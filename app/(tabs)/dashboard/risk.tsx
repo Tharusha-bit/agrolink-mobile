@@ -31,7 +31,7 @@ const [result, setResult] = useState<RiskResult | null>(null);
     try {
       // ⚠️ IMPORTANT: Use your HOTSPOT IP here (172.20.10.6)
       // If you are at university on a different Wi-Fi, you must update this IP!
-      const API_URL = 'http://192.168.8.178:8080/api/risk/predict';
+      const API_URL = 'http://172.20.10.6:8080/api/risk/predict';
       
       const farmerIdToUse = isProFarmer ? '1001' : '9999';
 
