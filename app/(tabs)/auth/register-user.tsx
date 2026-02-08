@@ -1,74 +1,197 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, Image, StyleSheet, ScrollView, Switch, KeyboardAvoidingView, Platform } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, Image, StyleSheet, ScrollView, Alert, KeyboardAvoidingView, Platform, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons'; // We use icons for a premium look
+import { Ionicons } from '@expo/vector-icons';
+import axios from 'axios';
 
 export default function RegisterUserScreen() {
   const router = useRouter();
-  const [isInvestor, setIsInvestor] = useState(false); // Default is Farmer (false)
+  
+  // --- STATE VARIABLES ---
+  const [isInvestor, setIsInvestor] = useState(false);
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [nic, setNic] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  // --- THE REGISTER FUNCTION ---
+  const handleRegister = async () => {
+    // 1. Basic Validation
+    if (!username || !password || !confirmPassword) {
+      Alert.alert("Error", "Please fill in all fields");
+      return;
+    }
+    if (password !== confirmPassword) {
+      Alert.alert("Error", "Passwords do not match");
+      return;
+    }
+    if (!isInvestor && !nic) {
+      Alert.alert("Error", "Farmers must provide a NIC number");
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      // ⚠️ USE YOUR HOTSPOT IP HERE (Same one you used for Risk Tool)
+      const API_URL = 'http://172.20.10.6:8080/api/auth/register';
+
+      // 2. Prepare Data for Backend
+      const userData = {
+        username: username,
+        password: password,
+        role: isInvestor ? "INVESTOR" : "FARMER", // Sends "FARMER" or "INVESTOR"
+        nic: isInvestor ? null : nic // Send NIC only if Farmer
+      };
+
+      // 3. Send Request
+      const response = await axios.post(API_URL, userData);
+
+      // 4. Success!
+      if (response.status === 200) {
+        Alert.alert("Success", "Account created successfully!", [
+          { text: "Login Now", onPress: () => router.push('/auth/login') }
+        ]);
+      }
+
+} catch (error: any) {
+      // ✅ 1. Check if the Backend rejected the request (e.g., 400 Duplicate User)
+      if (error.response) {
+        console.log("Registration Error:", error.response.status);
+        
+        // Show the specific error message from the backend (e.g. "Username taken")
+        Alert.alert("Registration Failed", error.response.data || "User already exists");
+      } 
+      // ✅ 2. Check if it's a Network Error (Backend down / Wrong IP)
+      else if (error.request) {
+        Alert.alert("Network Error", "Could not connect to server. Check your IP address.");
+      } 
+      // ✅ 3. Unknown Error
+      else {
+        Alert.alert("Error", "Something went wrong. Please try again.");
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
-    <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={{flex:1}}>
-      <ScrollView contentContainerStyle={styles.container}>
+    <KeyboardAvoidingView 
+      behavior={Platform.OS === "ios" ? "padding" : "height"} 
+      style={{ flex: 1, backgroundColor: '#fff' }}
+    >
+      <ScrollView contentContainerStyle={styles.scrollContainer} showsVerticalScrollIndicator={false}>
         
-        {/* Top Decorative Blob */}
-        <View style={styles.topShape} />
-
+        {/* Header */}
         <View style={styles.header}>
-          <Image source={require('../../../assets/logo.png')} style={styles.logo} resizeMode="contain" />
+          <View style={styles.logoContainer}>
+            <Image 
+              source={require('../../../assets/logo.png')} 
+              style={styles.logo} 
+              resizeMode="cover" 
+            />
+          </View>
           <Text style={styles.title}>Create Account</Text>
-          <Text style={styles.subtitle}>Join Agrolink as a {isInvestor ? "Investor" : "Farmer"}</Text>
+          <Text style={styles.subtitle}>Join Agrolink today</Text>
         </View>
 
-        <View style={styles.card}>
-          
-          {/* --- ROLE TOGGLE --- */}
-          <View style={styles.roleContainer}>
-            <Text style={[styles.roleText, !isInvestor && styles.activeRole]}>Farmer</Text>
-            <Switch
-              value={isInvestor}
-              onValueChange={setIsInvestor}
-              trackColor={{ false: "#A5D6A7", true: "#81C784" }}
-              thumbColor={isInvestor ? "#1B5E20" : "#4CAF50"}
-              style={{ marginHorizontal: 10 }}
-            />
-            <Text style={[styles.roleText, isInvestor && styles.activeRole]}>Investor</Text>
-          </View>
-
-          {/* Username */}
-          <View style={styles.inputContainer}>
-            <Ionicons name="mail-outline" size={20} color="#666" style={styles.icon} />
-            <TextInput style={styles.input} placeholder="Email / Username" placeholderTextColor="#aaa" />
-          </View>
-
-          {/* Password */}
-          <View style={styles.inputContainer}>
-            <Ionicons name="lock-closed-outline" size={20} color="#666" style={styles.icon} />
-            <TextInput style={styles.input} placeholder="Password" placeholderTextColor="#aaa" secureTextEntry />
-          </View>
-
-          {/* Confirm Password */}
-          <View style={styles.inputContainer}>
-            <Ionicons name="lock-closed-outline" size={20} color="#666" style={styles.icon} />
-            <TextInput style={styles.input} placeholder="Confirm Password" placeholderTextColor="#aaa" secureTextEntry />
-          </View>
-
-          {/* NIC Number (Only for Farmers) */}
-          {!isInvestor && (
-            <View style={styles.inputContainer}>
-              <Ionicons name="id-card-outline" size={20} color="#666" style={styles.icon} />
-              <TextInput style={styles.input} placeholder="NIC Number" placeholderTextColor="#aaa" />
-            </View>
-          )}
-
-          <TouchableOpacity style={styles.signupButton}>
-            <Text style={styles.signupButtonText}>REGISTER</Text>
+        {/* Role Selection Toggle */}
+        <View style={styles.roleToggleContainer}>
+          <TouchableOpacity 
+            style={[styles.roleButton, !isInvestor && styles.roleButtonActive]} 
+            onPress={() => setIsInvestor(false)}
+          >
+            <Ionicons name="leaf-outline" size={18} color={!isInvestor ? "#fff" : "#666"} />
+            <Text style={[styles.roleText, !isInvestor && styles.roleTextActive]}>Farmer</Text>
           </TouchableOpacity>
 
+          <TouchableOpacity 
+            style={[styles.roleButton, isInvestor && styles.roleButtonActive]} 
+            onPress={() => setIsInvestor(true)}
+          >
+            <Ionicons name="briefcase-outline" size={18} color={isInvestor ? "#fff" : "#666"} />
+            <Text style={[styles.roleText, isInvestor && styles.roleTextActive]}>Investor</Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* Form Inputs */}
+        <View style={styles.formContainer}>
+          
+          <Text style={styles.inputLabel}>Username / Email</Text>
+          <View style={styles.inputWrapper}>
+            <Ionicons name="person-outline" size={20} color="#666" style={styles.icon} />
+            <TextInput 
+              style={styles.input} 
+              placeholder="Choose a username" 
+              placeholderTextColor="#aaa"
+              value={username}
+              onChangeText={setUsername}
+              autoCapitalize="none"
+            />
+          </View>
+
+          <Text style={styles.inputLabel}>Password</Text>
+          <View style={styles.inputWrapper}>
+            <Ionicons name="lock-closed-outline" size={20} color="#666" style={styles.icon} />
+            <TextInput 
+              style={styles.input} 
+              placeholder="Create password" 
+              placeholderTextColor="#aaa" 
+              secureTextEntry
+              value={password}
+              onChangeText={setPassword}
+            />
+          </View>
+
+          <Text style={styles.inputLabel}>Confirm Password</Text>
+          <View style={styles.inputWrapper}>
+            <Ionicons name="shield-checkmark-outline" size={20} color="#666" style={styles.icon} />
+            <TextInput 
+              style={styles.input} 
+              placeholder="Repeat password" 
+              placeholderTextColor="#aaa" 
+              secureTextEntry
+              value={confirmPassword}
+              onChangeText={setConfirmPassword}
+            />
+          </View>
+
+          {/* Only Show NIC for Farmers */}
+          {!isInvestor && (
+            <>
+              <Text style={styles.inputLabel}>NIC Number</Text>
+              <View style={styles.inputWrapper}>
+                <Ionicons name="id-card-outline" size={20} color="#666" style={styles.icon} />
+                <TextInput 
+                  style={styles.input} 
+                  placeholder="National ID" 
+                  placeholderTextColor="#aaa" 
+                  value={nic}
+                  onChangeText={setNic}
+                />
+              </View>
+            </>
+          )}
+
+          {/* Register Button */}
+          <TouchableOpacity 
+            style={styles.registerButton} 
+            onPress={handleRegister}
+            disabled={loading} // Prevent double clicks
+          >
+            {loading ? (
+              <ActivityIndicator color="#fff" />
+            ) : (
+              <Text style={styles.registerButtonText}>Sign Up as {isInvestor ? "Investor" : "Farmer"}</Text>
+            )}
+          </TouchableOpacity>
+
+          {/* Login Link */}
           <View style={styles.footer}>
             <Text style={styles.footerText}>Already have an account? </Text>
             <TouchableOpacity onPress={() => router.push('/auth/login')}>
-              <Text style={styles.linkText}>Login here</Text>
+              <Text style={styles.linkText}>Log In</Text>
             </TouchableOpacity>
           </View>
 
@@ -79,28 +202,52 @@ export default function RegisterUserScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flexGrow: 1, backgroundColor: '#F1F8E9', justifyContent: 'center', alignItems: 'center' },
-  topShape: { position: 'absolute', top: -100, right: -100, width: 300, height: 300, borderRadius: 150, backgroundColor: '#C8E6C9', opacity: 0.5 },
+  scrollContainer: { flexGrow: 1, backgroundColor: '#fff', paddingHorizontal: 30, paddingTop: 50 },
   
-  header: { alignItems: 'center', marginBottom: 20 },
-  logo: { width: 100, height: 100, marginBottom: 10 },
-  title: { fontSize: 28, fontWeight: 'bold', color: '#1B5E20' },
-  subtitle: { fontSize: 16, color: '#558B2F', marginTop: 5 },
+  header: { alignItems: 'center', marginBottom: 30 },
+  logoContainer: {
+    width: 80, height: 80, borderRadius: 40,
+    backgroundColor: '#fff', justifyContent: 'center', alignItems: 'center',
+    elevation: 5, shadowColor: '#000', shadowOpacity: 0.1, shadowRadius: 5, shadowOffset: { width: 0, height: 4 },
+    marginBottom: 15,
+  },
+  logo: { width: 70, height: 70, borderRadius: 35 },
+  title: { fontSize: 26, fontWeight: 'bold', color: '#1a1a1a', marginBottom: 5 },
+  subtitle: { fontSize: 16, color: '#666' },
 
-  card: { width: '85%', backgroundColor: 'white', borderRadius: 20, padding: 25, elevation: 10, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.1, shadowRadius: 10 },
+  roleToggleContainer: {
+    flexDirection: 'row',
+    backgroundColor: '#F5F5F5',
+    borderRadius: 12,
+    padding: 4,
+    marginBottom: 25,
+  },
+  roleButton: {
+    flex: 1, flexDirection: 'row', justifyContent: 'center', alignItems: 'center',
+    paddingVertical: 10, borderRadius: 10,
+  },
+  roleButtonActive: { backgroundColor: '#1B5E20', shadowColor: '#000', shadowOpacity: 0.1, elevation: 2 },
+  roleText: { marginLeft: 8, fontSize: 14, fontWeight: '600', color: '#666' },
+  roleTextActive: { color: '#fff' },
 
-  roleContainer: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', marginBottom: 25, backgroundColor: '#F1F8E9', padding: 10, borderRadius: 30 },
-  roleText: { fontSize: 16, color: '#888', fontWeight: '600' },
-  activeRole: { color: '#2E7D32', fontWeight: 'bold' },
-
-  inputContainer: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#F9F9F9', borderRadius: 12, marginBottom: 15, paddingHorizontal: 15, borderWidth: 1, borderColor: '#EEE' },
+  formContainer: { width: '100%' },
+  inputLabel: { fontSize: 14, fontWeight: '600', color: '#1a1a1a', marginBottom: 8, marginLeft: 4 },
+  inputWrapper: {
+    flexDirection: 'row', alignItems: 'center',
+    backgroundColor: '#F9FAFB', borderRadius: 12, marginBottom: 15,
+    paddingHorizontal: 15, height: 50, borderWidth: 1, borderColor: '#EEE',
+  },
   icon: { marginRight: 10 },
-  input: { flex: 1, paddingVertical: 12, fontSize: 16, color: '#333' },
+  input: { flex: 1, fontSize: 15, color: '#333' },
 
-  signupButton: { backgroundColor: '#00C853', paddingVertical: 15, borderRadius: 12, alignItems: 'center', marginTop: 10, shadowColor: '#00C853', shadowOffset: {width: 0, height: 4}, shadowOpacity: 0.3, shadowRadius: 5, elevation: 5 },
-  signupButtonText: { color: '#fff', fontSize: 18, fontWeight: 'bold', letterSpacing: 1 },
+  registerButton: {
+    backgroundColor: '#000', 
+    paddingVertical: 16, borderRadius: 12, alignItems: 'center',
+    marginTop: 10, elevation: 4,
+  },
+  registerButtonText: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
 
-  footer: { flexDirection: 'row', justifyContent: 'center', marginTop: 20 },
-  footerText: { color: '#666' },
-  linkText: { color: '#00C853', fontWeight: 'bold' }
+  footer: { flexDirection: 'row', justifyContent: 'center', marginTop: 25, marginBottom: 40 },
+  footerText: { color: '#666', fontSize: 15 },
+  linkText: { color: '#1B5E20', fontWeight: 'bold', fontSize: 15 },
 });
