@@ -67,7 +67,7 @@ export default function RiskDashboard() {
         {userImage && typeof userImage === 'string' && userImage.length > 10 ? (
            <Image source={{ uri: userImage }} style={styles.profilePic} />
         ) : (
-           <Image source={require('../../assets/logo.png')} style={styles.logoSmall} resizeMode="contain" />
+           <Image source={require('../../../assets/logo.png')} style={styles.logoSmall} resizeMode="contain" />
         )}
         
         <TouchableOpacity onPress={() => router.replace('/auth/login')}>

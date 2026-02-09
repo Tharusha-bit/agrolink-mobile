@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, Image, StyleSheet, Switch, KeyboardAvoidingView, Platform, ScrollView, Alert, ActivityIndicator } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, Image, StyleSheet, KeyboardAvoidingView, Platform, ScrollView, Alert, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import axios from 'axios';
@@ -7,15 +7,14 @@ import axios from 'axios';
 export default function LoginScreen() {
   const router = useRouter();
   
-  const [username, setUsername] = useState('');
+  // ✅ Changed to PhoneNumber
+  const [phoneNumber, setPhoneNumber] = useState('');
   const [password, setPassword] = useState('');
-  const [stayLogged, setStayLogged] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  // --- LOGIN FUNCTION ---
   const handleLogin = async () => {
-    if (!username || !password) {
-      Alert.alert("Error", "Please enter both username and password");
+    if (!phoneNumber || !password) {
+      Alert.alert("Error", "Please enter phone number and password");
       return;
     }
 
@@ -26,38 +25,26 @@ export default function LoginScreen() {
       const API_URL = 'http://192.168.8.178:8080/api/auth/login';
 
       const response = await axios.post(API_URL, {
-        username: username,
+        phoneNumber: phoneNumber, // ✅ Sending Phone
         password: password
       });
 
       if (response.status === 200) {
-        // ✅ Capture Image and ID
         const { role, userId, profileImage } = response.data;
         
-        console.log("Logged in as:", role); 
-
-        // ✅ Pass 'userImage' to the dashboard
-        if (role === 'FARMER') {
-           router.replace({
-             pathname: '/dashboard/risk',
-             params: { userId: userId, userImage: profileImage }
-           }); 
-        } else {
-           // For Investors (sending to same dash for now)
-           router.replace({
-             pathname: '/dashboard/risk',
-             params: { userId: userId, userImage: profileImage }
-           }); 
-        }
+        router.replace({
+          pathname: '/dashboard/risk',
+          params: { userId: userId, userImage: profileImage }
+        }); 
       }
 
     } catch (error: any) {
       if (error.response) {
         Alert.alert("Login Failed", error.response.data || "Invalid credentials");
       } else if (error.request) {
-        Alert.alert("Network Error", "Could not connect to server. Check IP.");
+        Alert.alert("Network Error", "Check your IP address.");
       } else {
-        Alert.alert("Error", "Something went wrong. Please try again.");
+        Alert.alert("Error", "Something went wrong.");
       }
     } finally {
       setLoading(false);
@@ -65,62 +52,39 @@ export default function LoginScreen() {
   };
 
   return (
-    <KeyboardAvoidingView 
-      behavior={Platform.OS === "ios" ? "padding" : "height"} 
-      style={{ flex: 1, backgroundColor: '#fff' }}
-    >
+    <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={{ flex: 1, backgroundColor: '#fff' }}>
       <ScrollView contentContainerStyle={styles.scrollContainer} showsVerticalScrollIndicator={false}>
         
         <View style={styles.header}>
-          <View style={styles.logoContainer}>
-            <Image 
-              source={require('../../../assets/logo.png')} 
-              style={styles.logo} 
-              resizeMode="cover" 
-            />
-          </View>
+          <Image source={require('../../../assets/logo.png')} style={styles.logo} resizeMode="cover" />
           <Text style={styles.title}>Welcome Back</Text>
-          <Text style={styles.subtitle}>Sign in to continue to Agrolink</Text>
+          <Text style={styles.subtitle}>Sign in to Agrolink</Text>
         </View>
 
         <View style={styles.formContainer}>
           
-          <Text style={styles.inputLabel}>Username / Email</Text>
+          {/* ✅ Phone Input */}
+          <Text style={styles.inputLabel}>Mobile Number</Text>
           <View style={styles.inputWrapper}>
-            <Ionicons name="person-outline" size={20} color="#666" style={styles.icon} />
+            <Ionicons name="call-outline" size={20} color="#666" style={styles.icon} />
             <TextInput 
               style={styles.input} 
-              placeholder="farmer@agrolink.lk" 
+              placeholder="0771234567" 
               placeholderTextColor="#aaa"
-              autoCapitalize="none"
-              value={username}
-              onChangeText={setUsername}
+              keyboardType="phone-pad"
+              value={phoneNumber}
+              onChangeText={setPhoneNumber}
             />
           </View>
 
           <Text style={styles.inputLabel}>Password</Text>
           <View style={styles.inputWrapper}>
             <Ionicons name="lock-closed-outline" size={20} color="#666" style={styles.icon} />
-            <TextInput 
-              style={styles.input} 
-              placeholder="••••••••••" 
-              placeholderTextColor="#aaa" 
-              secureTextEntry
-              value={password}
-              onChangeText={setPassword}
-            />
+            <TextInput style={styles.input} placeholder="••••••••••" placeholderTextColor="#aaa" secureTextEntry value={password} onChangeText={setPassword}/>
           </View>
 
-          <TouchableOpacity 
-            style={styles.loginButton} 
-            onPress={handleLogin}
-            disabled={loading}
-          >
-            {loading ? (
-              <ActivityIndicator color="#fff" />
-            ) : (
-              <Text style={styles.loginButtonText}>Log In</Text>
-            )}
+          <TouchableOpacity style={styles.loginButton} onPress={handleLogin} disabled={loading}>
+            {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.loginButtonText}>Log In</Text>}
           </TouchableOpacity>
 
           <View style={styles.footer}>
@@ -143,34 +107,19 @@ export default function LoginScreen() {
 const styles = StyleSheet.create({
   scrollContainer: { flexGrow: 1, backgroundColor: '#fff', paddingHorizontal: 30, paddingTop: 60 },
   header: { alignItems: 'center', marginBottom: 40 },
-  logoContainer: {
-    width: 100, height: 100, borderRadius: 50, backgroundColor: '#fff',
-    justifyContent: 'center', alignItems: 'center', marginBottom: 20,
-    elevation: 8, shadowColor: '#000', shadowOpacity: 0.1, shadowRadius: 10, shadowOffset: { width: 0, height: 5 },
-  },
-  logo: { width: 90, height: 90, borderRadius: 45 },
+  logo: { width: 90, height: 90, borderRadius: 45, marginBottom: 20 },
   title: { fontSize: 28, fontWeight: 'bold', color: '#1a1a1a', marginBottom: 8 },
   subtitle: { fontSize: 16, color: '#666' },
   formContainer: { width: '100%' },
   inputLabel: { fontSize: 14, fontWeight: '600', color: '#1a1a1a', marginBottom: 8, marginLeft: 4 },
-  inputWrapper: {
-    flexDirection: 'row', alignItems: 'center', backgroundColor: '#F9FAFB',
-    borderRadius: 12, marginBottom: 20, paddingHorizontal: 15, height: 55, borderWidth: 1, borderColor: '#EEE',
-  },
+  inputWrapper: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#F9FAFB', borderRadius: 12, marginBottom: 20, paddingHorizontal: 15, height: 55, borderWidth: 1, borderColor: '#EEE' },
   icon: { marginRight: 10 },
   input: { flex: 1, fontSize: 16, color: '#333' },
-  loginButton: {
-    backgroundColor: '#1B5E20', paddingVertical: 16, borderRadius: 12,
-    alignItems: 'center', shadowColor: '#1B5E20', shadowOpacity: 0.3,
-    shadowRadius: 10, shadowOffset: { width: 0, height: 4 }, elevation: 5, marginBottom: 20
-  },
+  loginButton: { backgroundColor: '#1B5E20', paddingVertical: 16, borderRadius: 12, alignItems: 'center', marginBottom: 20 },
   loginButtonText: { color: '#fff', fontSize: 18, fontWeight: 'bold' },
   footer: { flexDirection: 'row', justifyContent: 'center', marginTop: 10, marginBottom: 40 },
   footerText: { color: '#666', fontSize: 15 },
   linkText: { color: '#1B5E20', fontWeight: 'bold', fontSize: 15 },
-  demoButton: {
-    alignSelf: 'center', paddingVertical: 10, paddingHorizontal: 20,
-    backgroundColor: '#FFF8E1', borderRadius: 20, marginBottom: 20
-  },
+  demoButton: { alignSelf: 'center', paddingVertical: 10, paddingHorizontal: 20, backgroundColor: '#FFF8E1', borderRadius: 20, marginBottom: 20 },
   demoText: { color: '#F57F17', fontSize: 12, fontWeight: 'bold' }
 });
