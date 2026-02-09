@@ -24,7 +24,7 @@ export default function LoginScreen() {
 
     try {
       // ⚠️ USE YOUR HOTSPOT IP HERE
-      const API_URL = 'http://172.20.10.6:8080/api/auth/login';
+      const API_URL = 'http://192.168.8.178:8080/api/auth/login';
 
       const response = await axios.post(API_URL, {
         username: username,

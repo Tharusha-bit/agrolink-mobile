@@ -35,7 +35,7 @@ export default function RegisterUserScreen() {
 
     try {
       // ⚠️ USE YOUR HOTSPOT IP HERE (Same one you used for Risk Tool)
-      const API_URL = 'http://172.20.10.6:8080/api/auth/register';
+      const API_URL = 'http://192.168.8.178:8080/api/auth/register';
 
       // 2. Prepare Data for Backend
       const userData = {
