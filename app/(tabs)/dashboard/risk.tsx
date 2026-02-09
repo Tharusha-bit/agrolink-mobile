@@ -2,9 +2,8 @@ import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, ActivityIndicator, ScrollView, Switch, Image } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
 import axios from 'axios';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 
-// Define what the backend response looks like
 interface RiskResult {
   baseRiskScore: number;
   riskLabel: string;
@@ -14,23 +13,23 @@ interface RiskResult {
 
 export default function RiskDashboard() {
   const router = useRouter();
+  
+  // ✅ Receive the User Image (if any)
+  const { userImage } = useLocalSearchParams(); 
 
-  // --- STATE VARIABLES ---
   const [district, setDistrict] = useState('ANURADHAPURA');
   const [season, setSeason] = useState('Yala');
-  const [isProFarmer, setIsProFarmer] = useState(true); // Toggle for Demo
+  const [isProFarmer, setIsProFarmer] = useState(true);
   
   const [loading, setLoading] = useState(false);
-const [result, setResult] = useState<RiskResult | null>(null);
+  const [result, setResult] = useState<RiskResult | null>(null);
 
-  // --- API FUNCTION ---
   const checkRisk = async () => {
     setLoading(true);
     setResult(null);
     
     try {
-      // ⚠️ IMPORTANT: Use your HOTSPOT IP here (172.20.10.6)
-      // If you are at university on a different Wi-Fi, you must update this IP!
+      // ⚠️ USE YOUR HOTSPOT IP HERE
       const API_URL = 'http://192.168.8.178:8080/api/risk/predict';
       
       const farmerIdToUse = isProFarmer ? '1001' : '9999';
@@ -52,19 +51,25 @@ const [result, setResult] = useState<RiskResult | null>(null);
     }
   };
 
-  // --- HELPER: GET COLORS ---
-  const getRiskColor = (score:number) => {
-    if (score < 25) return '#2E7D32'; // Green
-    if (score < 55) return '#F9A825'; // Yellow/Orange
-    return '#C62828'; // Red
+  const getRiskColor = (score: number) => {
+    if (score < 25) return '#2E7D32'; 
+    if (score < 55) return '#F9A825'; 
+    return '#C62828'; 
   };
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
       
-      {/* HEADER WITH LOGOUT */}
+      {/* HEADER WITH PROFILE PIC OR LOGO */}
       <View style={styles.headerRow}>
-        <Image source={require('../../../assets/logo.png')} style={styles.logoSmall} resizeMode="contain" />
+        
+        {/* ✅ Logic: If userImage exists, show it. Else show Logo */}
+        {userImage && typeof userImage === 'string' && userImage.length > 10 ? (
+           <Image source={{ uri: userImage }} style={styles.profilePic} />
+        ) : (
+           <Image source={require('../../assets/logo.png')} style={styles.logoSmall} resizeMode="contain" />
+        )}
+        
         <TouchableOpacity onPress={() => router.replace('/auth/login')}>
           <Text style={styles.logoutText}>Logout</Text>
         </TouchableOpacity>
@@ -72,10 +77,7 @@ const [result, setResult] = useState<RiskResult | null>(null);
 
       <Text style={styles.headerTitle}>Risk Assessment Tool</Text>
 
-      {/* --- FORM CARD --- */}
       <View style={styles.card}>
-        
-        {/* District Selector */}
         <Text style={styles.label}>Select District:</Text>
         <View style={styles.pickerBox}>
           <Picker
@@ -91,7 +93,6 @@ const [result, setResult] = useState<RiskResult | null>(null);
           </Picker>
         </View>
 
-        {/* Season Selector */}
         <Text style={styles.label}>Select Season:</Text>
         <View style={styles.pickerBox}>
           <Picker
@@ -102,7 +103,6 @@ const [result, setResult] = useState<RiskResult | null>(null);
           </Picker>
         </View>
 
-        {/* DEMO MODE TOGGLE */}
         <View style={styles.toggleRow}>
           <Text style={styles.toggleText}>Verified Farmer (Demo)</Text>
           <Switch 
@@ -116,13 +116,11 @@ const [result, setResult] = useState<RiskResult | null>(null);
           {isProFarmer ? "Simulating Expert Farmer (Low Risk)" : "Simulating New Farmer (High Risk)"}
         </Text>
 
-        {/* Calculate Button */}
         <TouchableOpacity style={styles.button} onPress={checkRisk}>
           <Text style={styles.buttonText}>CALCULATE RISK</Text>
         </TouchableOpacity>
       </View>
 
-      {/* --- RESULTS SECTION --- */}
       {loading && <ActivityIndicator size="large" color="#00C853" style={{marginTop: 20}} />}
 
       {result && (
@@ -151,23 +149,22 @@ const styles = StyleSheet.create({
   container: { padding: 20, backgroundColor: '#f8f9fa', flexGrow: 1, alignItems: 'center' },
   
   headerRow: { width: '100%', flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20, marginTop: 10 },
+  
+  // ✅ New Style for Profile Pic
+  profilePic: { width: 50, height: 50, borderRadius: 25, borderWidth: 2, borderColor: '#00C853' },
+  
   logoSmall: { width: 40, height: 40 },
   logoutText: { color: '#C62828', fontWeight: 'bold' },
 
   headerTitle: { fontSize: 24, fontWeight: 'bold', color: '#1B5E20', marginBottom: 20 },
-  
   card: { width: '100%', backgroundColor: 'white', borderRadius: 12, padding: 20, elevation: 3, shadowColor: '#000', shadowOpacity: 0.1, shadowRadius: 5 },
-  
   label: { fontSize: 16, fontWeight: '600', color: '#333', marginBottom: 8, marginTop: 10 },
   pickerBox: { borderWidth: 1, borderColor: '#ddd', borderRadius: 8, backgroundColor: '#fafafa', marginBottom: 10 },
-  
   toggleRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 15 },
   toggleText: { fontSize: 16, color: '#333' },
   hint: { fontSize: 12, color: '#999', marginBottom: 20, textAlign: 'right' },
-
   button: { backgroundColor: '#00C853', paddingVertical: 15, borderRadius: 8, alignItems: 'center', marginTop: 10 },
   buttonText: { color: 'white', fontSize: 18, fontWeight: 'bold' },
-
   resultCard: { marginTop: 25, width: '100%', backgroundColor: 'white', borderRadius: 12, padding: 25, alignItems: 'center', borderWidth: 2 },
   resultTitle: { fontSize: 18, color: '#555', marginBottom: 10 },
   score: { fontSize: 56, fontWeight: 'bold', marginBottom: 10 },

@@ -7,7 +7,6 @@ import axios from 'axios';
 export default function LoginScreen() {
   const router = useRouter();
   
-  // --- STATE VARIABLES ---
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [stayLogged, setStayLogged] = useState(false);
@@ -31,38 +30,33 @@ export default function LoginScreen() {
         password: password
       });
 
-      // --- SUCCESS ---
       if (response.status === 200) {
-        const { role, userId } = response.data;
+        // ✅ Capture Image and ID
+        const { role, userId, profileImage } = response.data;
         
-        // You can save these to storage later if needed
         console.log("Logged in as:", role); 
 
-        // Navigate based on Role (For now, both go to Risk Tool)
+        // ✅ Pass 'userImage' to the dashboard
         if (role === 'FARMER') {
-           Alert.alert("Welcome Back!", "Farmer Dashboard loading...");
-           router.replace('/dashboard/risk'); 
+           router.replace({
+             pathname: '/dashboard/risk',
+             params: { userId: userId, userImage: profileImage }
+           }); 
         } else {
-           Alert.alert("Welcome Investor!", "Marketplace loading...");
-           // If you have an investor screen, go there. For now:
-           router.replace('/dashboard/risk'); 
+           // For Investors (sending to same dash for now)
+           router.replace({
+             pathname: '/dashboard/risk',
+             params: { userId: userId, userImage: profileImage }
+           }); 
         }
       }
 
-} catch (error: any) {
-      // ✅ 1. Check if it's a specific Backend Error (like 401 or 404)
+    } catch (error: any) {
       if (error.response) {
-        console.log("Server responded with:", error.response.status);
-        
-        // Show the simple alert to the user
         Alert.alert("Login Failed", error.response.data || "Invalid credentials");
-      } 
-      // ✅ 2. Check if it's a Network Error (Backend down / Wrong IP)
-      else if (error.request) {
-        Alert.alert("Network Error", "Could not connect to server. Check your IP address.");
-      } 
-      // ✅ 3. Unknown Error
-      else {
+      } else if (error.request) {
+        Alert.alert("Network Error", "Could not connect to server. Check IP.");
+      } else {
         Alert.alert("Error", "Something went wrong. Please try again.");
       }
     } finally {
@@ -77,7 +71,6 @@ export default function LoginScreen() {
     >
       <ScrollView contentContainerStyle={styles.scrollContainer} showsVerticalScrollIndicator={false}>
         
-        {/* Header */}
         <View style={styles.header}>
           <View style={styles.logoContainer}>
             <Image 
@@ -90,7 +83,6 @@ export default function LoginScreen() {
           <Text style={styles.subtitle}>Sign in to continue to Agrolink</Text>
         </View>
 
-        {/* Form */}
         <View style={styles.formContainer}>
           
           <Text style={styles.inputLabel}>Username / Email</Text>
@@ -119,7 +111,6 @@ export default function LoginScreen() {
             />
           </View>
 
-          {/* Login Button */}
           <TouchableOpacity 
             style={styles.loginButton} 
             onPress={handleLogin}
@@ -132,7 +123,6 @@ export default function LoginScreen() {
             )}
           </TouchableOpacity>
 
-          {/* Register Link */}
           <View style={styles.footer}>
             <Text style={styles.footerText}>New to Agrolink? </Text>
             <TouchableOpacity onPress={() => router.push('/auth/register-user')}>
@@ -140,7 +130,6 @@ export default function LoginScreen() {
             </TouchableOpacity>
           </View>
 
-          {/* Supervisor Demo Button */}
           <TouchableOpacity style={styles.demoButton} onPress={() => router.push('/dashboard/risk')}>
             <Text style={styles.demoText}>⚡ Supervisor Demo Access</Text>
           </TouchableOpacity>

@@ -34,15 +34,15 @@ export default function RegisterUserScreen() {
     setLoading(true);
 
     try {
-      // ⚠️ USE YOUR HOTSPOT IP HERE (Same one you used for Risk Tool)
+      // ⚠️ USE YOUR HOTSPOT IP HERE
       const API_URL = 'http://192.168.8.178:8080/api/auth/register';
 
       // 2. Prepare Data for Backend
       const userData = {
         username: username,
         password: password,
-        role: isInvestor ? "INVESTOR" : "FARMER", // Sends "FARMER" or "INVESTOR"
-        nic: isInvestor ? null : nic // Send NIC only if Farmer
+        role: isInvestor ? "INVESTOR" : "FARMER",
+        nic: isInvestor ? null : nic
       };
 
       // 3. Send Request
@@ -50,25 +50,27 @@ export default function RegisterUserScreen() {
 
       // 4. Success!
       if (response.status === 200) {
-        Alert.alert("Success", "Account created successfully!", [
-          { text: "Login Now", onPress: () => router.push('/auth/login') }
+        const newUserId = response.data.userId; // <--- Capture the ID
+        
+        Alert.alert("Success", "Account created! Let's set up your profile.", [
+          { 
+            text: "Continue", 
+            // ✅ Navigate to Profile Setup and PASS the ID
+            onPress: () => router.push({
+              pathname: '/profile/setup',
+              params: { userId: newUserId }
+            }) 
+          }
         ]);
       }
 
-} catch (error: any) {
-      // ✅ 1. Check if the Backend rejected the request (e.g., 400 Duplicate User)
+    } catch (error: any) {
+      // Handle Errors
       if (error.response) {
-        console.log("Registration Error:", error.response.status);
-        
-        // Show the specific error message from the backend (e.g. "Username taken")
         Alert.alert("Registration Failed", error.response.data || "User already exists");
-      } 
-      // ✅ 2. Check if it's a Network Error (Backend down / Wrong IP)
-      else if (error.request) {
+      } else if (error.request) {
         Alert.alert("Network Error", "Could not connect to server. Check your IP address.");
-      } 
-      // ✅ 3. Unknown Error
-      else {
+      } else {
         Alert.alert("Error", "Something went wrong. Please try again.");
       }
     } finally {
@@ -203,7 +205,6 @@ export default function RegisterUserScreen() {
 
 const styles = StyleSheet.create({
   scrollContainer: { flexGrow: 1, backgroundColor: '#fff', paddingHorizontal: 30, paddingTop: 50 },
-  
   header: { alignItems: 'center', marginBottom: 30 },
   logoContainer: {
     width: 80, height: 80, borderRadius: 40,
@@ -214,13 +215,8 @@ const styles = StyleSheet.create({
   logo: { width: 70, height: 70, borderRadius: 35 },
   title: { fontSize: 26, fontWeight: 'bold', color: '#1a1a1a', marginBottom: 5 },
   subtitle: { fontSize: 16, color: '#666' },
-
   roleToggleContainer: {
-    flexDirection: 'row',
-    backgroundColor: '#F5F5F5',
-    borderRadius: 12,
-    padding: 4,
-    marginBottom: 25,
+    flexDirection: 'row', backgroundColor: '#F5F5F5', borderRadius: 12, padding: 4, marginBottom: 25,
   },
   roleButton: {
     flex: 1, flexDirection: 'row', justifyContent: 'center', alignItems: 'center',
@@ -229,7 +225,6 @@ const styles = StyleSheet.create({
   roleButtonActive: { backgroundColor: '#1B5E20', shadowColor: '#000', shadowOpacity: 0.1, elevation: 2 },
   roleText: { marginLeft: 8, fontSize: 14, fontWeight: '600', color: '#666' },
   roleTextActive: { color: '#fff' },
-
   formContainer: { width: '100%' },
   inputLabel: { fontSize: 14, fontWeight: '600', color: '#1a1a1a', marginBottom: 8, marginLeft: 4 },
   inputWrapper: {
@@ -239,14 +234,12 @@ const styles = StyleSheet.create({
   },
   icon: { marginRight: 10 },
   input: { flex: 1, fontSize: 15, color: '#333' },
-
   registerButton: {
     backgroundColor: '#000', 
     paddingVertical: 16, borderRadius: 12, alignItems: 'center',
     marginTop: 10, elevation: 4,
   },
   registerButtonText: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
-
   footer: { flexDirection: 'row', justifyContent: 'center', marginTop: 25, marginBottom: 40 },
   footerText: { color: '#666', fontSize: 15 },
   linkText: { color: '#1B5E20', fontWeight: 'bold', fontSize: 15 },
