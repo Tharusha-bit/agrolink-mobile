@@ -32,10 +32,10 @@ export default function LoginScreen() {
       if (response.status === 200) {
         const { role, userId, profileImage } = response.data;
         
-        router.replace({
-          pathname: '/dashboard/risk',
-          params: { userId: userId, userImage: profileImage }
-        }); 
+router.replace({
+          pathname: '/dashboard/main'as any,// ✅ Navigate to the new Main Dashboard
+          params: { userId: userId, userImage: profileImage, phoneNumber: phoneNumber }
+        });
       }
 
     } catch (error: any) {

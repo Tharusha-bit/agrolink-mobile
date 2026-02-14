@@ -125,7 +125,7 @@ export default function ProfileSetupScreen() {
       </View>
 
       {/* Back to Home Logic */}
-      <TouchableOpacity onPress={() => router.push('/dashboard/risk')}>
+      <TouchableOpacity onPress={() => router.push('/dashboard/main' as any)}>
         <Text style={styles.backLink}>Back to Home</Text>
       </TouchableOpacity>
 
