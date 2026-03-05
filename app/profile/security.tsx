@@ -1,4 +1,5 @@
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
@@ -73,6 +74,8 @@ const styles = StyleSheet.create({
   checkboxText: { fontSize: 12, color: 'gray', marginLeft: 10, lineHeight: 18 },
   saveBtn: { backgroundColor: '#000', borderRadius: 30, marginTop: 10 } // Black Button like Image 2
 =======
+=======
+>>>>>>> Stashed changes
 /**
  * AgroLink — SecurityScreen (Production-Level Redesign)
  *
@@ -621,5 +624,8 @@ const s = StyleSheet.create({
   saveBtnDisabled:{ opacity: 0.45 },
   saveBtnText:    { color: COLORS.white, fontWeight: '800', fontSize: 16, letterSpacing: 0.3 },
   cancelText:     { fontSize: 13, color: COLORS.textMuted, fontWeight: '600', textDecorationLine: 'underline' },
+<<<<<<< Updated upstream
+>>>>>>> Stashed changes
+=======
 >>>>>>> Stashed changes
 });

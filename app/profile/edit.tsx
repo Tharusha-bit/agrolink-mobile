@@ -1,4 +1,5 @@
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { Image, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
@@ -45,6 +46,8 @@ export default function EditProfileScreen() {
         </Button>
       </ScrollView>
 =======
+=======
+>>>>>>> Stashed changes
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React, { useRef, useState } from 'react';
@@ -457,11 +460,15 @@ export default function EditProfileScreen() {
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
+<<<<<<< Updated upstream
+>>>>>>> Stashed changes
+=======
 >>>>>>> Stashed changes
     </View>
   );
 }
 
+<<<<<<< Updated upstream
 <<<<<<< Updated upstream
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#fff' },
@@ -484,6 +491,8 @@ const styles = StyleSheet.create({
   form: { padding: 25 },
   saveBtn: { backgroundColor: '#000', borderRadius: 30, marginTop: 20, paddingVertical: 6 }
 =======
+=======
+>>>>>>> Stashed changes
 // ─── Styles ───────────────────────────────────────────────────────────────────
 const s = StyleSheet.create({
   container:    { flex: 1, backgroundColor: COLORS.surface },
@@ -553,5 +562,8 @@ const s = StyleSheet.create({
   saveBtnLoading:{ opacity: 0.8 },
   saveBtnText:   { color: COLORS.white, fontWeight: '800', fontSize: 16, letterSpacing: 0.5 },
   discardText:   { fontSize: 14, color: COLORS.textMuted, fontWeight: '600', textDecorationLine: 'underline' },
+<<<<<<< Updated upstream
+>>>>>>> Stashed changes
+=======
 >>>>>>> Stashed changes
 });
