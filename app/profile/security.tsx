@@ -1,4 +1,3 @@
-
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React, { useRef, useState } from 'react';
@@ -18,50 +17,50 @@ import { Text } from 'react-native-paper';
 
 // ─── Design Tokens (AgroLink system) ──────────────────────────────────────────
 const COLORS = {
-  primary: '#216000',
-  primaryLight: '#2E8B00',
-  primaryPale: '#E8F5E1',
-  accent: '#76C442',
-  accentWarm: '#F5A623',
-  white: '#FFFFFF',
-  surface: '#F7F9F4',
-  card: '#FFFFFF',
-  text: '#1A2E0D',
+  primary:       '#216000',
+  primaryLight:  '#2E8B00',
+  primaryPale:   '#E8F5E1',
+  accent:        '#76C442',
+  accentWarm:    '#F5A623',
+  white:         '#FFFFFF',
+  surface:       '#F7F9F4',
+  card:          '#FFFFFF',
+  text:          '#1A2E0D',
   textSecondary: '#5C7A4A',
-  textMuted: '#9BB08A',
-  border: '#DDE8D4',
-  error: '#D32F2F',
-  errorBg: '#FFF0F0',
-  success: '#2E7D32',
-  successBg: '#F1F8E9',
+  textMuted:     '#9BB08A',
+  border:        '#DDE8D4',
+  error:         '#D32F2F',
+  errorBg:       '#FFF0F0',
+  success:       '#2E7D32',
+  successBg:     '#F1F8E9',
 };
 
 const SHADOWS = {
   sm: Platform.select({
-    ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.08, shadowRadius: 6 },
+    ios:     { shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.08, shadowRadius: 6 },
     android: { elevation: 3 },
   }),
   md: Platform.select({
-    ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.13, shadowRadius: 16 },
+    ios:     { shadowColor: '#000', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.13, shadowRadius: 16 },
     android: { elevation: 8 },
   }),
 };
 
 // ─── Password Strength Logic ───────────────────────────────────────────────────
 const REQUIREMENTS = [
-  { key: 'length', label: 'At least 8 characters', test: (p: string) => p.length >= 8 },
-  { key: 'upper', label: 'One uppercase letter (A–Z)', test: (p: string) => /[A-Z]/.test(p) },
-  { key: 'number', label: 'One number (0–9)', test: (p: string) => /[0-9]/.test(p) },
-  { key: 'special', label: 'One special character (!@#…)', test: (p: string) => /[^A-Za-z0-9]/.test(p) },
+  { key: 'length',    label: 'At least 8 characters',          test: (p: string) => p.length >= 8 },
+  { key: 'upper',     label: 'One uppercase letter (A–Z)',      test: (p: string) => /[A-Z]/.test(p) },
+  { key: 'number',    label: 'One number (0–9)',                test: (p: string) => /[0-9]/.test(p) },
+  { key: 'special',   label: 'One special character (!@#…)',    test: (p: string) => /[^A-Za-z0-9]/.test(p) },
 ];
 
 const getStrength = (password: string) => {
   const passed = REQUIREMENTS.filter((r) => r.test(password)).length;
-  if (passed === 0) return { score: 0, label: '', color: COLORS.border };
-  if (passed === 1) return { score: 1, label: 'Weak', color: COLORS.error };
-  if (passed === 2) return { score: 2, label: 'Fair', color: COLORS.accentWarm };
-  if (passed === 3) return { score: 3, label: 'Good', color: '#8BC34A' };
-  return { score: 4, label: 'Strong', color: COLORS.accent };
+  if (passed === 0) return { score: 0, label: '',           color: COLORS.border };
+  if (passed === 1) return { score: 1, label: 'Weak',       color: COLORS.error };
+  if (passed === 2) return { score: 2, label: 'Fair',       color: COLORS.accentWarm };
+  if (passed === 3) return { score: 3, label: 'Good',       color: '#8BC34A' };
+  return              { score: 4, label: 'Strong',          color: COLORS.accent };
 };
 
 // ─── Reusable: Animated Password Field ────────────────────────────────────────
@@ -94,13 +93,13 @@ const SecureField = ({ label, value, onChangeText, placeholder, icon, error }: S
   };
 
   const borderColor = anim.interpolate({ inputRange: [0, 1], outputRange: [COLORS.border, COLORS.primary] });
-  const labelColor = error ? COLORS.error : focused ? COLORS.primary : COLORS.textSecondary;
+  const labelColor  = error ? COLORS.error : focused ? COLORS.primary : COLORS.textSecondary;
 
   return (
     <View style={sf.wrap}>
       <Text style={[sf.label, { color: labelColor }]}>{label}</Text>
       <Animated.View style={[sf.inputWrap, { borderColor: error ? COLORS.error : borderColor },
-      error && { backgroundColor: COLORS.errorBg }]}>
+        error && { backgroundColor: COLORS.errorBg }]}>
         {/* Leading icon */}
         <MaterialCommunityIcons
           name={icon as any}
@@ -136,16 +135,16 @@ const SecureField = ({ label, value, onChangeText, placeholder, icon, error }: S
 };
 
 const sf = StyleSheet.create({
-  wrap: { marginBottom: 18 },
-  label: { fontSize: 12, fontWeight: '700', letterSpacing: 0.4, marginBottom: 6, textTransform: 'uppercase' },
+  wrap:      { marginBottom: 18 },
+  label:     { fontSize: 12, fontWeight: '700', letterSpacing: 0.4, marginBottom: 6, textTransform: 'uppercase' },
   inputWrap: {
     flexDirection: 'row', alignItems: 'center',
     backgroundColor: COLORS.white,
     borderWidth: 1.5, borderRadius: 14,
     paddingHorizontal: 14, height: 52,
   },
-  input: { flex: 1, fontSize: 15, color: COLORS.text, letterSpacing: 1 },
-  errorRow: { flexDirection: 'row', alignItems: 'center', marginTop: 5 },
+  input:     { flex: 1, fontSize: 15, color: COLORS.text, letterSpacing: 1 },
+  errorRow:  { flexDirection: 'row', alignItems: 'center', marginTop: 5 },
   errorText: { fontSize: 11.5, color: COLORS.error, marginLeft: 4, fontWeight: '600' },
 });
 
@@ -177,11 +176,11 @@ const StrengthMeter = ({ password }: { password: string }) => {
 };
 
 const sm = StyleSheet.create({
-  wrap: { marginBottom: 18 },
-  barRow: { flexDirection: 'row', marginBottom: 6 },
-  seg: { flex: 1, height: 6, borderRadius: 3 },
-  labelRow: { flexDirection: 'row', justifyContent: 'space-between' },
-  labelLeft: { fontSize: 11.5, color: COLORS.textMuted },
+  wrap:       { marginBottom: 18 },
+  barRow:     { flexDirection: 'row', marginBottom: 6 },
+  seg:        { flex: 1, height: 6, borderRadius: 3 },
+  labelRow:   { flexDirection: 'row', justifyContent: 'space-between' },
+  labelLeft:  { fontSize: 11.5, color: COLORS.textMuted },
   labelRight: { fontSize: 11.5, fontWeight: '700' },
 });
 
@@ -212,8 +211,8 @@ const RequirementsList = ({ password }: { password: string }) => {
 
 const rl = StyleSheet.create({
   wrap: { marginBottom: 20, padding: 14, backgroundColor: COLORS.surface, borderRadius: 14, gap: 8 },
-  row: { flexDirection: 'row', alignItems: 'center' },
-  dot: { width: 18, height: 18, borderRadius: 9, justifyContent: 'center', alignItems: 'center', marginRight: 10 },
+  row:  { flexDirection: 'row', alignItems: 'center' },
+  dot:  { width: 18, height: 18, borderRadius: 9, justifyContent: 'center', alignItems: 'center', marginRight: 10 },
   text: { fontSize: 12.5, color: COLORS.textMuted },
 });
 
@@ -222,25 +221,25 @@ export default function SecurityScreen() {
   const router = useRouter();
 
   // ── State ──
-  const [currentPassword, setCurrentPassword] = useState('');
-  const [newPassword, setNewPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [agree, setAgree] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [currentPassword,  setCurrentPassword]  = useState('');
+  const [newPassword,      setNewPassword]      = useState('');
+  const [confirmPassword,  setConfirmPassword]  = useState('');
+  const [agree,            setAgree]            = useState(false);
+  const [loading,          setLoading]          = useState(false);
+  const [errors,           setErrors]           = useState<Record<string, string>>({});
 
   // ── Validation — per-field ─────────────────────────────────────────────────
   const validate = () => {
     const e: Record<string, string> = {};
-    if (!currentPassword) e.current = 'Current password is required';
-    if (!newPassword) e.new = 'New password is required';
+    if (!currentPassword)            e.current = 'Current password is required';
+    if (!newPassword)                e.new     = 'New password is required';
     else {
       const { score } = getStrength(newPassword);
-      if (score < 3) e.new = 'Password does not meet all requirements';
+      if (score < 3)                 e.new     = 'Password does not meet all requirements';
     }
-    if (!confirmPassword) e.confirm = 'Please confirm your new password';
+    if (!confirmPassword)            e.confirm = 'Please confirm your new password';
     else if (newPassword !== confirmPassword) e.confirm = 'Passwords do not match';
-    if (!agree) e.agree = 'You must acknowledge this change before continuing';
+    if (!agree)                      e.agree   = 'You must acknowledge this change before continuing';
     return e;
   };
 
@@ -452,16 +451,16 @@ const s = StyleSheet.create({
     marginBottom: 18,
     ...SHADOWS.sm,
   },
-  headerBody: { alignItems: 'center' },
-  shieldWrap: {
+  headerBody:   { alignItems: 'center' },
+  shieldWrap:   {
     width: 72, height: 72, borderRadius: 36,
     backgroundColor: 'rgba(255,255,255,0.18)',
     justifyContent: 'center', alignItems: 'center',
     marginBottom: 12,
     borderWidth: 2, borderColor: 'rgba(255,255,255,0.35)',
   },
-  headerTitle: { fontSize: 22, fontWeight: '900', color: COLORS.white, letterSpacing: -0.4, marginBottom: 6 },
-  headerSubtitle: { fontSize: 13, color: 'rgba(255,255,255,0.72)', textAlign: 'center', lineHeight: 19 },
+  headerTitle:   { fontSize: 22, fontWeight: '900', color: COLORS.white, letterSpacing: -0.4, marginBottom: 6 },
+  headerSubtitle:{ fontSize: 13, color: 'rgba(255,255,255,0.72)', textAlign: 'center', lineHeight: 19 },
   lastChangedBadge: {
     flexDirection: 'row', alignItems: 'center', gap: 5,
     backgroundColor: 'rgba(255,255,255,0.14)',
@@ -479,36 +478,36 @@ const s = StyleSheet.create({
     marginBottom: 16,
   },
   cardTitleRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 20 },
-  cardTitlePill: { width: 4, height: 20, borderRadius: 2, backgroundColor: COLORS.accent, marginRight: 10 },
-  cardTitle: { fontSize: 15, fontWeight: '800', color: COLORS.text, letterSpacing: -0.2 },
+  cardTitlePill:{ width: 4, height: 20, borderRadius: 2, backgroundColor: COLORS.accent, marginRight: 10 },
+  cardTitle:    { fontSize: 15, fontWeight: '800', color: COLORS.text, letterSpacing: -0.2 },
 
   /* MATCH INDICATOR */
-  matchRow: { flexDirection: 'row', alignItems: 'center', padding: 10, borderRadius: 10, marginBottom: 4, gap: 6 },
+  matchRow:  { flexDirection: 'row', alignItems: 'center', padding: 10, borderRadius: 10, marginBottom: 4, gap: 6 },
   matchText: { fontSize: 12.5, fontWeight: '600' },
 
   /* ACKNOWLEDGEMENT */
-  agreeRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 14 },
-  toggleBox: {
+  agreeRow:       { flexDirection: 'row', alignItems: 'flex-start', gap: 14 },
+  toggleBox:      {
     width: 26, height: 26, borderRadius: 8,
     borderWidth: 2, borderColor: COLORS.border,
     justifyContent: 'center', alignItems: 'center',
     marginTop: 2,
   },
-  toggleBoxActive: { backgroundColor: COLORS.primary, borderColor: COLORS.primary },
-  agreeTitle: { fontSize: 14, fontWeight: '700', color: COLORS.text, marginBottom: 4 },
-  agreeSubtitle: { fontSize: 12.5, color: COLORS.textMuted, lineHeight: 18 },
-  agreeErrorRow: { flexDirection: 'row', alignItems: 'center', marginTop: 10, gap: 5 },
+  toggleBoxActive:{ backgroundColor: COLORS.primary, borderColor: COLORS.primary },
+  agreeTitle:     { fontSize: 14, fontWeight: '700', color: COLORS.text, marginBottom: 4 },
+  agreeSubtitle:  { fontSize: 12.5, color: COLORS.textMuted, lineHeight: 18 },
+  agreeErrorRow:  { flexDirection: 'row', alignItems: 'center', marginTop: 10, gap: 5 },
   agreeErrorText: { fontSize: 11.5, color: COLORS.error, fontWeight: '600' },
 
   /* CTA */
-  ctaSection: { marginHorizontal: 20, alignItems: 'center' },
-  saveBtn: {
+  ctaSection:     { marginHorizontal: 20, alignItems: 'center' },
+  saveBtn:        {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
     backgroundColor: COLORS.primary, borderRadius: 18,
     paddingVertical: 16, width: '100%',
     ...SHADOWS.md,
   },
-  saveBtnDisabled: { opacity: 0.45 },
-  saveBtnText: { color: COLORS.white, fontWeight: '800', fontSize: 16, letterSpacing: 0.3 },
-  cancelText: { fontSize: 13, color: COLORS.textMuted, fontWeight: '600', textDecorationLine: 'underline' },
+  saveBtnDisabled:{ opacity: 0.45 },
+  saveBtnText:    { color: COLORS.white, fontWeight: '800', fontSize: 16, letterSpacing: 0.3 },
+  cancelText:     { fontSize: 13, color: COLORS.textMuted, fontWeight: '600', textDecorationLine: 'underline' },
 });
