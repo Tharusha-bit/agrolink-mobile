@@ -3,6 +3,7 @@ import * as DocumentPicker from "expo-document-picker";
 import { useRouter } from "expo-router";
 import React, { useState } from "react";
 import {
+  ActivityIndicator,
   Alert,
   Image,
   KeyboardAvoidingView,
@@ -15,7 +16,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { saveSession } from "../src/lib/auth";
+import { registerUser } from "../src/lib/auth";
 
 // ─── Design Tokens ─────────────────────────────────────────────────────────────
 const COLORS = {
@@ -89,6 +90,7 @@ const SignupInput = ({
 export default function SignupScreen() {
   const router = useRouter();
   const [isFarmer, setIsFarmer] = useState(true);
+  const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -96,9 +98,11 @@ export default function SignupScreen() {
   const [nic, setNic] = useState("");
   const [gramaSevakaLetter, setGramaSevakaLetter] =
     useState<SelectedUpload | null>(null);
+  const [submitting, setSubmitting] = useState(false);
 
   const handleSignup = async () => {
     if (
+      !name.trim() ||
       !email.trim() ||
       !password.trim() ||
       !confirmPassword.trim() ||
@@ -127,16 +131,27 @@ export default function SignupScreen() {
       return;
     }
 
-    await saveSession({
-      token: `signup-${isFarmer ? "farmer" : "investor"}-token`,
-      user: {
-        email,
-        name: email.split("@")[0] || "AgroLink User",
+    try {
+      setSubmitting(true);
+      await registerUser({
+        name: name.trim(),
+        email: email.trim(),
+        password,
         role: isFarmer ? "farmer" : "investor",
-      },
-    });
-
-    router.replace("/(tabs)/dashboard");
+        nic: nic.trim(),
+        farmerId: isFarmer ? farmerId.trim() : undefined,
+      });
+      router.replace("/(tabs)/dashboard");
+    } catch (error) {
+      Alert.alert(
+        "Signup failed",
+        error instanceof Error
+          ? error.message
+          : "Unable to create account right now.",
+      );
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const pickGramaSevakaLetter = async () => {
@@ -237,7 +252,14 @@ export default function SignupScreen() {
 
             {/* Inputs */}
             <SignupInput
-              label="Username"
+              label="Full Name"
+              placeholder="Your full name"
+              icon="account-outline"
+              value={name}
+              onChangeText={setName}
+            />
+            <SignupInput
+              label="Email"
               placeholder="sample@email.com"
               icon="email-outline"
               value={email}
@@ -335,13 +357,23 @@ export default function SignupScreen() {
             )}
 
             {/* Signup Button */}
-            <TouchableOpacity style={s.signupBtn} onPress={handleSignup}>
-              <Text style={s.signupBtnText}>Sign Up</Text>
-              <MaterialCommunityIcons
-                name="arrow-right"
-                size={20}
-                color={COLORS.white}
-              />
+            <TouchableOpacity
+              style={s.signupBtn}
+              onPress={handleSignup}
+              disabled={submitting}
+            >
+              {submitting ? (
+                <ActivityIndicator color={COLORS.white} />
+              ) : (
+                <>
+                  <Text style={s.signupBtnText}>Sign Up</Text>
+                  <MaterialCommunityIcons
+                    name="arrow-right"
+                    size={20}
+                    color={COLORS.white}
+                  />
+                </>
+              )}
             </TouchableOpacity>
 
             <View style={s.footer}>

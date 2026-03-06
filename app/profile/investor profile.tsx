@@ -30,8 +30,8 @@
  * ─────────────────────────────────────────────────────────────────────────────
  */
 
-import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
+import { MaterialCommunityIcons } from "@expo/vector-icons";
+import { useRouter } from "expo-router";
 import {
   Alert,
   Image,
@@ -41,39 +41,49 @@ import {
   StyleSheet,
   TouchableOpacity,
   View,
-} from 'react-native';
-import { Divider, Text } from 'react-native-paper';
+} from "react-native";
+import { Divider, Text } from "react-native-paper";
 
 // ─── Design Tokens ─────────────────────────────────────────────────────────────
 // Centralised so any future rebrand is a single-file change.
 const COLORS = {
-  primary:       '#216000',
-  primaryLight:  '#2E8B00',
-  primaryPale:   '#E8F5E1',
-  accent:        '#76C442',
-  accentWarm:    '#F5A623',
-  white:         '#FFFFFF',
-  surface:       '#F7F9F4',
-  card:          '#FFFFFF',
-  text:          '#1A2E0D',
-  textSecondary: '#5C7A4A',
-  textMuted:     '#9BB08A',
-  border:        '#DDE8D4',
-  error:         '#D32F2F',
-  errorBg:       '#FFEBEE',
-  info:          '#3A9BD5',
-  infoBg:        '#E8F4FD',
-  warning:       '#F5A623',
-  warningBg:     '#FFF8ED',
+  primary: "#216000",
+  primaryLight: "#2E8B00",
+  primaryPale: "#E8F5E1",
+  accent: "#76C442",
+  accentWarm: "#F5A623",
+  white: "#FFFFFF",
+  surface: "#F7F9F4",
+  card: "#FFFFFF",
+  text: "#1A2E0D",
+  textSecondary: "#5C7A4A",
+  textMuted: "#9BB08A",
+  border: "#DDE8D4",
+  error: "#D32F2F",
+  errorBg: "#FFEBEE",
+  info: "#3A9BD5",
+  infoBg: "#E8F4FD",
+  warning: "#F5A623",
+  warningBg: "#FFF8ED",
 };
 
 const SHADOWS = {
   sm: Platform.select({
-    ios:     { shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.08, shadowRadius: 6 },
+    ios: {
+      shadowColor: "#000",
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.08,
+      shadowRadius: 6,
+    },
     android: { elevation: 3 },
   }),
   md: Platform.select({
-    ios:     { shadowColor: '#000', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.13, shadowRadius: 16 },
+    ios: {
+      shadowColor: "#000",
+      shadowOffset: { width: 0, height: 6 },
+      shadowOpacity: 0.13,
+      shadowRadius: 16,
+    },
     android: { elevation: 8 },
   }),
 };
@@ -105,7 +115,7 @@ interface StatPillProps {
  */
 const StatPill = ({ icon, value, label, color }: StatPillProps) => (
   <View style={sp.wrap}>
-    <View style={[sp.iconCircle, { backgroundColor: color + '22' }]}>
+    <View style={[sp.iconCircle, { backgroundColor: color + "22" }]}>
       <MaterialCommunityIcons name={icon} size={18} color={color} />
     </View>
     <Text style={sp.value}>{value}</Text>
@@ -114,10 +124,27 @@ const StatPill = ({ icon, value, label, color }: StatPillProps) => (
 );
 
 const sp = StyleSheet.create({
-  wrap:       { alignItems: 'center', flex: 1 },
-  iconCircle: { width: 40, height: 40, borderRadius: 20, justifyContent: 'center', alignItems: 'center', marginBottom: 6 },
-  value:      { fontSize: 17, fontWeight: '800', color: COLORS.text, letterSpacing: -0.3 },
-  label:      { fontSize: 10.5, color: COLORS.textMuted, marginTop: 1, textAlign: 'center' },
+  wrap: { alignItems: "center", flex: 1 },
+  iconCircle: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: 6,
+  },
+  value: {
+    fontSize: 17,
+    fontWeight: "800",
+    color: COLORS.text,
+    letterSpacing: -0.3,
+  },
+  label: {
+    fontSize: 10.5,
+    color: COLORS.textMuted,
+    marginTop: 1,
+    textAlign: "center",
+  },
 });
 
 // ─── Reusable: Profile Option Row ─────────────────────────────────────────────
@@ -136,19 +163,27 @@ const ProfileOption = ({
   iconColor,
   badge,
 }: ProfileOptionProps) => {
-  const resolvedIconBg    = iconBg    ?? (isDestructive ? COLORS.errorBg  : COLORS.primaryPale);
-  const resolvedIconColor = iconColor ?? (isDestructive ? COLORS.error     : COLORS.primary);
+  const resolvedIconBg =
+    iconBg ?? (isDestructive ? COLORS.errorBg : COLORS.primaryPale);
+  const resolvedIconColor =
+    iconColor ?? (isDestructive ? COLORS.error : COLORS.primary);
 
   return (
     <TouchableOpacity style={po.row} onPress={onPress} activeOpacity={0.72}>
       {/* Icon container */}
       <View style={[po.iconBox, { backgroundColor: resolvedIconBg }]}>
-        <MaterialCommunityIcons name={icon} size={21} color={resolvedIconColor} />
+        <MaterialCommunityIcons
+          name={icon}
+          size={21}
+          color={resolvedIconColor}
+        />
       </View>
 
       {/* Text block */}
       <View style={po.textBlock}>
-        <Text style={[po.label, isDestructive && { color: COLORS.error }]}>{label}</Text>
+        <Text style={[po.label, isDestructive && { color: COLORS.error }]}>
+          {label}
+        </Text>
         {sublabel && <Text style={po.sublabel}>{sublabel}</Text>}
       </View>
 
@@ -162,26 +197,42 @@ const ProfileOption = ({
       <MaterialCommunityIcons
         name="chevron-right"
         size={20}
-        color={isDestructive ? COLORS.error + '88' : '#C8D9C0'}
+        color={isDestructive ? COLORS.error + "88" : "#C8D9C0"}
       />
     </TouchableOpacity>
   );
 };
 
 const po = StyleSheet.create({
-  row:       {
-    flexDirection: 'row', alignItems: 'center',
+  row: {
+    flexDirection: "row",
+    alignItems: "center",
     backgroundColor: COLORS.card,
-    paddingVertical: 14, paddingHorizontal: 16,
-    borderRadius: 16, marginBottom: 10,
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    borderRadius: 16,
+    marginBottom: 10,
     ...SHADOWS.sm,
   },
-  iconBox:   { width: 42, height: 42, borderRadius: 13, justifyContent: 'center', alignItems: 'center', marginRight: 14 },
+  iconBox: {
+    width: 42,
+    height: 42,
+    borderRadius: 13,
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: 14,
+  },
   textBlock: { flex: 1 },
-  label:     { fontSize: 15, fontWeight: '600', color: COLORS.text },
-  sublabel:  { fontSize: 11.5, color: COLORS.textMuted, marginTop: 2 },
-  badge:     { backgroundColor: COLORS.accentWarm, borderRadius: 20, paddingHorizontal: 8, paddingVertical: 2, marginRight: 8 },
-  badgeText: { fontSize: 11, fontWeight: '700', color: COLORS.white },
+  label: { fontSize: 15, fontWeight: "600", color: COLORS.text },
+  sublabel: { fontSize: 11.5, color: COLORS.textMuted, marginTop: 2 },
+  badge: {
+    backgroundColor: COLORS.accentWarm,
+    borderRadius: 20,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    marginRight: 8,
+  },
+  badgeText: { fontSize: 11, fontWeight: "700", color: COLORS.white },
 });
 
 // ─── Reusable: Section Header ─────────────────────────────────────────────────
@@ -194,9 +245,26 @@ const SectionLabel = ({ title }: { title: string }) => (
 );
 
 const sl = StyleSheet.create({
-  row:  { flexDirection: 'row', alignItems: 'center', marginBottom: 12, marginTop: 4 },
-  pill: { width: 4, height: 18, borderRadius: 2, backgroundColor: COLORS.accent, marginRight: 10 },
-  text: { fontSize: 13, fontWeight: '800', color: COLORS.textSecondary, letterSpacing: 0.5, textTransform: 'uppercase' },
+  row: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 12,
+    marginTop: 4,
+  },
+  pill: {
+    width: 4,
+    height: 18,
+    borderRadius: 2,
+    backgroundColor: COLORS.accent,
+    marginRight: 10,
+  },
+  text: {
+    fontSize: 13,
+    fontWeight: "800",
+    color: COLORS.textSecondary,
+    letterSpacing: 0.5,
+    textTransform: "uppercase",
+  },
 });
 
 // ─── Profile Strength Segment Bar ─────────────────────────────────────────────
@@ -206,21 +274,39 @@ const sl = StyleSheet.create({
  * completion level so the feedback feels urgent or encouraging.
  */
 const StrengthBar = ({ percent }: { percent: number }) => {
-  const STEPS     = 5;
-  const filled    = Math.round((percent / 100) * STEPS);
-  const color     = percent < 40 ? COLORS.error : percent < 70 ? COLORS.accentWarm : COLORS.accent;
-  const label     = percent < 40 ? 'Needs work' : percent < 70 ? 'Getting there' : 'Looking great!';
+  const STEPS = 5;
+  const filled = Math.round((percent / 100) * STEPS);
+  const color =
+    percent < 40
+      ? COLORS.error
+      : percent < 70
+        ? COLORS.accentWarm
+        : COLORS.accent;
+  const label =
+    percent < 40
+      ? "Needs work"
+      : percent < 70
+        ? "Getting there"
+        : "Looking great!";
 
   // Actionable next steps
-  const TIPS = ['Add a photo', 'Verify NIC', 'Add bank account', 'Add 3+ skills', 'Complete address'];
+  const TIPS = [
+    "Add a photo",
+    "Verify NIC",
+    "Add bank account",
+    "Add 3+ skills",
+    "Complete address",
+  ];
   const nextTip = TIPS[filled] ?? null;
 
   return (
     <View style={str.wrap}>
       <View style={str.topRow}>
         <Text style={str.title}>Profile Strength</Text>
-        <View style={[str.badge, { backgroundColor: color + '22' }]}>
-          <Text style={[str.badgeText, { color }]}>{label} · {percent}%</Text>
+        <View style={[str.badge, { backgroundColor: color + "22" }]}>
+          <Text style={[str.badgeText, { color }]}>
+            {label} · {percent}%
+          </Text>
         </View>
       </View>
 
@@ -231,7 +317,9 @@ const StrengthBar = ({ percent }: { percent: number }) => {
             key={i}
             style={[
               str.seg,
-              i < filled ? { backgroundColor: color } : { backgroundColor: COLORS.border },
+              i < filled
+                ? { backgroundColor: color }
+                : { backgroundColor: COLORS.border },
               i < STEPS - 1 && { marginRight: 5 },
             ]}
           />
@@ -241,8 +329,14 @@ const StrengthBar = ({ percent }: { percent: number }) => {
       {/* Next action tip */}
       {nextTip && (
         <View style={str.tipRow}>
-          <MaterialCommunityIcons name="lightning-bolt" size={13} color={COLORS.accentWarm} />
-          <Text style={str.tipText}>Next: <Text style={{ fontWeight: '700' }}>{nextTip}</Text></Text>
+          <MaterialCommunityIcons
+            name="lightning-bolt"
+            size={13}
+            color={COLORS.accentWarm}
+          />
+          <Text style={str.tipText}>
+            Next: <Text style={{ fontWeight: "700" }}>{nextTip}</Text>
+          </Text>
         </View>
       )}
     </View>
@@ -250,15 +344,25 @@ const StrengthBar = ({ percent }: { percent: number }) => {
 };
 
 const str = StyleSheet.create({
-  wrap:      { marginTop: 16, paddingTop: 16, borderTopWidth: 1, borderTopColor: COLORS.border },
-  topRow:    { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 },
-  title:     { fontSize: 13, fontWeight: '700', color: COLORS.textSecondary },
-  badge:     { borderRadius: 20, paddingHorizontal: 10, paddingVertical: 4 },
-  badgeText: { fontSize: 11.5, fontWeight: '700' },
-  segRow:    { flexDirection: 'row', marginBottom: 10 },
-  seg:       { flex: 1, height: 7, borderRadius: 4 },
-  tipRow:    { flexDirection: 'row', alignItems: 'center' },
-  tipText:   { fontSize: 12, color: COLORS.textMuted, marginLeft: 4 },
+  wrap: {
+    marginTop: 16,
+    paddingTop: 16,
+    borderTopWidth: 1,
+    borderTopColor: COLORS.border,
+  },
+  topRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 10,
+  },
+  title: { fontSize: 13, fontWeight: "700", color: COLORS.textSecondary },
+  badge: { borderRadius: 20, paddingHorizontal: 10, paddingVertical: 4 },
+  badgeText: { fontSize: 11.5, fontWeight: "700" },
+  segRow: { flexDirection: "row", marginBottom: 10 },
+  seg: { flex: 1, height: 7, borderRadius: 4 },
+  tipRow: { flexDirection: "row", alignItems: "center" },
+  tipText: { fontSize: 12, color: COLORS.textMuted, marginLeft: 4 },
 });
 
 // ─── Main Screen ──────────────────────────────────────────────────────────────
@@ -291,7 +395,11 @@ export default function ProfileScreen() {
             <Text style={s.headerTitle}>My Profile</Text>
             {/* Settings shortcut */}
             <TouchableOpacity style={s.settingsBtn} activeOpacity={0.8}>
-              <MaterialCommunityIcons name="cog-outline" size={20} color={COLORS.primary} />
+              <MaterialCommunityIcons
+                name="cog-outline"
+                size={20}
+                color={COLORS.primary}
+              />
             </TouchableOpacity>
           </View>
 
@@ -299,11 +407,15 @@ export default function ProfileScreen() {
           <View style={s.avatarSection}>
             <View style={s.avatarRing}>
               <Image
-                source={{ uri: 'https://i.pravatar.cc/150?img=12' }}
+                source={{ uri: "https://i.pravatar.cc/150?img=12" }}
                 style={s.avatar}
               />
               <TouchableOpacity style={s.cameraBtn} activeOpacity={0.85}>
-                <MaterialCommunityIcons name="camera" size={13} color={COLORS.white} />
+                <MaterialCommunityIcons
+                  name="camera"
+                  size={13}
+                  color={COLORS.white}
+                />
               </TouchableOpacity>
             </View>
 
@@ -311,13 +423,17 @@ export default function ProfileScreen() {
             <View style={s.nameRow}>
               <Text style={s.name}>W.T.P. Fernando</Text>
               <View style={s.verifiedChip}>
-                <MaterialCommunityIcons name="check-decagram" size={13} color={COLORS.accent} />
+                <MaterialCommunityIcons
+                  name="check-decagram"
+                  size={13}
+                  color={COLORS.accent}
+                />
                 <Text style={s.verifiedText}>Verified</Text>
               </View>
             </View>
 
             {/* Role + ID */}
-            <Text style={s.role}>Farmer  ·  ID: 20321212</Text>
+            <Text style={s.role}>Farmer · ID: 20321212</Text>
           </View>
         </View>
 
@@ -328,11 +444,26 @@ export default function ProfileScreen() {
           activity — a pattern common in fintech / marketplace profiles.
         */}
         <View style={[s.statsCard, SHADOWS.md]}>
-          <StatPill icon="sprout"        value="8"    label="Active Crops"   color={COLORS.accent} />
+          <StatPill
+            icon="sprout"
+            value="8"
+            label="Active Crops"
+            color={COLORS.accent}
+          />
           <View style={s.statDivider} />
-          <StatPill icon="cash-multiple" value="LKR 2.4M" label="Total Invested" color={COLORS.accentWarm} />
+          <StatPill
+            icon="cash-multiple"
+            value="LKR 2.4M"
+            label="Total Invested"
+            color={COLORS.accentWarm}
+          />
           <View style={s.statDivider} />
-          <StatPill icon="star"          value="4.8"  label="Rating"         color={COLORS.primary} />
+          <StatPill
+            icon="star"
+            value="4.8"
+            label="Rating"
+            color={COLORS.primary}
+          />
         </View>
 
         {/* ── PROFILE STRENGTH ─────────────────────────────────────────────── */}
@@ -350,7 +481,7 @@ export default function ProfileScreen() {
             sublabel="Name, NIC, address and more"
             iconBg={COLORS.primaryPale}
             iconColor={COLORS.primary}
-            onPress={() => router.push('/profile/edit')}
+            onPress={() => router.push("/profile/edit")}
           />
           <ProfileOption
             icon="shield-lock"
@@ -358,7 +489,7 @@ export default function ProfileScreen() {
             sublabel="2FA, password, login history"
             iconBg={COLORS.infoBg}
             iconColor={COLORS.info}
-            onPress={() => router.push('/profile/security')}
+            onPress={() => router.push("/profile/security")}
           />
           <ProfileOption
             icon="bank"
@@ -367,7 +498,12 @@ export default function ProfileScreen() {
             iconBg={COLORS.warningBg}
             iconColor={COLORS.accentWarm}
             badge="New"
-            onPress={() => Alert.alert('Payment methods', 'Bank account management is available from Settings.')}
+            onPress={() =>
+              Alert.alert(
+                "Payment methods",
+                "Bank account management is available from Settings.",
+              )
+            }
           />
 
           <SectionLabel title="Support" />
@@ -378,7 +514,12 @@ export default function ProfileScreen() {
             sublabel="FAQs, live chat, report an issue"
             iconBg={COLORS.primaryPale}
             iconColor={COLORS.accent}
-            onPress={() => Alert.alert('Help & Support', 'Contact support@agrolink.app for account or investment help.')}
+            onPress={() =>
+              Alert.alert(
+                "Help & Support",
+                "Contact support@agrolink.app for account or investment help.",
+              )
+            }
           />
           <ProfileOption
             icon="file-document-outline"
@@ -386,7 +527,12 @@ export default function ProfileScreen() {
             sublabel="Privacy policy and legal terms"
             iconBg={COLORS.primaryPale}
             iconColor={COLORS.textSecondary}
-            onPress={() => Alert.alert('Terms & Conditions', 'Legal and privacy details are available in the app documentation.')}
+            onPress={() =>
+              Alert.alert(
+                "Terms & Conditions",
+                "Legal and privacy details are available in the app documentation.",
+              )
+            }
           />
 
           {/* Danger zone separator */}
@@ -396,7 +542,7 @@ export default function ProfileScreen() {
             icon="logout"
             label="Log Out"
             isDestructive
-            onPress={() => router.replace('/')}
+            onPress={() => router.replace("/")}
           />
         </View>
       </ScrollView>
@@ -406,67 +552,110 @@ export default function ProfileScreen() {
 
 // ─── Screen Styles ────────────────────────────────────────────────────────────
 const s = StyleSheet.create({
-  root:   { flex: 1, backgroundColor: COLORS.surface },
+  root: { flex: 1, backgroundColor: COLORS.surface },
   scroll: { flex: 1 },
 
   /* HEADER */
   header: {
     backgroundColor: COLORS.primary,
-    paddingTop: Platform.OS === 'ios' ? 60 : 48,
+    paddingTop: Platform.OS === "ios" ? 60 : 48,
     paddingHorizontal: 24,
     paddingBottom: 48,
     borderBottomLeftRadius: 36,
     borderBottomRightRadius: 36,
-    alignItems: 'center',
-    overflow: 'hidden',
-    position: 'relative',
+    alignItems: "center",
+    overflow: "hidden",
+    position: "relative",
   },
   decLg: {
-    position: 'absolute', width: 220, height: 220, borderRadius: 110,
-    backgroundColor: COLORS.primaryLight, top: -60, right: -50, opacity: 0.5,
+    position: "absolute",
+    width: 220,
+    height: 220,
+    borderRadius: 110,
+    backgroundColor: COLORS.primaryLight,
+    top: -60,
+    right: -50,
+    opacity: 0.5,
   },
   decSm: {
-    position: 'absolute', width: 100, height: 100, borderRadius: 50,
-    backgroundColor: COLORS.accent, bottom: -20, left: -30, opacity: 0.18,
+    position: "absolute",
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    backgroundColor: COLORS.accent,
+    bottom: -20,
+    left: -30,
+    opacity: 0.18,
   },
 
   headerTopRow: {
-    width: '100%', flexDirection: 'row',
-    justifyContent: 'space-between', alignItems: 'center',
+    width: "100%",
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     marginBottom: 22,
   },
-  headerTitle: { fontSize: 20, fontWeight: '800', color: COLORS.white, letterSpacing: -0.3 },
+  headerTitle: {
+    fontSize: 20,
+    fontWeight: "800",
+    color: COLORS.white,
+    letterSpacing: -0.3,
+  },
   settingsBtn: {
-    width: 38, height: 38, borderRadius: 19,
-    backgroundColor: 'rgba(255,255,255,0.92)',
-    justifyContent: 'center', alignItems: 'center',
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    backgroundColor: "rgba(255,255,255,0.92)",
+    justifyContent: "center",
+    alignItems: "center",
   },
 
-  avatarSection: { alignItems: 'center' },
+  avatarSection: { alignItems: "center" },
   avatarRing: {
-    width: 96, height: 96, borderRadius: 48,
-    borderWidth: 3, borderColor: 'rgba(255,255,255,0.55)',
-    justifyContent: 'center', alignItems: 'center',
-    marginBottom: 12, position: 'relative',
+    width: 96,
+    height: 96,
+    borderRadius: 48,
+    borderWidth: 3,
+    borderColor: "rgba(255,255,255,0.55)",
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: 12,
+    position: "relative",
   },
-  avatar:    { width: 88, height: 88, borderRadius: 44 },
+  avatar: { width: 88, height: 88, borderRadius: 44 },
   cameraBtn: {
-    position: 'absolute', bottom: 0, right: 0,
-    width: 26, height: 26, borderRadius: 13,
+    position: "absolute",
+    bottom: 0,
+    right: 0,
+    width: 26,
+    height: 26,
+    borderRadius: 13,
     backgroundColor: COLORS.accent,
-    justifyContent: 'center', alignItems: 'center',
-    borderWidth: 2, borderColor: COLORS.white,
+    justifyContent: "center",
+    alignItems: "center",
+    borderWidth: 2,
+    borderColor: COLORS.white,
   },
 
-  nameRow:      { flexDirection: 'row', alignItems: 'center', marginBottom: 4 },
-  name:         { fontSize: 22, fontWeight: '900', color: COLORS.white, letterSpacing: -0.4, marginRight: 8 },
-  verifiedChip: {
-    flexDirection: 'row', alignItems: 'center',
-    backgroundColor: 'rgba(255,255,255,0.18)',
-    borderRadius: 20, paddingHorizontal: 8, paddingVertical: 3, gap: 3,
+  nameRow: { flexDirection: "row", alignItems: "center", marginBottom: 4 },
+  name: {
+    fontSize: 22,
+    fontWeight: "900",
+    color: COLORS.white,
+    letterSpacing: -0.4,
+    marginRight: 8,
   },
-  verifiedText: { fontSize: 11, fontWeight: '700', color: COLORS.white },
-  role:         { fontSize: 13, color: 'rgba(255,255,255,0.65)', letterSpacing: 0.2 },
+  verifiedChip: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "rgba(255,255,255,0.18)",
+    borderRadius: 20,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    gap: 3,
+  },
+  verifiedText: { fontSize: 11, fontWeight: "700", color: COLORS.white },
+  role: { fontSize: 13, color: "rgba(255,255,255,0.65)", letterSpacing: 0.2 },
 
   /* STATS CARD */
   statsCard: {
@@ -476,8 +665,8 @@ const s = StyleSheet.create({
     borderRadius: 22,
     paddingVertical: 20,
     paddingHorizontal: 16,
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
   },
   statDivider: { width: 1, height: 44, backgroundColor: COLORS.border },
 
@@ -490,6 +679,6 @@ const s = StyleSheet.create({
   },
 
   /* MENU */
-  menu:    { paddingHorizontal: 20, marginTop: 20 },
+  menu: { paddingHorizontal: 20, marginTop: 20 },
   divider: { marginVertical: 8, backgroundColor: COLORS.border },
 });

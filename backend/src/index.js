@@ -181,12 +181,27 @@ async function deleteFarmerInvestmentRequest(userId, requestId) {
   return localDb.deleteInvestmentRequest(userId, requestId);
 }
 
-async function investInFarmerRequest(requestId, investorUserId, investorName, amount) {
+async function investInFarmerRequest(
+  requestId,
+  investorUserId,
+  investorName,
+  amount,
+) {
   if (mongoEnabled) {
-    return mongoDb.investInRequest(requestId, investorUserId, investorName, amount);
+    return mongoDb.investInRequest(
+      requestId,
+      investorUserId,
+      investorName,
+      amount,
+    );
   }
 
-  return localDb.investInRequest(requestId, investorUserId, investorName, amount);
+  return localDb.investInRequest(
+    requestId,
+    investorUserId,
+    investorName,
+    amount,
+  );
 }
 
 async function getInvestmentInsight(entityId) {
@@ -399,7 +414,15 @@ app.post(
   async (req, res) => {
     const parsed = investmentRequestSchema.safeParse(req.body);
     if (!parsed.success) {
-      return res.status(400).json({ message: "Invalid investment request payload." });
+      const validationErrors = parsed.error.issues.map((issue) => {
+        const field = issue.path.length > 0 ? String(issue.path[0]) : "request";
+        return `${field}: ${issue.message}`;
+      });
+
+      return res.status(400).json({
+        message: validationErrors[0] || "Invalid investment request payload.",
+        validationErrors,
+      });
     }
 
     const user = await findUserByEmail(req.auth.email);
@@ -434,7 +457,10 @@ app.delete(
       });
     } catch (error) {
       return res.status(404).json({
-        message: error instanceof Error ? error.message : "Unable to delete investment request.",
+        message:
+          error instanceof Error
+            ? error.message
+            : "Unable to delete investment request.",
       });
     }
   },
@@ -479,25 +505,35 @@ app.post(
       return res.json(updated);
     } catch (error) {
       return res.status(400).json({
-        message: error instanceof Error ? error.message : "Unable to complete investment.",
+        message:
+          error instanceof Error
+            ? error.message
+            : "Unable to complete investment.",
       });
     }
   },
 );
 
-app.post("/api/ai/investment-insight", requireAuth, requireRole("investor"), async (req, res) => {
-  const parsed = insightSchema.safeParse(req.body);
-  if (!parsed.success) {
-    return res.status(400).json({ message: "Invalid AI insight request." });
-  }
+app.post(
+  "/api/ai/investment-insight",
+  requireAuth,
+  requireRole("investor"),
+  async (req, res) => {
+    const parsed = insightSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({ message: "Invalid AI insight request." });
+    }
 
-  const insight = await getInvestmentInsight(parsed.data.entityId);
-  if (!insight) {
-    return res.status(404).json({ message: "No insight available for this entity." });
-  }
+    const insight = await getInvestmentInsight(parsed.data.entityId);
+    if (!insight) {
+      return res
+        .status(404)
+        .json({ message: "No insight available for this entity." });
+    }
 
-  return res.json(insight);
-});
+    return res.json(insight);
+  },
+);
 
 app.get(
   "/api/farmer/overview",
