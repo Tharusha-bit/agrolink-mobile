@@ -17,6 +17,7 @@ export interface DemoAccount extends AuthSession {
 
 const SESSION_KEY = "agrolink.auth.session";
 const API_BASE_URL = "http://localhost:4000/api";
+export const SESSION_EXPIRED_MESSAGE = "Session expired. Please sign in again.";
 
 export const demoAccounts: DemoAccount[] = [
   {
@@ -79,6 +80,10 @@ export async function saveSession(session: AuthSession) {
   await AsyncStorage.setItem(SESSION_KEY, JSON.stringify(session));
 }
 
+function isJwtToken(token: string) {
+  return typeof token === "string" && token.split(".").length === 3;
+}
+
 export async function getSession() {
   const raw = await AsyncStorage.getItem(SESSION_KEY);
   if (!raw) {
@@ -86,7 +91,13 @@ export async function getSession() {
   }
 
   try {
-    return JSON.parse(raw) as AuthSession;
+    const session = JSON.parse(raw) as AuthSession;
+    if (!session?.token || !isJwtToken(session.token)) {
+      await AsyncStorage.removeItem(SESSION_KEY);
+      return null;
+    }
+
+    return session;
   } catch {
     await AsyncStorage.removeItem(SESSION_KEY);
     return null;
@@ -115,44 +126,63 @@ export async function loginUser(
   password: string,
   role: UserRole,
 ) {
-  const demoMatch = findDemoAccount(email, password, role);
+  const response = await fetch(`${API_BASE_URL}/auth/login`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ email, password, role }),
+  });
 
-  try {
-    const response = await fetch(`${API_BASE_URL}/auth/login`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ email, password, role }),
-    });
-
-    if (response.ok) {
-      const payload = await response.json();
-      const session: AuthSession = {
-        token: payload.token,
-        user: {
-          email: payload.user.email,
-          name: payload.user.name,
-          role: payload.user.role,
-        },
-      };
-      await saveSession(session);
-      return { session, source: "api" as const };
-    }
-
-    if (demoMatch) {
-      await saveSession(demoMatch);
-      return { session: demoMatch, source: "demo" as const };
-    }
-
+  if (!response.ok) {
     const errorBody = await response.json().catch(() => null);
     throw new Error(errorBody?.message ?? "Login failed.");
-  } catch (error) {
-    if (demoMatch) {
-      await saveSession(demoMatch);
-      return { session: demoMatch, source: "demo" as const };
-    }
-
-    throw error;
   }
+
+  const payload = await response.json();
+  const session: AuthSession = {
+    token: payload.token,
+    user: {
+      email: payload.user.email,
+      name: payload.user.name,
+      role: payload.user.role,
+    },
+  };
+  await saveSession(session);
+  return { session, source: "api" as const };
+}
+
+export async function registerUser(payload: {
+  name: string;
+  email: string;
+  password: string;
+  role: UserRole;
+  nic: string;
+  farmerId?: string;
+}) {
+  const response = await fetch(`${API_BASE_URL}/auth/register`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(payload),
+  });
+
+  if (!response.ok) {
+    const errorBody = await response.json().catch(() => null);
+    throw new Error(errorBody?.message ?? "Registration failed.");
+  }
+
+  const registered = await response.json();
+  const session: AuthSession = {
+    token: registered.token,
+    user: {
+      email: registered.user.email,
+      name: registered.user.name,
+      role: registered.user.role,
+    },
+  };
+
+  await saveSession(session);
+  return session;
 }

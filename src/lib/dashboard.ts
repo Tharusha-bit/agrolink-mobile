@@ -1,6 +1,6 @@
-import { AuthSession } from './auth';
+import { AuthSession, clearSession, SESSION_EXPIRED_MESSAGE } from "./auth";
 
-const API_BASE_URL = 'http://localhost:4000/api';
+const API_BASE_URL = "http://localhost:4000/api";
 
 export interface InvestorConnection {
   id: string;
@@ -21,18 +21,18 @@ export interface FarmerOpportunity {
   amountNeeded: number;
   raisedAmount: number;
   historicalReturnRate: string;
-  riskLevel: 'Low' | 'Medium' | 'High';
+  riskLevel: "Low" | "Medium" | "High";
   summary: string;
   createdAt?: string;
 }
 
 export interface FarmerInvestmentRequestsResponse {
-  role: 'farmer';
+  role: "farmer";
   requests: FarmerOpportunity[];
 }
 
 export interface InvestorInvestmentRequestsResponse {
-  role: 'investor';
+  role: "investor";
   requests: FarmerOpportunity[];
 }
 
@@ -46,34 +46,59 @@ export interface AiAssessment {
   summary: string;
 }
 
-async function authorizedRequest<T>(session: AuthSession, path: string, init?: RequestInit): Promise<T> {
+async function authorizedRequest<T>(
+  session: AuthSession,
+  path: string,
+  init?: RequestInit,
+): Promise<T> {
   const response = await fetch(`${API_BASE_URL}${path}`, {
     ...init,
     headers: {
-      'Content-Type': 'application/json',
+      "Content-Type": "application/json",
       Authorization: `Bearer ${session.token}`,
       ...(init?.headers ?? {}),
     },
   });
 
   if (!response.ok) {
+    if (response.status === 401) {
+      await clearSession();
+      throw new Error(SESSION_EXPIRED_MESSAGE);
+    }
+
     const body = await response.json().catch(() => null);
-    throw new Error(body?.message ?? 'Request failed.');
+    if (
+      Array.isArray(body?.validationErrors) &&
+      body.validationErrors.length > 0
+    ) {
+      throw new Error(body.validationErrors[0]);
+    }
+
+    throw new Error(body?.message ?? "Request failed.");
   }
 
   return response.json() as Promise<T>;
 }
 
 export async function fetchRoleNetwork(session: AuthSession) {
-  if (session.user.role === 'farmer') {
-    return authorizedRequest<{ role: 'farmer'; investors: InvestorConnection[] }>(session, '/farmer/investors');
+  if (session.user.role === "farmer") {
+    return authorizedRequest<{
+      role: "farmer";
+      investors: InvestorConnection[];
+    }>(session, "/farmer/investors");
   }
 
-  return authorizedRequest<{ role: 'investor'; farmers: FarmerOpportunity[] }>(session, '/investor/farmers');
+  return authorizedRequest<{ role: "investor"; farmers: FarmerOpportunity[] }>(
+    session,
+    "/investor/farmers",
+  );
 }
 
 export async function fetchFarmerInvestmentRequests(session: AuthSession) {
-  return authorizedRequest<FarmerInvestmentRequestsResponse>(session, '/farmer/investment-requests');
+  return authorizedRequest<FarmerInvestmentRequestsResponse>(
+    session,
+    "/farmer/investment-requests",
+  );
 }
 
 export async function createInvestmentRequest(
@@ -82,15 +107,19 @@ export async function createInvestmentRequest(
     crop: string;
     location: string;
     amountNeeded: number;
-    riskLevel: 'Low' | 'Medium' | 'High';
+    riskLevel: "Low" | "Medium" | "High";
     summary: string;
     historicalReturnRate?: string;
   },
 ) {
-  return authorizedRequest<FarmerOpportunity>(session, '/farmer/investment-requests', {
-    method: 'POST',
-    body: JSON.stringify(payload),
-  });
+  return authorizedRequest<FarmerOpportunity>(
+    session,
+    "/farmer/investment-requests",
+    {
+      method: "POST",
+      body: JSON.stringify(payload),
+    },
+  );
 }
 
 export async function deleteInvestmentRequest(
@@ -101,13 +130,16 @@ export async function deleteInvestmentRequest(
     session,
     `/farmer/investment-requests/${requestId}`,
     {
-      method: 'DELETE',
+      method: "DELETE",
     },
   );
 }
 
 export async function fetchInvestmentRequests(session: AuthSession) {
-  return authorizedRequest<InvestorInvestmentRequestsResponse>(session, '/investor/investment-requests');
+  return authorizedRequest<InvestorInvestmentRequestsResponse>(
+    session,
+    "/investor/investment-requests",
+  );
 }
 
 export async function investInRequest(
@@ -115,15 +147,22 @@ export async function investInRequest(
   requestId: string,
   amount = 5000,
 ) {
-  return authorizedRequest<FarmerOpportunity>(session, `/investor/investment-requests/${requestId}/invest`, {
-    method: 'POST',
-    body: JSON.stringify({ amount }),
-  });
+  return authorizedRequest<FarmerOpportunity>(
+    session,
+    `/investor/investment-requests/${requestId}/invest`,
+    {
+      method: "POST",
+      body: JSON.stringify({ amount }),
+    },
+  );
 }
 
-export async function fetchAiAssessment(session: AuthSession, entityId: string) {
-  return authorizedRequest<AiAssessment>(session, '/ai/investment-insight', {
-    method: 'POST',
+export async function fetchAiAssessment(
+  session: AuthSession,
+  entityId: string,
+) {
+  return authorizedRequest<AiAssessment>(session, "/ai/investment-insight", {
+    method: "POST",
     body: JSON.stringify({ entityId }),
   });
 }

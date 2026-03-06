@@ -87,7 +87,11 @@ const investmentRequestSchema = new mongoose.Schema(
     amountNeeded: { type: Number, required: true, min: 0 },
     raisedAmount: { type: Number, required: true, min: 0, default: 0 },
     historicalReturnRate: { type: String, required: true, trim: true },
-    riskLevel: { type: String, enum: ["Low", "Medium", "High"], required: true },
+    riskLevel: {
+      type: String,
+      enum: ["Low", "Medium", "High"],
+      required: true,
+    },
     summary: { type: String, required: true, trim: true },
     createdAt: { type: Date, required: true, default: Date.now },
     investments: { type: [requestInvestmentSchema], default: [] },
@@ -164,6 +168,11 @@ function buildDynamicInsight(request) {
 async function ensureSeedData(User) {
   const seedData = await readSeedData();
   const usersByLegacyId = new Map();
+  const seedEmails = new Set(seedData.users.map((user) => user.email));
+  const seedRequestIds = new Set(
+    (seedData.investmentRequests || []).map((request) => request.id),
+  );
+  const seededConnections = [];
 
   for (const seedUser of seedData.users) {
     const user = await User.findOneAndUpdate(
@@ -187,6 +196,16 @@ async function ensureSeedData(User) {
 
     usersByLegacyId.set(seedUser.id, user);
   }
+
+  if (seedRequestIds.size === 0) {
+    await InvestmentRequest.deleteMany({});
+  } else {
+    await InvestmentRequest.deleteMany({
+      externalId: { $nin: Array.from(seedRequestIds) },
+    });
+  }
+
+  await InvestorConnection.deleteMany({});
 
   for (const seedRequest of seedData.investmentRequests || []) {
     const farmerUser = usersByLegacyId.get(seedRequest.farmerUserId);
@@ -253,6 +272,11 @@ async function ensureSeedData(User) {
         continue;
       }
 
+      seededConnections.push({
+        farmerUserId: farmerUser._id,
+        investorUserId: investorUser._id,
+      });
+
       await InvestorConnection.findOneAndUpdate(
         {
           farmerUserId: farmerUser._id,
@@ -277,6 +301,14 @@ async function ensureSeedData(User) {
       );
     }
   }
+
+  if (seededConnections.length === 0) {
+    await InvestorConnection.deleteMany({});
+  }
+
+  await User.deleteMany({
+    email: { $nin: Array.from(seedEmails) },
+  });
 }
 
 async function getFarmerInvestors(userId) {
@@ -367,7 +399,12 @@ async function deleteInvestmentRequest(userId, requestId) {
   return formattedRequest;
 }
 
-async function investInRequest(requestId, investorUserId, investorName, amount) {
+async function investInRequest(
+  requestId,
+  investorUserId,
+  investorName,
+  amount,
+) {
   const request = await InvestmentRequest.findById(requestId);
 
   if (!request) {
@@ -389,8 +426,7 @@ async function investInRequest(requestId, investorUserId, investorName, amount) 
   });
   await request.save();
 
-  const investorMeta =
-    investorDirectory[investorUserId] ||
+  const investorMeta = investorDirectory[investorUserId] ||
     investorDirectory[investorUserId.toString()] || {
       profileId: investorUserId.toString(),
       company: "AgroLink Capital Network",
