@@ -8,9 +8,11 @@
     "dev": "node --watch src/index.js"
   },
   "dependencies": {
+    "@react-native-community/netinfo": "11.4.1",
     "bcryptjs": "^3.0.2",
     "cors": "^2.8.5",
     "dotenv": "^17.2.3",
+    "expo-local-authentication": "~17.0.8",
     "express": "^5.1.0",
     "express-rate-limit": "^8.1.0",
     "helmet": "^8.1.0",

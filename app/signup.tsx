@@ -174,10 +174,7 @@ export default function SignupScreen() {
         uri: asset.uri,
       });
     } catch {
-      Alert.alert(
-        t("signup.uploadFailed"),
-        t("signup.uploadFailedMessage"),
-      );
+      Alert.alert(t("signup.uploadFailed"), t("signup.uploadFailedMessage"));
     }
   };
 
@@ -302,10 +299,10 @@ export default function SignupScreen() {
                 />
 
                 <View style={s.uploadSection}>
-                  <Text style={s.uploadTitle}>{t("signup.verificationUploads")}</Text>
-                  <Text style={s.uploadHint}>
-                    {t("signup.uploadHint")}
+                  <Text style={s.uploadTitle}>
+                    {t("signup.verificationUploads")}
                   </Text>
+                  <Text style={s.uploadHint}>{t("signup.uploadHint")}</Text>
 
                   <TouchableOpacity
                     style={s.uploadCard}
@@ -319,7 +316,9 @@ export default function SignupScreen() {
                       />
                     </View>
                     <View style={s.uploadContent}>
-                      <Text style={s.uploadLabel}>{t("signup.gramaSevakaLetter")}</Text>
+                      <Text style={s.uploadLabel}>
+                        {t("signup.gramaSevakaLetter")}
+                      </Text>
                       <Text style={s.uploadValue}>
                         {gramaSevakaLetter
                           ? gramaSevakaLetter.name
@@ -336,7 +335,9 @@ export default function SignupScreen() {
                           size={18}
                           color={COLORS.primary}
                         />
-                        <Text style={s.removeUploadText}>{t("signup.remove")}</Text>
+                        <Text style={s.removeUploadText}>
+                          {t("signup.remove")}
+                        </Text>
                       </TouchableOpacity>
                     ) : (
                       <MaterialCommunityIcons
@@ -379,7 +380,9 @@ export default function SignupScreen() {
             </TouchableOpacity>
 
             <View style={s.footer}>
-              <Text style={s.footerText}>{t("signup.alreadyHaveAccount")} </Text>
+              <Text style={s.footerText}>
+                {t("signup.alreadyHaveAccount")}{" "}
+              </Text>
               <TouchableOpacity onPress={() => router.replace("/login")}>
                 <Text style={s.loginLink}>{t("signup.login")}</Text>
               </TouchableOpacity>

@@ -18,6 +18,8 @@ export interface DemoAccount extends AuthSession {
 const SESSION_KEY = "agrolink.auth.session";
 const API_BASE_URL = "http://localhost:4000/api";
 export const SESSION_EXPIRED_MESSAGE = "Session expired. Please sign in again.";
+export const NETWORK_ERROR_MESSAGE =
+  "You're offline or the server is unreachable. Check your connection and try again.";
 
 export const demoAccounts: DemoAccount[] = [
   {
@@ -126,13 +128,19 @@ export async function loginUser(
   password: string,
   role: UserRole,
 ) {
-  const response = await fetch(`${API_BASE_URL}/auth/login`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({ email, password, role }),
-  });
+  let response: Response;
+
+  try {
+    response = await fetch(`${API_BASE_URL}/auth/login`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ email, password, role }),
+    });
+  } catch {
+    throw new Error(NETWORK_ERROR_MESSAGE);
+  }
 
   if (!response.ok) {
     const errorBody = await response.json().catch(() => null);
@@ -160,13 +168,19 @@ export async function registerUser(payload: {
   nic: string;
   farmerId?: string;
 }) {
-  const response = await fetch(`${API_BASE_URL}/auth/register`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(payload),
-  });
+  let response: Response;
+
+  try {
+    response = await fetch(`${API_BASE_URL}/auth/register`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(payload),
+    });
+  } catch {
+    throw new Error(NETWORK_ERROR_MESSAGE);
+  }
 
   if (!response.ok) {
     const errorBody = await response.json().catch(() => null);
