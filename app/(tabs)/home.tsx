@@ -3,6 +3,7 @@ import {
   Ionicons,
   MaterialCommunityIcons,
 } from "@expo/vector-icons";
+import { useIsFocused } from "@react-navigation/native";
 import { useRouter } from "expo-router";
 import React, { useEffect, useState } from "react";
 import {
@@ -18,7 +19,7 @@ import {
   useWindowDimensions,
   View,
 } from "react-native";
-import { getSession } from "../../src/lib/auth";
+import { getSession, SESSION_EXPIRED_MESSAGE } from "../../src/lib/auth";
 import {
   fetchFarmerInvestmentRequests,
   fetchInvestmentRequests,
@@ -77,8 +78,7 @@ const SHADOWS = {
 const CROP_IMAGES: Record<string, string> = {
   paddy:
     "https://cdn.pixabay.com/photo/2016/09/21/04/46/barley-field-1684052_1280.jpg",
-  rice:
-    "https://cdn.pixabay.com/photo/2016/09/21/04/46/barley-field-1684052_1280.jpg",
+  rice: "https://cdn.pixabay.com/photo/2016/09/21/04/46/barley-field-1684052_1280.jpg",
   vegetables:
     "https://cdn.pixabay.com/photo/2018/03/11/01/25/vegetable-3215091_1280.jpg",
   vegetable:
@@ -249,7 +249,11 @@ const InvestmentCard = ({
         </View>
 
         {/* Invest Button */}
-        <TouchableOpacity style={ic.investBtn} activeOpacity={0.85} onPress={onPress}>
+        <TouchableOpacity
+          style={ic.investBtn}
+          activeOpacity={0.85}
+          onPress={onPress}
+        >
           <Text style={ic.investText}>{actionLabel}</Text>
           <MaterialCommunityIcons name="arrow-right" size={16} color="#fff" />
         </TouchableOpacity>
@@ -262,6 +266,7 @@ const InvestmentCard = ({
 export default function HomeScreen() {
   const { width } = useWindowDimensions();
   const router = useRouter();
+  const isFocused = useIsFocused();
   const [userName, setUserName] = useState("Fernando");
   const [greeting, setGreeting] = useState("Good morning 🌱");
   const [searchPlaceholder, setSearchPlaceholder] = useState(
@@ -273,11 +278,17 @@ export default function HomeScreen() {
   const compactLayout = width < 390;
 
   useEffect(() => {
+    if (!isFocused) {
+      return;
+    }
+
     let active = true;
 
     const loadSession = async () => {
+      setLoadError("");
       const session = await getSession();
       if (!active || !session) {
+        router.replace("/login");
         return;
       }
 
@@ -313,24 +324,43 @@ export default function HomeScreen() {
         if (!active) {
           return;
         }
+
+        if (
+          error instanceof Error &&
+          error.message === SESSION_EXPIRED_MESSAGE
+        ) {
+          Alert.alert("Session expired", SESSION_EXPIRED_MESSAGE, [
+            { text: "Sign in", onPress: () => router.replace("/login") },
+          ]);
+          return;
+        }
+
         setLoadError(
-          error instanceof Error ? error.message : "Unable to load request data.",
+          error instanceof Error
+            ? error.message
+            : "Unable to load request data.",
         );
       }
     };
 
     loadSession();
 
+    const intervalId = setInterval(() => {
+      loadSession();
+    }, 5000);
+
     return () => {
       active = false;
+      clearInterval(intervalId);
     };
-  }, []);
+  }, [isFocused, router]);
 
   const handlePrimaryAction = () => {
     router.push("/(tabs)/dashboard");
   };
 
-  const visibleRequests = role === "investor" ? requests.slice(0, 3) : requests.slice(0, 2);
+  const visibleRequests =
+    role === "investor" ? requests.slice(0, 3) : requests.slice(0, 2);
 
   const mapRequestToCard = (request: FarmerOpportunity) => {
     const normalizedCrop = request.crop.toLowerCase();
@@ -424,6 +454,19 @@ export default function HomeScreen() {
               />
             </TouchableOpacity>
           </View>
+
+          <View style={s.roleBanner}>
+            <MaterialCommunityIcons
+              name={role === "farmer" ? "shield-account" : "view-grid-outline"}
+              size={18}
+              color={COLORS.primary}
+            />
+            <Text style={s.roleBannerText}>
+              {role === "farmer"
+                ? "Private farmer view: only your own requests appear on this home feed."
+                : "Investor marketplace: you are seeing active requests from multiple farmers."}
+            </Text>
+          </View>
         </View>
 
         {/* WEATHER WIDGET */}
@@ -500,29 +543,42 @@ export default function HomeScreen() {
 
         {/* INVESTMENTS LIST */}
         <SectionHeader
-          title={role === "investor" ? "Open Investment Requests" : "Your Active Requests"}
+          title={
+            role === "investor"
+              ? "Open Investment Requests"
+              : "Your Active Requests"
+          }
           actionLabel="See all"
           onAction={() => router.push("/(tabs)/dashboard")}
         />
 
         {loadError ? (
-          <View style={s.emptyCard}>
-            <Text style={s.emptyTitle}>Unable to load requests</Text>
-            <Text style={s.emptyText}>{loadError}</Text>
+          <View style={s.errorBanner}>
+            <MaterialCommunityIcons
+              name="alert-circle-outline"
+              size={18}
+              color={COLORS.danger}
+            />
+            <Text style={s.errorBannerText}>{loadError}</Text>
           </View>
         ) : null}
 
         {!loadError && visibleRequests.length === 0 ? (
           <View style={s.emptyCard}>
             <Text style={s.emptyTitle}>
-              {role === "farmer" ? "No personal requests yet" : "No farmer requests live yet"}
+              {role === "farmer"
+                ? "No personal requests yet"
+                : "No farmer requests live yet"}
             </Text>
             <Text style={s.emptyText}>
               {role === "farmer"
                 ? "Farmers only see their own requests here. Create one from the dashboard."
                 : "Investors can review multiple farmer requests here once they are created."}
             </Text>
-            <TouchableOpacity style={s.emptyButton} onPress={handlePrimaryAction}>
+            <TouchableOpacity
+              style={s.emptyButton}
+              onPress={handlePrimaryAction}
+            >
               <Text style={s.emptyButtonText}>
                 {role === "farmer" ? "Open Dashboard" : "View Dashboard"}
               </Text>
@@ -530,18 +586,21 @@ export default function HomeScreen() {
           </View>
         ) : null}
 
-        {!loadError && visibleRequests.map((request) => {
-          const card = mapRequestToCard(request);
-          return (
-            <InvestmentCard
-              key={card.id}
-              {...card}
-              compact={compactLayout}
-              actionLabel={role === "investor" ? "Invest Now" : "Manage Request"}
-              onPress={handlePrimaryAction}
-            />
-          );
-        })}
+        {!loadError &&
+          visibleRequests.map((request) => {
+            const card = mapRequestToCard(request);
+            return (
+              <InvestmentCard
+                key={card.id}
+                {...card}
+                compact={compactLayout}
+                actionLabel={
+                  role === "investor" ? "Invest Now" : "Manage Request"
+                }
+                onPress={handlePrimaryAction}
+              />
+            );
+          })}
       </ScrollView>
     </View>
   );
@@ -783,6 +842,23 @@ const s = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
+  roleBanner: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    backgroundColor: "rgba(255,255,255,0.92)",
+    borderRadius: 16,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    marginTop: 14,
+  },
+  roleBannerText: {
+    flex: 1,
+    color: COLORS.primary,
+    fontSize: 12,
+    fontWeight: "700",
+    lineHeight: 18,
+  },
 
   weatherCard: {
     backgroundColor: COLORS.card,
@@ -814,7 +890,11 @@ const s = StyleSheet.create({
   },
   divider: { height: 1, backgroundColor: COLORS.border, marginBottom: 16 },
   statsRow: { flexDirection: "row", alignItems: "center" },
-  statsRowCompact: { flexWrap: "wrap", justifyContent: "space-between", rowGap: 12 },
+  statsRowCompact: {
+    flexWrap: "wrap",
+    justifyContent: "space-between",
+    rowGap: 12,
+  },
   statDivider: { width: 1, height: 40, backgroundColor: COLORS.border },
 
   kpiStrip: {
@@ -868,4 +948,24 @@ const s = StyleSheet.create({
     paddingVertical: 12,
   },
   emptyButtonText: { color: COLORS.white, fontWeight: "700", fontSize: 13 },
+  errorBanner: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    backgroundColor: "#FDEDEC",
+    borderRadius: 18,
+    marginHorizontal: 24,
+    marginBottom: 20,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    borderWidth: 1,
+    borderColor: "#F6C7C3",
+  },
+  errorBannerText: {
+    flex: 1,
+    color: COLORS.danger,
+    fontSize: 12,
+    fontWeight: "700",
+    lineHeight: 18,
+  },
 });
