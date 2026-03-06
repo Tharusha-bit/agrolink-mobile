@@ -137,9 +137,12 @@ export default function LoginScreen() {
       });
 
       if (response.status === 200) {
-        // ✅ Trigger the custom popup instead of jumping instantly
-        showSuccessToast(() => {
-          router.replace("/(tabs)/home" as any);
+        router.replace({
+          pathname: "/(tabs)/home" as any,
+          params: {
+            firstName: response.data.firstName,
+            lastName: response.data.lastName,
+          },
         });
       }
     } catch (error: any) {
