@@ -1,6 +1,6 @@
-import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
-import React, { useRef, useState } from 'react';
+import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
+import { useRouter } from "expo-router";
+import React, { useRef, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -13,38 +13,56 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
-  View
-} from 'react-native';
+  View,
+} from "react-native";
+import { useLanguage } from "../../src/lib/language";
 
 // ─── Design Tokens ─────────────────────────────────────────────────────────────
 const COLORS = {
-  primary:       '#216000',
-  primaryLight:  '#2E8B00',
-  primaryPale:   '#E8F5E1',
-  accent:        '#76C442',
-  white:         '#FFFFFF',
-  surface:       '#F7F9F4',
-  card:          '#FFFFFF',
-  text:          '#1A2E0D',
-  textSecondary: '#5C7A4A',
-  textMuted:     '#9BB08A',
-  border:        '#DDE8D4',
-  error:         '#D32F2F',
-  errorBg:       '#FFF0F0',
+  primary: "#216000",
+  primaryLight: "#2E8B00",
+  primaryPale: "#E8F5E1",
+  accent: "#76C442",
+  white: "#FFFFFF",
+  surface: "#F7F9F4",
+  card: "#FFFFFF",
+  text: "#1A2E0D",
+  textSecondary: "#5C7A4A",
+  textMuted: "#9BB08A",
+  border: "#DDE8D4",
+  error: "#D32F2F",
+  errorBg: "#FFF0F0",
 };
 
 const SHADOWS = {
   sm: Platform.select({
-    ios:     { shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.07, shadowRadius: 6 },
+    ios: {
+      shadowColor: "#000",
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.07,
+      shadowRadius: 6,
+    },
     android: { elevation: 3 },
   }),
   md: Platform.select({
-    ios:     { shadowColor: '#000', shadowOffset: { width: 0, height: 5 }, shadowOpacity: 0.11, shadowRadius: 14 },
+    ios: {
+      shadowColor: "#000",
+      shadowOffset: { width: 0, height: 5 },
+      shadowOpacity: 0.11,
+      shadowRadius: 14,
+    },
     android: { elevation: 6 },
   }),
 };
 
-const SUGGESTED_SKILLS = ['Irrigation', 'Paddy', 'Organic', 'Horticulture', 'Poultry', 'Aquaculture'];
+const SUGGESTED_SKILLS = [
+  "Irrigation",
+  "Paddy",
+  "Organic",
+  "Horticulture",
+  "Poultry",
+  "Aquaculture",
+];
 
 // ─── Reusable: Animated Form Field ─────────────────────────────────────────────
 const ProfileField = ({
@@ -53,7 +71,7 @@ const ProfileField = ({
   onChangeText,
   placeholder,
   icon,
-  keyboardType = 'default',
+  keyboardType = "default",
   error,
   secureTextEntry = false,
 }: any) => {
@@ -63,11 +81,19 @@ const ProfileField = ({
 
   const onFocus = () => {
     setFocused(true);
-    Animated.timing(anim, { toValue: 1, duration: 200, useNativeDriver: false }).start();
+    Animated.timing(anim, {
+      toValue: 1,
+      duration: 200,
+      useNativeDriver: false,
+    }).start();
   };
   const onBlur = () => {
     setFocused(false);
-    Animated.timing(anim, { toValue: 0, duration: 200, useNativeDriver: false }).start();
+    Animated.timing(anim, {
+      toValue: 0,
+      duration: 200,
+      useNativeDriver: false,
+    }).start();
   };
 
   // Interpolate colors based on focus state
@@ -75,7 +101,7 @@ const ProfileField = ({
     inputRange: [0, 1],
     outputRange: [COLORS.border, COLORS.primary],
   });
-  
+
   const labelColor = anim.interpolate({
     inputRange: [0, 1],
     outputRange: [COLORS.textSecondary, COLORS.primary],
@@ -85,7 +111,9 @@ const ProfileField = ({
 
   return (
     <View style={pf.wrap}>
-      <Animated.Text style={[pf.label, { color: error ? COLORS.error : labelColor }]}>
+      <Animated.Text
+        style={[pf.label, { color: error ? COLORS.error : labelColor }]}
+      >
         {label}
       </Animated.Text>
 
@@ -96,11 +124,11 @@ const ProfileField = ({
           error && { backgroundColor: COLORS.errorBg },
         ]}
       >
-        <MaterialCommunityIcons 
-          name={icon} 
-          size={20} 
-          color={error ? COLORS.error : iconColor} 
-          style={pf.icon} 
+        <MaterialCommunityIcons
+          name={icon}
+          size={20}
+          color={error ? COLORS.error : iconColor}
+          style={pf.icon}
         />
 
         <TextInput
@@ -129,18 +157,32 @@ const ProfileField = ({
 };
 
 const pf = StyleSheet.create({
-  wrap:      { marginBottom: 18 },
-  label:     { fontSize: 12, fontWeight: '700', letterSpacing: 0.5, marginBottom: 6, textTransform: 'uppercase' },
-  inputWrap: {
-    flexDirection: 'row', alignItems: 'center',
-    backgroundColor: COLORS.white,
-    borderWidth: 1.5, borderRadius: 14,
-    paddingHorizontal: 14, height: 54,
+  wrap: { marginBottom: 18 },
+  label: {
+    fontSize: 12,
+    fontWeight: "700",
+    letterSpacing: 0.5,
+    marginBottom: 6,
+    textTransform: "uppercase",
   },
-  icon:      { marginRight: 12 },
-  input:     { flex: 1, fontSize: 15, color: COLORS.text, height: '100%' },
-  errorRow:  { flexDirection: 'row', alignItems: 'center', marginTop: 6 },
-  errorText: { fontSize: 12, color: COLORS.error, marginLeft: 4, fontWeight: '600' },
+  inputWrap: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: COLORS.white,
+    borderWidth: 1.5,
+    borderRadius: 14,
+    paddingHorizontal: 14,
+    height: 54,
+  },
+  icon: { marginRight: 12 },
+  input: { flex: 1, fontSize: 15, color: COLORS.text, height: "100%" },
+  errorRow: { flexDirection: "row", alignItems: "center", marginTop: 6 },
+  errorText: {
+    fontSize: 12,
+    color: COLORS.error,
+    marginLeft: 4,
+    fontWeight: "600",
+  },
 });
 
 // ─── Reusable: Section Card ────────────────────────────────────────────────────
@@ -160,60 +202,95 @@ const SectionCard = ({ title, subtitle, icon, children }: any) => (
 );
 
 const sc = StyleSheet.create({
-  card:     { backgroundColor: COLORS.card, marginHorizontal: 20, borderRadius: 24, padding: 20, marginBottom: 20 },
-  header:   { flexDirection: 'row', alignItems: 'center', marginBottom: 20 },
-  iconWrap: { width: 44, height: 44, borderRadius: 22, backgroundColor: COLORS.primaryPale, justifyContent: 'center', alignItems: 'center', marginRight: 14 },
-  title:    { fontSize: 16, fontWeight: '800', color: COLORS.text, letterSpacing: -0.3 },
+  card: {
+    backgroundColor: COLORS.card,
+    marginHorizontal: 20,
+    borderRadius: 24,
+    padding: 20,
+    marginBottom: 20,
+  },
+  header: { flexDirection: "row", alignItems: "center", marginBottom: 20 },
+  iconWrap: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: COLORS.primaryPale,
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: 14,
+  },
+  title: {
+    fontSize: 16,
+    fontWeight: "800",
+    color: COLORS.text,
+    letterSpacing: -0.3,
+  },
   subtitle: { fontSize: 12, color: COLORS.textMuted, marginTop: 2 },
 });
 
 // ─── Reusable: Skill Chip ──────────────────────────────────────────────────────
 const SkillChip = ({ label, onRemove }: any) => (
   <View style={chip.wrap}>
-    <MaterialCommunityIcons name="sprout" size={14} color={COLORS.primary} style={{ marginRight: 6 }} />
+    <MaterialCommunityIcons
+      name="sprout"
+      size={14}
+      color={COLORS.primary}
+      style={{ marginRight: 6 }}
+    />
     <Text style={chip.label}>{label}</Text>
-    <TouchableOpacity onPress={onRemove} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} style={{ marginLeft: 8 }}>
+    <TouchableOpacity
+      onPress={onRemove}
+      hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+      style={{ marginLeft: 8 }}
+    >
       <Ionicons name="close-circle" size={18} color={COLORS.primary} />
     </TouchableOpacity>
   </View>
 );
 
 const chip = StyleSheet.create({
-  wrap:  {
-    flexDirection: 'row', alignItems: 'center',
+  wrap: {
+    flexDirection: "row",
+    alignItems: "center",
     backgroundColor: COLORS.primaryPale,
-    borderWidth: 1, borderColor: COLORS.border,
-    borderRadius: 30, paddingHorizontal: 14, paddingVertical: 8,
-    marginRight: 8, marginBottom: 8,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    borderRadius: 30,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    marginRight: 8,
+    marginBottom: 8,
   },
-  label: { fontSize: 13, fontWeight: '700', color: COLORS.primary },
+  label: { fontSize: 13, fontWeight: "700", color: COLORS.primary },
 });
 
 // ─── Main Screen ──────────────────────────────────────────────────────────────
 export default function EditProfileScreen() {
   const router = useRouter();
+  const { language, t } = useLanguage();
 
   // Form State
-  const [firstName,   setFirstName]   = useState('');
-  const [lastName,    setLastName]    = useState('');
-  const [displayName, setDisplayName] = useState('');
-  const [nic,         setNic]         = useState('');
-  const [address,     setAddress]     = useState('');
-  const [phone,       setPhone]       = useState('');
-  const [skills,      setSkills]      = useState<string[]>([]);
-  const [newSkill,    setNewSkill]    = useState('');
-  const [loading,     setLoading]     = useState(false);
-  const [errors,      setErrors]      = useState<any>({});
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
+  const [displayName, setDisplayName] = useState("");
+  const [nic, setNic] = useState("");
+  const [address, setAddress] = useState("");
+  const [phone, setPhone] = useState("");
+  const [skills, setSkills] = useState<string[]>([]);
+  const [newSkill, setNewSkill] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [errors, setErrors] = useState<any>({});
 
   // Validation
   const validate = () => {
     const e: any = {};
-    if (!firstName.trim())           e.firstName   = 'First name is required';
-    if (!lastName.trim())            e.lastName    = 'Last name is required';
-    if (!nic.trim())                 e.nic         = 'NIC number is required';
-    if (!address.trim())             e.address     = 'Address is required';
-    if (!phone.match(/^[0-9]{10}$/)) e.phone       = 'Enter valid 10-digit number';
-    if (!displayName.trim())         e.displayName = 'Display name is required';
+    if (!firstName.trim()) e.firstName = t("profile.editFirstNameRequired");
+    if (!lastName.trim()) e.lastName = t("profile.editLastNameRequired");
+    if (!nic.trim()) e.nic = t("profile.editNicRequired");
+    if (!address.trim()) e.address = t("profile.editAddressRequired");
+    if (!phone.match(/^[0-9]{10}$/)) e.phone = t("profile.editPhoneInvalid");
+    if (!displayName.trim())
+      e.displayName = t("profile.editDisplayNameRequired");
     return e;
   };
 
@@ -229,10 +306,16 @@ export default function EditProfileScreen() {
       setLoading(true);
       // Simulate API call
       await new Promise((resolve) => setTimeout(resolve, 1500));
-      Alert.alert('Success', 'Profile updated successfully!');
+      Alert.alert(
+        t("profile.editSaveSuccessTitle"),
+        t("profile.editSaveSuccessMessage"),
+      );
       router.back();
     } catch {
-      Alert.alert('Error', 'Failed to update profile.');
+      Alert.alert(
+        t("profile.editSaveErrorTitle"),
+        t("profile.editSaveErrorMessage"),
+      );
     } finally {
       setLoading(false);
     }
@@ -242,20 +325,21 @@ export default function EditProfileScreen() {
     const skillToAdd = (s || newSkill).trim();
     if (!skillToAdd || skills.includes(skillToAdd)) return;
     setSkills([...skills, skillToAdd]);
-    setNewSkill('');
+    setNewSkill("");
   };
 
-  const removeSkill = (index: number) => setSkills(skills.filter((_, i) => i !== index));
+  const removeSkill = (index: number) =>
+    setSkills(skills.filter((_, i) => i !== index));
 
   const suggestions = SUGGESTED_SKILLS.filter((s) => !skills.includes(s));
 
   return (
     <View style={s.container}>
       <StatusBar barStyle="light-content" backgroundColor={COLORS.primary} />
-      
+
       {/* Keyboard Avoiding View allows scrolling when keyboard is open */}
-      <KeyboardAvoidingView 
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'} 
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
         style={{ flex: 1 }}
       >
         <ScrollView
@@ -268,76 +352,123 @@ export default function EditProfileScreen() {
             <View style={s.decCircleLg} />
             <View style={s.decCircleSm} />
 
-            <TouchableOpacity onPress={() => router.back()} style={s.backBtn} activeOpacity={0.8}>
+            <TouchableOpacity
+              onPress={() => router.back()}
+              style={s.backBtn}
+              activeOpacity={0.8}
+            >
               <Ionicons name="arrow-back" size={22} color={COLORS.primary} />
             </TouchableOpacity>
 
             <View style={s.avatarSection}>
+              <View style={s.headerTopRow}>
+                <Text style={s.screenTitle}>{t("profile.editTitle")}</Text>
+                <View style={s.languageChip}>
+                  <Ionicons name="language" size={14} color={COLORS.white} />
+                  <Text style={s.languageChipText}>
+                    {language === "en"
+                      ? t("common.english")
+                      : language === "si"
+                        ? t("common.sinhala")
+                        : t("common.tamil")}
+                  </Text>
+                </View>
+              </View>
               <View style={s.avatarRing}>
                 <View style={s.avatarCircle}>
-                  <MaterialCommunityIcons name="account" size={52} color={COLORS.white} />
+                  <MaterialCommunityIcons
+                    name="account"
+                    size={52}
+                    color={COLORS.white}
+                  />
                 </View>
                 <TouchableOpacity style={s.cameraBtn} activeOpacity={0.85}>
                   <Ionicons name="camera" size={16} color={COLORS.white} />
                 </TouchableOpacity>
               </View>
-              <Text style={s.avatarName}>{displayName || 'Fernando'}</Text>
-              <Text style={s.avatarSub}>Tap camera to upload</Text>
+              <Text style={s.avatarName}>{displayName || "Fernando"}</Text>
+              <Text style={s.avatarSub}>{t("profile.editTapCamera")}</Text>
             </View>
           </View>
 
           {/* ── PERSONAL INFO ── */}
           <View style={{ marginTop: 20 }}>
-            <SectionCard title="Personal Information" subtitle="Legal details for verification" icon="card-account-details-outline">
+            <SectionCard
+              title={t("profile.editPersonalInfo")}
+              subtitle={t("profile.editPersonalInfoSub")}
+              icon="card-account-details-outline"
+            >
               <ProfileField
-                label="First Name"
+                label={t("profile.editFirstName")}
                 value={firstName}
-                onChangeText={(v: string) => { setFirstName(v); setErrors({ ...errors, firstName: '' }); }}
-                placeholder="e.g. Kasun"
+                onChangeText={(v: string) => {
+                  setFirstName(v);
+                  setErrors({ ...errors, firstName: "" });
+                }}
+                placeholder={t("profile.editFirstNamePlaceholder")}
                 icon="account-outline"
                 error={errors.firstName}
               />
               <ProfileField
-                label="Last Name"
+                label={t("profile.editLastName")}
                 value={lastName}
-                onChangeText={(v: string) => { setLastName(v); setErrors({ ...errors, lastName: '' }); }}
-                placeholder="e.g. Perera"
+                onChangeText={(v: string) => {
+                  setLastName(v);
+                  setErrors({ ...errors, lastName: "" });
+                }}
+                placeholder={t("profile.editLastNamePlaceholder")}
                 icon="account-outline"
                 error={errors.lastName}
               />
               <ProfileField
-                label="Display Name"
+                label={t("profile.editDisplayName")}
                 value={displayName}
-                onChangeText={(v: string) => { setDisplayName(v); setErrors({ ...errors, displayName: '' }); }}
-                placeholder="How you appear to others"
+                onChangeText={(v: string) => {
+                  setDisplayName(v);
+                  setErrors({ ...errors, displayName: "" });
+                }}
+                placeholder={t("profile.editDisplayNamePlaceholder")}
                 icon="badge-account-outline"
                 error={errors.displayName}
               />
               <ProfileField
-                label="NIC Number"
+                label={t("profile.editNicNumber")}
                 value={nic}
-                onChangeText={(v: string) => { setNic(v); setErrors({ ...errors, nic: '' }); }}
-                placeholder="e.g. 991234567V"
+                onChangeText={(v: string) => {
+                  setNic(v);
+                  setErrors({ ...errors, nic: "" });
+                }}
+                placeholder={t("profile.editNicPlaceholder")}
                 icon="identifier"
                 error={errors.nic}
               />
             </SectionCard>
 
             {/* ── CONTACT ── */}
-            <SectionCard title="Contact Details" subtitle="For investor communications" icon="map-marker-radius-outline">
+            <SectionCard
+              title={t("profile.editContactDetails")}
+              subtitle={t("profile.editContactDetailsSub")}
+              icon="map-marker-radius-outline"
+            >
               <ProfileField
-                label="Address"
+                label={t("profile.editAddress")}
                 value={address}
-                onChangeText={(v: string) => { setAddress(v); setErrors({ ...errors, address: '' }); }}
-                placeholder="e.g. 12 Kandy Rd, Colombo"
+                onChangeText={(v: string) => {
+                  setAddress(v);
+                  setErrors({ ...errors, address: "" });
+                }}
+                placeholder={t("profile.editAddressPlaceholder")}
                 icon="home-outline"
                 error={errors.address}
               />
               <ProfileField
-                label="Phone Number"
+                label={t("profile.editPhoneNumber")}
                 value={phone}
-                onChangeText={(v: string) => { setPhone(v); setErrors({ ...errors, phone: '' }); }}
-                placeholder="07X XXX XXXX"
+                onChangeText={(v: string) => {
+                  setPhone(v);
+                  setErrors({ ...errors, phone: "" });
+                }}
+                placeholder={t("profile.editPhonePlaceholder")}
                 icon="phone-outline"
                 keyboardType="phone-pad"
                 error={errors.phone}
@@ -345,20 +476,33 @@ export default function EditProfileScreen() {
             </SectionCard>
 
             {/* ── SKILLS ── */}
-            <SectionCard title="Skills & Expertise" subtitle="Your farming strengths" icon="leaf">
+            <SectionCard
+              title={t("profile.editSkillsTitle")}
+              subtitle={t("profile.editSkillsSub")}
+              icon="leaf"
+            >
               <View style={s.skillInputRow}>
                 <View style={s.skillInputWrap}>
-                  <MaterialCommunityIcons name="sprout-outline" size={18} color={COLORS.textMuted} style={{ marginRight: 8 }} />
+                  <MaterialCommunityIcons
+                    name="sprout-outline"
+                    size={18}
+                    color={COLORS.textMuted}
+                    style={{ marginRight: 8 }}
+                  />
                   <TextInput
                     style={s.skillInput}
                     value={newSkill}
                     onChangeText={setNewSkill}
-                    placeholder="Add a skill..."
+                    placeholder={t("profile.editSkillPlaceholder")}
                     placeholderTextColor={COLORS.textMuted}
                     onSubmitEditing={() => addSkill()}
                   />
                 </View>
-                <TouchableOpacity style={s.addBtn} onPress={() => addSkill()} activeOpacity={0.8}>
+                <TouchableOpacity
+                  style={s.addBtn}
+                  onPress={() => addSkill()}
+                  activeOpacity={0.8}
+                >
                   <Ionicons name="add" size={24} color={COLORS.white} />
                 </TouchableOpacity>
               </View>
@@ -366,11 +510,22 @@ export default function EditProfileScreen() {
               {/* Suggestions */}
               {suggestions.length > 0 && (
                 <View style={{ marginBottom: 16 }}>
-                  <Text style={s.suggestLabel}>Quick Add:</Text>
+                  <Text style={s.suggestLabel}>
+                    {t("profile.editQuickAdd")}
+                  </Text>
                   <View style={s.chipsWrap}>
                     {suggestions.slice(0, 4).map((sg) => (
-                      <TouchableOpacity key={sg} style={s.suggestChip} onPress={() => addSkill(sg)}>
-                        <Ionicons name="add-circle-outline" size={14} color={COLORS.primary} style={{ marginRight: 4 }} />
+                      <TouchableOpacity
+                        key={sg}
+                        style={s.suggestChip}
+                        onPress={() => addSkill(sg)}
+                      >
+                        <Ionicons
+                          name="add-circle-outline"
+                          size={14}
+                          color={COLORS.primary}
+                          style={{ marginRight: 4 }}
+                        />
                         <Text style={s.suggestChipText}>{sg}</Text>
                       </TouchableOpacity>
                     ))}
@@ -381,7 +536,11 @@ export default function EditProfileScreen() {
               {/* Chip List */}
               <View style={s.chipsWrap}>
                 {skills.map((sk, i) => (
-                  <SkillChip key={i} label={sk} onRemove={() => removeSkill(i)} />
+                  <SkillChip
+                    key={i}
+                    label={sk}
+                    onRemove={() => removeSkill(i)}
+                  />
                 ))}
               </View>
             </SectionCard>
@@ -398,13 +557,23 @@ export default function EditProfileScreen() {
                   <ActivityIndicator color={COLORS.white} />
                 ) : (
                   <>
-                    <MaterialCommunityIcons name="content-save-check" size={20} color={COLORS.white} style={{ marginRight: 8 }} />
-                    <Text style={s.saveBtnText}>Save Profile</Text>
+                    <MaterialCommunityIcons
+                      name="content-save-check"
+                      size={20}
+                      color={COLORS.white}
+                      style={{ marginRight: 8 }}
+                    />
+                    <Text style={s.saveBtnText}>
+                      {t("profile.editSaveProfile")}
+                    </Text>
                   </>
                 )}
               </TouchableOpacity>
-              <TouchableOpacity onPress={() => router.back()} style={{ padding: 10 }}>
-                <Text style={s.discardText}>Cancel</Text>
+              <TouchableOpacity
+                onPress={() => router.back()}
+                style={{ padding: 10 }}
+              >
+                <Text style={s.discardText}>{t("common.cancel")}</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -416,71 +585,195 @@ export default function EditProfileScreen() {
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
 const s = StyleSheet.create({
-  container:    { flex: 1, backgroundColor: COLORS.surface },
-  scrollContent:{ paddingBottom: 40 },
+  container: { flex: 1, backgroundColor: COLORS.surface },
+  scrollContent: { paddingBottom: 40 },
 
   /* HEADER */
   header: {
     backgroundColor: COLORS.primary,
-    paddingTop: Platform.OS === 'ios' ? 50 : 40,
+    paddingTop: Platform.OS === "ios" ? 50 : 40,
     paddingBottom: 40,
     borderBottomLeftRadius: 40,
     borderBottomRightRadius: 40,
-    alignItems: 'center',
-    overflow: 'hidden',
-    position: 'relative',
+    alignItems: "center",
+    overflow: "hidden",
+    position: "relative",
     ...SHADOWS.md,
   },
-  decCircleLg: { position: 'absolute', width: 240, height: 240, borderRadius: 120, backgroundColor: COLORS.primaryLight, top: -80, right: -60, opacity: 0.4 },
-  decCircleSm: { position: 'absolute', width: 120, height: 120, borderRadius: 60, backgroundColor: COLORS.accent, bottom: -40, left: -20, opacity: 0.2 },
-  
-  backBtn: {
-    position: 'absolute', top: Platform.OS === 'ios' ? 50 : 40, left: 20,
-    width: 44, height: 44, borderRadius: 22, backgroundColor: COLORS.white,
-    justifyContent: 'center', alignItems: 'center', zIndex: 10, ...SHADOWS.sm,
+  decCircleLg: {
+    position: "absolute",
+    width: 240,
+    height: 240,
+    borderRadius: 120,
+    backgroundColor: COLORS.primaryLight,
+    top: -80,
+    right: -60,
+    opacity: 0.4,
+  },
+  decCircleSm: {
+    position: "absolute",
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    backgroundColor: COLORS.accent,
+    bottom: -40,
+    left: -20,
+    opacity: 0.2,
   },
 
-  avatarSection: { alignItems: 'center', marginTop: 10 },
+  backBtn: {
+    position: "absolute",
+    top: Platform.OS === "ios" ? 50 : 40,
+    left: 20,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: COLORS.white,
+    justifyContent: "center",
+    alignItems: "center",
+    zIndex: 10,
+    ...SHADOWS.sm,
+  },
+
+  avatarSection: { alignItems: "center", marginTop: 10 },
+  headerTopRow: {
+    width: "100%",
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 12,
+    paddingHorizontal: 8,
+  },
+  screenTitle: { fontSize: 16, fontWeight: "800", color: COLORS.white },
+  languageChip: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    backgroundColor: "rgba(255,255,255,0.16)",
+    borderRadius: 999,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+  },
+  languageChipText: { fontSize: 11, fontWeight: "700", color: COLORS.white },
   avatarRing: {
-    width: 100, height: 100, borderRadius: 50, borderWidth: 3, borderColor: 'rgba(255,255,255,0.4)',
-    justifyContent: 'center', alignItems: 'center', marginBottom: 12,
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    borderWidth: 3,
+    borderColor: "rgba(255,255,255,0.4)",
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: 12,
   },
-  avatarCircle: { width: 88, height: 88, borderRadius: 44, backgroundColor: COLORS.primaryLight, justifyContent: 'center', alignItems: 'center' },
+  avatarCircle: {
+    width: 88,
+    height: 88,
+    borderRadius: 44,
+    backgroundColor: COLORS.primaryLight,
+    justifyContent: "center",
+    alignItems: "center",
+  },
   cameraBtn: {
-    position: 'absolute', bottom: 0, right: 0, width: 32, height: 32, borderRadius: 16,
-    backgroundColor: COLORS.accent, justifyContent: 'center', alignItems: 'center',
-    borderWidth: 2, borderColor: COLORS.white,
+    position: "absolute",
+    bottom: 0,
+    right: 0,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: COLORS.accent,
+    justifyContent: "center",
+    alignItems: "center",
+    borderWidth: 2,
+    borderColor: COLORS.white,
   },
-  avatarName: { fontSize: 22, fontWeight: '800', color: COLORS.white, letterSpacing: -0.5 },
-  avatarSub:  { fontSize: 13, color: 'rgba(255,255,255,0.7)', marginTop: 4 },
+  avatarName: {
+    fontSize: 22,
+    fontWeight: "800",
+    color: COLORS.white,
+    letterSpacing: -0.5,
+  },
+  avatarSub: { fontSize: 13, color: "rgba(255,255,255,0.7)", marginTop: 4 },
 
   /* SKILLS */
-  skillInputRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 16 },
+  skillInputRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 16,
+  },
   skillInputWrap: {
-    flex: 1, flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.white,
-    borderWidth: 1.5, borderColor: COLORS.border, borderRadius: 14, paddingHorizontal: 14,
-    height: 52, marginRight: 10,
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: COLORS.white,
+    borderWidth: 1.5,
+    borderColor: COLORS.border,
+    borderRadius: 14,
+    paddingHorizontal: 14,
+    height: 52,
+    marginRight: 10,
   },
-  skillInput:    { flex: 1, fontSize: 14, color: COLORS.text },
-  addBtn:        { width: 52, height: 52, borderRadius: 14, backgroundColor: COLORS.primary, justifyContent: 'center', alignItems: 'center', ...SHADOWS.sm },
+  skillInput: { flex: 1, fontSize: 14, color: COLORS.text },
+  addBtn: {
+    width: 52,
+    height: 52,
+    borderRadius: 14,
+    backgroundColor: COLORS.primary,
+    justifyContent: "center",
+    alignItems: "center",
+    ...SHADOWS.sm,
+  },
 
-  suggestLabel:  { fontSize: 11, fontWeight: '700', color: COLORS.textMuted, textTransform: 'uppercase', marginBottom: 8, letterSpacing: 0.5 },
-  chipsWrap:     { flexDirection: 'row', flexWrap: 'wrap' },
-  suggestChip:   {
-    flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.white,
-    borderWidth: 1, borderColor: COLORS.border, borderRadius: 20,
-    paddingHorizontal: 12, paddingVertical: 6, marginRight: 8, marginBottom: 8,
+  suggestLabel: {
+    fontSize: 11,
+    fontWeight: "700",
+    color: COLORS.textMuted,
+    textTransform: "uppercase",
+    marginBottom: 8,
+    letterSpacing: 0.5,
   },
-  suggestChipText: { fontSize: 12, fontWeight: '600', color: COLORS.primary },
+  chipsWrap: { flexDirection: "row", flexWrap: "wrap" },
+  suggestChip: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: COLORS.white,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    borderRadius: 20,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    marginRight: 8,
+    marginBottom: 8,
+  },
+  suggestChipText: { fontSize: 12, fontWeight: "600", color: COLORS.primary },
 
   /* SAVE */
-  saveSection:   { marginHorizontal: 20, marginTop: 10, marginBottom: 20, alignItems: 'center' },
-  saveBtn:       {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
-    backgroundColor: COLORS.primary, borderRadius: 18, paddingVertical: 18, width: '100%',
+  saveSection: {
+    marginHorizontal: 20,
+    marginTop: 10,
+    marginBottom: 20,
+    alignItems: "center",
+  },
+  saveBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: COLORS.primary,
+    borderRadius: 18,
+    paddingVertical: 18,
+    width: "100%",
     ...SHADOWS.md,
   },
-  saveBtnLoading:{ opacity: 0.8 },
-  saveBtnText:   { color: COLORS.white, fontWeight: '800', fontSize: 16, letterSpacing: 0.5 },
-  discardText:   { fontSize: 14, color: COLORS.textMuted, fontWeight: '600', textDecorationLine: 'underline' },
+  saveBtnLoading: { opacity: 0.8 },
+  saveBtnText: {
+    color: COLORS.white,
+    fontWeight: "800",
+    fontSize: 16,
+    letterSpacing: 0.5,
+  },
+  discardText: {
+    fontSize: 14,
+    color: COLORS.textMuted,
+    fontWeight: "600",
+    textDecorationLine: "underline",
+  },
 });

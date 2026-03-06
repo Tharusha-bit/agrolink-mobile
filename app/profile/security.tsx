@@ -1,6 +1,6 @@
-import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
-import React, { useRef, useState } from 'react';
+import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
+import { useRouter } from "expo-router";
+import React, { useRef, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -12,55 +12,74 @@ import {
   TextInput,
   TouchableOpacity,
   View,
-} from 'react-native';
-import { Text } from 'react-native-paper';
+} from "react-native";
+import { Text } from "react-native-paper";
+import { useLanguage } from "../../src/lib/language";
 
 // ─── Design Tokens (AgroLink system) ──────────────────────────────────────────
 const COLORS = {
-  primary:       '#216000',
-  primaryLight:  '#2E8B00',
-  primaryPale:   '#E8F5E1',
-  accent:        '#76C442',
-  accentWarm:    '#F5A623',
-  white:         '#FFFFFF',
-  surface:       '#F7F9F4',
-  card:          '#FFFFFF',
-  text:          '#1A2E0D',
-  textSecondary: '#5C7A4A',
-  textMuted:     '#9BB08A',
-  border:        '#DDE8D4',
-  error:         '#D32F2F',
-  errorBg:       '#FFF0F0',
-  success:       '#2E7D32',
-  successBg:     '#F1F8E9',
+  primary: "#216000",
+  primaryLight: "#2E8B00",
+  primaryPale: "#E8F5E1",
+  accent: "#76C442",
+  accentWarm: "#F5A623",
+  white: "#FFFFFF",
+  surface: "#F7F9F4",
+  card: "#FFFFFF",
+  text: "#1A2E0D",
+  textSecondary: "#5C7A4A",
+  textMuted: "#9BB08A",
+  border: "#DDE8D4",
+  error: "#D32F2F",
+  errorBg: "#FFF0F0",
+  success: "#2E7D32",
+  successBg: "#F1F8E9",
 };
 
 const SHADOWS = {
   sm: Platform.select({
-    ios:     { shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.08, shadowRadius: 6 },
+    ios: {
+      shadowColor: "#000",
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.08,
+      shadowRadius: 6,
+    },
     android: { elevation: 3 },
   }),
   md: Platform.select({
-    ios:     { shadowColor: '#000', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.13, shadowRadius: 16 },
+    ios: {
+      shadowColor: "#000",
+      shadowOffset: { width: 0, height: 6 },
+      shadowOpacity: 0.13,
+      shadowRadius: 16,
+    },
     android: { elevation: 8 },
   }),
 };
 
 // ─── Password Strength Logic ───────────────────────────────────────────────────
-const REQUIREMENTS = [
-  { key: 'length',    label: 'At least 8 characters',          test: (p: string) => p.length >= 8 },
-  { key: 'upper',     label: 'One uppercase letter (A–Z)',      test: (p: string) => /[A-Z]/.test(p) },
-  { key: 'number',    label: 'One number (0–9)',                test: (p: string) => /[0-9]/.test(p) },
-  { key: 'special',   label: 'One special character (!@#…)',    test: (p: string) => /[^A-Za-z0-9]/.test(p) },
-];
-
-const getStrength = (password: string) => {
-  const passed = REQUIREMENTS.filter((r) => r.test(password)).length;
-  if (passed === 0) return { score: 0, label: '',           color: COLORS.border };
-  if (passed === 1) return { score: 1, label: 'Weak',       color: COLORS.error };
-  if (passed === 2) return { score: 2, label: 'Fair',       color: COLORS.accentWarm };
-  if (passed === 3) return { score: 3, label: 'Good',       color: '#8BC34A' };
-  return              { score: 4, label: 'Strong',          color: COLORS.accent };
+const getStrength = (
+  password: string,
+  t: (key: string) => string,
+  requirements: Array<{
+    key: string;
+    label: string;
+    test: (p: string) => boolean;
+  }>,
+) => {
+  const passed = requirements.filter((r) => r.test(password)).length;
+  if (passed === 0) return { score: 0, label: "", color: COLORS.border };
+  if (passed === 1)
+    return { score: 1, label: t("profile.securityWeak"), color: COLORS.error };
+  if (passed === 2)
+    return {
+      score: 2,
+      label: t("profile.securityFair"),
+      color: COLORS.accentWarm,
+    };
+  if (passed === 3)
+    return { score: 3, label: t("profile.securityGood"), color: "#8BC34A" };
+  return { score: 4, label: t("profile.securityStrong"), color: COLORS.accent };
 };
 
 // ─── Reusable: Animated Password Field ────────────────────────────────────────
@@ -78,40 +97,69 @@ interface SecureFieldProps {
   error?: string;
 }
 
-const SecureField = ({ label, value, onChangeText, placeholder, icon, error }: SecureFieldProps) => {
+const SecureField = ({
+  label,
+  value,
+  onChangeText,
+  placeholder,
+  icon,
+  error,
+}: SecureFieldProps) => {
   const [visible, setVisible] = useState(false);
   const [focused, setFocused] = useState(false);
   const anim = useRef(new Animated.Value(0)).current;
 
   const onFocus = () => {
     setFocused(true);
-    Animated.timing(anim, { toValue: 1, duration: 200, useNativeDriver: false }).start();
+    Animated.timing(anim, {
+      toValue: 1,
+      duration: 200,
+      useNativeDriver: false,
+    }).start();
   };
   const onBlur = () => {
     setFocused(false);
-    Animated.timing(anim, { toValue: 0, duration: 200, useNativeDriver: false }).start();
+    Animated.timing(anim, {
+      toValue: 0,
+      duration: 200,
+      useNativeDriver: false,
+    }).start();
   };
 
-  const borderColor = anim.interpolate({ inputRange: [0, 1], outputRange: [COLORS.border, COLORS.primary] });
-  const labelColor  = error ? COLORS.error : focused ? COLORS.primary : COLORS.textSecondary;
+  const borderColor = anim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [COLORS.border, COLORS.primary],
+  });
+  const labelColor = error
+    ? COLORS.error
+    : focused
+      ? COLORS.primary
+      : COLORS.textSecondary;
 
   return (
     <View style={sf.wrap}>
       <Text style={[sf.label, { color: labelColor }]}>{label}</Text>
-      <Animated.View style={[sf.inputWrap, { borderColor: error ? COLORS.error : borderColor },
-        error && { backgroundColor: COLORS.errorBg }]}>
+      <Animated.View
+        style={[
+          sf.inputWrap,
+          { borderColor: error ? COLORS.error : borderColor },
+          error && { backgroundColor: COLORS.errorBg },
+        ]}
+      >
         {/* Leading icon */}
         <MaterialCommunityIcons
           name={icon as any}
           size={18}
-          color={error ? COLORS.error : focused ? COLORS.primary : COLORS.textMuted}
+          color={
+            error ? COLORS.error : focused ? COLORS.primary : COLORS.textMuted
+          }
           style={{ marginRight: 10 }}
         />
         <TextInput
           style={sf.input}
           value={value}
           onChangeText={onChangeText}
-          placeholder={placeholder ?? '••••••••'}
+          placeholder={placeholder ?? "••••••••"}
           placeholderTextColor={COLORS.textMuted}
           secureTextEntry={!visible}
           onFocus={onFocus}
@@ -120,8 +168,15 @@ const SecureField = ({ label, value, onChangeText, placeholder, icon, error }: S
           autoCapitalize="none"
         />
         {/* Eye toggle */}
-        <TouchableOpacity onPress={() => setVisible((v) => !v)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-          <Ionicons name={visible ? 'eye-off-outline' : 'eye-outline'} size={18} color={COLORS.textMuted} />
+        <TouchableOpacity
+          onPress={() => setVisible((v) => !v)}
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+        >
+          <Ionicons
+            name={visible ? "eye-off-outline" : "eye-outline"}
+            size={18}
+            color={COLORS.textMuted}
+          />
         </TouchableOpacity>
       </Animated.View>
       {error ? (
@@ -135,17 +190,31 @@ const SecureField = ({ label, value, onChangeText, placeholder, icon, error }: S
 };
 
 const sf = StyleSheet.create({
-  wrap:      { marginBottom: 18 },
-  label:     { fontSize: 12, fontWeight: '700', letterSpacing: 0.4, marginBottom: 6, textTransform: 'uppercase' },
-  inputWrap: {
-    flexDirection: 'row', alignItems: 'center',
-    backgroundColor: COLORS.white,
-    borderWidth: 1.5, borderRadius: 14,
-    paddingHorizontal: 14, height: 52,
+  wrap: { marginBottom: 18 },
+  label: {
+    fontSize: 12,
+    fontWeight: "700",
+    letterSpacing: 0.4,
+    marginBottom: 6,
+    textTransform: "uppercase",
   },
-  input:     { flex: 1, fontSize: 15, color: COLORS.text, letterSpacing: 1 },
-  errorRow:  { flexDirection: 'row', alignItems: 'center', marginTop: 5 },
-  errorText: { fontSize: 11.5, color: COLORS.error, marginLeft: 4, fontWeight: '600' },
+  inputWrap: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: COLORS.white,
+    borderWidth: 1.5,
+    borderRadius: 14,
+    paddingHorizontal: 14,
+    height: 52,
+  },
+  input: { flex: 1, fontSize: 15, color: COLORS.text, letterSpacing: 1 },
+  errorRow: { flexDirection: "row", alignItems: "center", marginTop: 5 },
+  errorText: {
+    fontSize: 11.5,
+    color: COLORS.error,
+    marginLeft: 4,
+    fontWeight: "600",
+  },
 });
 
 // ─── Reusable: Strength Meter ──────────────────────────────────────────────────
@@ -153,8 +222,20 @@ const sf = StyleSheet.create({
  * Improvement: 4-segment bar with live colour feedback.
  * Far more informative than a single blocking Alert about password rules.
  */
-const StrengthMeter = ({ password }: { password: string }) => {
-  const { score, label, color } = getStrength(password);
+const StrengthMeter = ({
+  password,
+  t,
+  requirements,
+}: {
+  password: string;
+  t: (key: string) => string;
+  requirements: Array<{
+    key: string;
+    label: string;
+    test: (p: string) => boolean;
+  }>;
+}) => {
+  const { score, label, color } = getStrength(password, t, requirements);
   if (!password) return null;
 
   return (
@@ -163,12 +244,18 @@ const StrengthMeter = ({ password }: { password: string }) => {
         {[1, 2, 3, 4].map((step) => (
           <View
             key={step}
-            style={[sm.seg, { backgroundColor: step <= score ? color : COLORS.border }, step < 4 && { marginRight: 5 }]}
+            style={[
+              sm.seg,
+              { backgroundColor: step <= score ? color : COLORS.border },
+              step < 4 && { marginRight: 5 },
+            ]}
           />
         ))}
       </View>
       <View style={sm.labelRow}>
-        <Text style={sm.labelLeft}>Password strength</Text>
+        <Text style={sm.labelLeft}>
+          {t("profile.securityPasswordStrength")}
+        </Text>
         <Text style={[sm.labelRight, { color }]}>{label}</Text>
       </View>
     </View>
@@ -176,12 +263,12 @@ const StrengthMeter = ({ password }: { password: string }) => {
 };
 
 const sm = StyleSheet.create({
-  wrap:       { marginBottom: 18 },
-  barRow:     { flexDirection: 'row', marginBottom: 6 },
-  seg:        { flex: 1, height: 6, borderRadius: 3 },
-  labelRow:   { flexDirection: 'row', justifyContent: 'space-between' },
-  labelLeft:  { fontSize: 11.5, color: COLORS.textMuted },
-  labelRight: { fontSize: 11.5, fontWeight: '700' },
+  wrap: { marginBottom: 18 },
+  barRow: { flexDirection: "row", marginBottom: 6 },
+  seg: { flex: 1, height: 6, borderRadius: 3 },
+  labelRow: { flexDirection: "row", justifyContent: "space-between" },
+  labelLeft: { fontSize: 11.5, color: COLORS.textMuted },
+  labelRight: { fontSize: 11.5, fontWeight: "700" },
 });
 
 // ─── Reusable: Requirements Checklist ─────────────────────────────────────────
@@ -190,18 +277,44 @@ const sm = StyleSheet.create({
  * Alert. Users know what to fix *as they type*, dramatically reducing
  * submission failures and frustration.
  */
-const RequirementsList = ({ password }: { password: string }) => {
+const RequirementsList = ({
+  password,
+  requirements,
+}: {
+  password: string;
+  requirements: Array<{
+    key: string;
+    label: string;
+    test: (p: string) => boolean;
+  }>;
+}) => {
   if (!password) return null;
   return (
     <View style={rl.wrap}>
-      {REQUIREMENTS.map((req) => {
+      {requirements.map((req) => {
         const met = req.test(password);
         return (
           <View key={req.key} style={rl.row}>
-            <View style={[rl.dot, { backgroundColor: met ? COLORS.accent : COLORS.border }]}>
-              <Ionicons name={met ? 'checkmark' : 'remove'} size={10} color={COLORS.white} />
+            <View
+              style={[
+                rl.dot,
+                { backgroundColor: met ? COLORS.accent : COLORS.border },
+              ]}
+            >
+              <Ionicons
+                name={met ? "checkmark" : "remove"}
+                size={10}
+                color={COLORS.white}
+              />
             </View>
-            <Text style={[rl.text, met && { color: COLORS.success, fontWeight: '600' }]}>{req.label}</Text>
+            <Text
+              style={[
+                rl.text,
+                met && { color: COLORS.success, fontWeight: "600" },
+              ]}
+            >
+              {req.label}
+            </Text>
           </View>
         );
       })}
@@ -210,60 +323,111 @@ const RequirementsList = ({ password }: { password: string }) => {
 };
 
 const rl = StyleSheet.create({
-  wrap: { marginBottom: 20, padding: 14, backgroundColor: COLORS.surface, borderRadius: 14, gap: 8 },
-  row:  { flexDirection: 'row', alignItems: 'center' },
-  dot:  { width: 18, height: 18, borderRadius: 9, justifyContent: 'center', alignItems: 'center', marginRight: 10 },
+  wrap: {
+    marginBottom: 20,
+    padding: 14,
+    backgroundColor: COLORS.surface,
+    borderRadius: 14,
+    gap: 8,
+  },
+  row: { flexDirection: "row", alignItems: "center" },
+  dot: {
+    width: 18,
+    height: 18,
+    borderRadius: 9,
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: 10,
+  },
   text: { fontSize: 12.5, color: COLORS.textMuted },
 });
 
 // ─── Main Screen ──────────────────────────────────────────────────────────────
 export default function SecurityScreen() {
   const router = useRouter();
+  const { language, t } = useLanguage();
+
+  const requirements = [
+    {
+      key: "length",
+      label: t("profile.securityReqLength"),
+      test: (p: string) => p.length >= 8,
+    },
+    {
+      key: "upper",
+      label: t("profile.securityReqUpper"),
+      test: (p: string) => /[A-Z]/.test(p),
+    },
+    {
+      key: "number",
+      label: t("profile.securityReqNumber"),
+      test: (p: string) => /[0-9]/.test(p),
+    },
+    {
+      key: "special",
+      label: t("profile.securityReqSpecial"),
+      test: (p: string) => /[^A-Za-z0-9]/.test(p),
+    },
+  ];
 
   // ── State ──
-  const [currentPassword,  setCurrentPassword]  = useState('');
-  const [newPassword,      setNewPassword]      = useState('');
-  const [confirmPassword,  setConfirmPassword]  = useState('');
-  const [agree,            setAgree]            = useState(false);
-  const [loading,          setLoading]          = useState(false);
-  const [errors,           setErrors]           = useState<Record<string, string>>({});
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [agree, setAgree] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
   // ── Validation — per-field ─────────────────────────────────────────────────
   const validate = () => {
     const e: Record<string, string> = {};
-    if (!currentPassword)            e.current = 'Current password is required';
-    if (!newPassword)                e.new     = 'New password is required';
+    if (!currentPassword) e.current = t("profile.securityCurrentRequired");
+    if (!newPassword) e.new = t("profile.securityNewRequired");
     else {
-      const { score } = getStrength(newPassword);
-      if (score < 3)                 e.new     = 'Password does not meet all requirements';
+      const { score } = getStrength(newPassword, t, requirements);
+      if (score < 3) e.new = t("profile.securityRequirementsError");
     }
-    if (!confirmPassword)            e.confirm = 'Please confirm your new password';
-    else if (newPassword !== confirmPassword) e.confirm = 'Passwords do not match';
-    if (!agree)                      e.agree   = 'You must acknowledge this change before continuing';
+    if (!confirmPassword) e.confirm = t("profile.securityConfirmRequired");
+    else if (newPassword !== confirmPassword)
+      e.confirm = t("profile.securityMismatch");
+    if (!agree) e.agree = t("profile.securityAgreeRequired");
     return e;
   };
 
   // ── Save handler ───────────────────────────────────────────────────────────
   const handleSave = async () => {
     const e = validate();
-    if (Object.keys(e).length > 0) { setErrors(e); return; }
+    if (Object.keys(e).length > 0) {
+      setErrors(e);
+      return;
+    }
     setErrors({});
 
     try {
       setLoading(true);
       await new Promise((resolve) => setTimeout(resolve, 1500));
-      Alert.alert('Password Updated ✓', 'Your new password is active. Please use it next time you log in.');
+      Alert.alert(
+        t("profile.securityUpdatedTitle"),
+        t("profile.securityUpdatedMessage"),
+      );
       router.back();
     } catch {
-      Alert.alert('Error', 'Something went wrong. Please try again.');
+      Alert.alert(
+        t("profile.securityErrorTitle"),
+        t("profile.securityErrorMessage"),
+      );
     } finally {
       setLoading(false);
     }
   };
 
   // Disable CTA until basic shape of form is correct
-  const allRequirementsMet = REQUIREMENTS.every((r) => r.test(newPassword));
-  const canSubmit = currentPassword && allRequirementsMet && confirmPassword === newPassword && agree;
+  const allRequirementsMet = requirements.every((r) => r.test(newPassword));
+  const canSubmit =
+    currentPassword &&
+    allRequirementsMet &&
+    confirmPassword === newPassword &&
+    agree;
 
   return (
     <View style={s.root}>
@@ -280,20 +444,46 @@ export default function SecurityScreen() {
         <View style={s.decSm} />
 
         {/* Back button */}
-        <TouchableOpacity onPress={() => router.back()} style={s.backBtn} activeOpacity={0.8}>
+        <TouchableOpacity
+          onPress={() => router.back()}
+          style={s.backBtn}
+          activeOpacity={0.8}
+        >
           <Ionicons name="arrow-back" size={20} color={COLORS.primary} />
         </TouchableOpacity>
 
         {/* Icon + title */}
         <View style={s.headerBody}>
-          <View style={s.shieldWrap}>
-            <MaterialCommunityIcons name="shield-lock" size={36} color={COLORS.white} />
+          <View style={s.headerChipRow}>
+            <View style={s.languageChip}>
+              <Ionicons name="language" size={14} color={COLORS.white} />
+              <Text style={s.languageChipText}>
+                {language === "en"
+                  ? t("common.english")
+                  : language === "si"
+                    ? t("common.sinhala")
+                    : t("common.tamil")}
+              </Text>
+            </View>
           </View>
-          <Text style={s.headerTitle}>Security Settings</Text>
-          <Text style={s.headerSubtitle}>Change your password to keep your account safe</Text>
+          <View style={s.shieldWrap}>
+            <MaterialCommunityIcons
+              name="shield-lock"
+              size={36}
+              color={COLORS.white}
+            />
+          </View>
+          <Text style={s.headerTitle}>{t("profile.securityTitle")}</Text>
+          <Text style={s.headerSubtitle}>{t("profile.securitySubtitle")}</Text>
           <View style={s.lastChangedBadge}>
-            <MaterialCommunityIcons name="clock-outline" size={12} color="rgba(255,255,255,0.7)" />
-            <Text style={s.lastChangedText}>Last changed: 30 days ago</Text>
+            <MaterialCommunityIcons
+              name="clock-outline"
+              size={12}
+              color="rgba(255,255,255,0.7)"
+            />
+            <Text style={s.lastChangedText}>
+              {t("profile.securityLastChanged")}
+            </Text>
           </View>
         </View>
       </View>
@@ -308,52 +498,100 @@ export default function SecurityScreen() {
           {/* Card title row */}
           <View style={s.cardTitleRow}>
             <View style={s.cardTitlePill} />
-            <Text style={s.cardTitle}>Update Credentials</Text>
+            <Text style={s.cardTitle}>
+              {t("profile.securityUpdateCredentials")}
+            </Text>
           </View>
 
           {/* Current password */}
           <SecureField
-            label="Current Password"
+            label={t("profile.securityCurrentPassword")}
             value={currentPassword}
-            onChangeText={(v) => { setCurrentPassword(v); setErrors((e) => ({ ...e, current: '' })); }}
+            onChangeText={(v) => {
+              setCurrentPassword(v);
+              setErrors((e) => ({ ...e, current: "" }));
+            }}
             icon="lock-outline"
             error={errors.current}
           />
 
           {/* New password */}
           <SecureField
-            label="New Password"
+            label={t("profile.securityNewPassword")}
             value={newPassword}
-            onChangeText={(v) => { setNewPassword(v); setErrors((e) => ({ ...e, new: '' })); }}
+            onChangeText={(v) => {
+              setNewPassword(v);
+              setErrors((e) => ({ ...e, new: "" }));
+            }}
             icon="lock-reset"
             error={errors.new}
           />
 
           {/* Live strength meter — only appears once user starts typing */}
-          <StrengthMeter password={newPassword} />
+          <StrengthMeter
+            password={newPassword}
+            t={t}
+            requirements={requirements}
+          />
 
           {/* Live requirements list */}
-          <RequirementsList password={newPassword} />
+          <RequirementsList
+            password={newPassword}
+            requirements={requirements}
+          />
 
           {/* Confirm */}
           <SecureField
-            label="Confirm New Password"
+            label={t("profile.securityConfirmNewPassword")}
             value={confirmPassword}
-            onChangeText={(v) => { setConfirmPassword(v); setErrors((e) => ({ ...e, confirm: '' })); }}
+            onChangeText={(v) => {
+              setConfirmPassword(v);
+              setErrors((e) => ({ ...e, confirm: "" }));
+            }}
             icon="lock-check-outline"
             error={errors.confirm}
           />
 
           {/* Match indicator */}
           {confirmPassword && newPassword && (
-            <View style={[s.matchRow, { backgroundColor: confirmPassword === newPassword ? COLORS.successBg : COLORS.errorBg }]}>
+            <View
+              style={[
+                s.matchRow,
+                {
+                  backgroundColor:
+                    confirmPassword === newPassword
+                      ? COLORS.successBg
+                      : COLORS.errorBg,
+                },
+              ]}
+            >
               <Ionicons
-                name={confirmPassword === newPassword ? 'checkmark-circle' : 'close-circle'}
+                name={
+                  confirmPassword === newPassword
+                    ? "checkmark-circle"
+                    : "close-circle"
+                }
                 size={15}
-                color={confirmPassword === newPassword ? COLORS.success : COLORS.error}
+                color={
+                  confirmPassword === newPassword
+                    ? COLORS.success
+                    : COLORS.error
+                }
               />
-              <Text style={[s.matchText, { color: confirmPassword === newPassword ? COLORS.success : COLORS.error }]}>
-                {confirmPassword === newPassword ? 'Passwords match' : 'Passwords do not match'}
+              <Text
+                style={[
+                  s.matchText,
+                  {
+                    color:
+                      confirmPassword === newPassword
+                        ? COLORS.success
+                        : COLORS.error,
+                  },
+                ]}
+              >
+                {confirmPassword === newPassword
+                  ? t("profile.securityMatch")
+                  : t("profile.securityMismatch")}
               </Text>
             </View>
           )}
@@ -368,17 +606,24 @@ export default function SecurityScreen() {
         <View style={[s.card, SHADOWS.sm, { marginTop: 0 }]}>
           <TouchableOpacity
             style={s.agreeRow}
-            onPress={() => { setAgree((v) => !v); setErrors((e) => ({ ...e, agree: '' })); }}
+            onPress={() => {
+              setAgree((v) => !v);
+              setErrors((e) => ({ ...e, agree: "" }));
+            }}
             activeOpacity={0.75}
           >
             {/* Custom toggle */}
             <View style={[s.toggleBox, agree && s.toggleBoxActive]}>
-              {agree && <Ionicons name="checkmark" size={16} color={COLORS.white} />}
+              {agree && (
+                <Ionicons name="checkmark" size={16} color={COLORS.white} />
+              )}
             </View>
             <View style={{ flex: 1 }}>
-              <Text style={s.agreeTitle}>I understand</Text>
+              <Text style={s.agreeTitle}>
+                {t("profile.securityAgreeTitle")}
+              </Text>
               <Text style={s.agreeSubtitle}>
-                My current password will no longer work after this change. I will need to use the new password to log in.
+                {t("profile.securityAgreeText")}
               </Text>
             </View>
           </TouchableOpacity>
@@ -406,14 +651,26 @@ export default function SecurityScreen() {
               <ActivityIndicator color={COLORS.white} size="small" />
             ) : (
               <>
-                <MaterialCommunityIcons name="shield-check" size={20} color={COLORS.white} style={{ marginRight: 10 }} />
-                <Text style={s.saveBtnText}>Update Password</Text>
+                <MaterialCommunityIcons
+                  name="shield-check"
+                  size={20}
+                  color={COLORS.white}
+                  style={{ marginRight: 10 }}
+                />
+                <Text style={s.saveBtnText}>
+                  {t("profile.securityUpdatePassword")}
+                </Text>
               </>
             )}
           </TouchableOpacity>
 
-          <TouchableOpacity onPress={() => router.back()} style={{ marginTop: 16 }}>
-            <Text style={s.cancelText}>Cancel & Go Back</Text>
+          <TouchableOpacity
+            onPress={() => router.back()}
+            style={{ marginTop: 16 }}
+          >
+            <Text style={s.cancelText}>
+              {t("profile.securityCancelGoBack")}
+            </Text>
           </TouchableOpacity>
         </View>
       </ScrollView>
@@ -428,45 +685,99 @@ const s = StyleSheet.create({
   /* HEADER */
   header: {
     backgroundColor: COLORS.primary,
-    paddingTop: Platform.OS === 'ios' ? 56 : 44,
+    paddingTop: Platform.OS === "ios" ? 56 : 44,
     paddingHorizontal: 24,
     paddingBottom: 40,
     borderBottomLeftRadius: 36,
     borderBottomRightRadius: 36,
-    overflow: 'hidden',
-    position: 'relative',
+    overflow: "hidden",
+    position: "relative",
   },
   decLg: {
-    position: 'absolute', width: 220, height: 220, borderRadius: 110,
-    backgroundColor: COLORS.primaryLight, top: -60, right: -50, opacity: 0.5,
+    position: "absolute",
+    width: 220,
+    height: 220,
+    borderRadius: 110,
+    backgroundColor: COLORS.primaryLight,
+    top: -60,
+    right: -50,
+    opacity: 0.5,
   },
   decSm: {
-    position: 'absolute', width: 100, height: 100, borderRadius: 50,
-    backgroundColor: COLORS.accent, bottom: -20, left: -30, opacity: 0.18,
+    position: "absolute",
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    backgroundColor: COLORS.accent,
+    bottom: -20,
+    left: -30,
+    opacity: 0.18,
   },
   backBtn: {
-    width: 40, height: 40, borderRadius: 20,
-    backgroundColor: 'rgba(255,255,255,0.92)',
-    justifyContent: 'center', alignItems: 'center',
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: "rgba(255,255,255,0.92)",
+    justifyContent: "center",
+    alignItems: "center",
     marginBottom: 18,
     ...SHADOWS.sm,
   },
-  headerBody:   { alignItems: 'center' },
-  shieldWrap:   {
-    width: 72, height: 72, borderRadius: 36,
-    backgroundColor: 'rgba(255,255,255,0.18)',
-    justifyContent: 'center', alignItems: 'center',
+  headerChipRow: {
+    width: "100%",
+    alignItems: "flex-end",
+    marginBottom: 10,
+  },
+  languageChip: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    backgroundColor: "rgba(255,255,255,0.16)",
+    borderRadius: 999,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+  },
+  languageChipText: { color: COLORS.white, fontSize: 11, fontWeight: "700" },
+  headerBody: { alignItems: "center" },
+  shieldWrap: {
+    width: 72,
+    height: 72,
+    borderRadius: 36,
+    backgroundColor: "rgba(255,255,255,0.18)",
+    justifyContent: "center",
+    alignItems: "center",
     marginBottom: 12,
-    borderWidth: 2, borderColor: 'rgba(255,255,255,0.35)',
+    borderWidth: 2,
+    borderColor: "rgba(255,255,255,0.35)",
   },
-  headerTitle:   { fontSize: 22, fontWeight: '900', color: COLORS.white, letterSpacing: -0.4, marginBottom: 6 },
-  headerSubtitle:{ fontSize: 13, color: 'rgba(255,255,255,0.72)', textAlign: 'center', lineHeight: 19 },
+  headerTitle: {
+    fontSize: 22,
+    fontWeight: "900",
+    color: COLORS.white,
+    letterSpacing: -0.4,
+    marginBottom: 6,
+  },
+  headerSubtitle: {
+    fontSize: 13,
+    color: "rgba(255,255,255,0.72)",
+    textAlign: "center",
+    lineHeight: 19,
+  },
   lastChangedBadge: {
-    flexDirection: 'row', alignItems: 'center', gap: 5,
-    backgroundColor: 'rgba(255,255,255,0.14)',
-    borderRadius: 20, paddingHorizontal: 12, paddingVertical: 5, marginTop: 12,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5,
+    backgroundColor: "rgba(255,255,255,0.14)",
+    borderRadius: 20,
+    paddingHorizontal: 12,
+    paddingVertical: 5,
+    marginTop: 12,
   },
-  lastChangedText: { fontSize: 11.5, color: 'rgba(255,255,255,0.7)', fontWeight: '500' },
+  lastChangedText: {
+    fontSize: 11.5,
+    color: "rgba(255,255,255,0.7)",
+    fontWeight: "500",
+  },
 
   /* SCROLL + CARDS */
   scrollContent: { paddingTop: 24, paddingBottom: 60 },
@@ -477,37 +788,90 @@ const s = StyleSheet.create({
     padding: 20,
     marginBottom: 16,
   },
-  cardTitleRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 20 },
-  cardTitlePill:{ width: 4, height: 20, borderRadius: 2, backgroundColor: COLORS.accent, marginRight: 10 },
-  cardTitle:    { fontSize: 15, fontWeight: '800', color: COLORS.text, letterSpacing: -0.2 },
+  cardTitleRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 20,
+  },
+  cardTitlePill: {
+    width: 4,
+    height: 20,
+    borderRadius: 2,
+    backgroundColor: COLORS.accent,
+    marginRight: 10,
+  },
+  cardTitle: {
+    fontSize: 15,
+    fontWeight: "800",
+    color: COLORS.text,
+    letterSpacing: -0.2,
+  },
 
   /* MATCH INDICATOR */
-  matchRow:  { flexDirection: 'row', alignItems: 'center', padding: 10, borderRadius: 10, marginBottom: 4, gap: 6 },
-  matchText: { fontSize: 12.5, fontWeight: '600' },
+  matchRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    padding: 10,
+    borderRadius: 10,
+    marginBottom: 4,
+    gap: 6,
+  },
+  matchText: { fontSize: 12.5, fontWeight: "600" },
 
   /* ACKNOWLEDGEMENT */
-  agreeRow:       { flexDirection: 'row', alignItems: 'flex-start', gap: 14 },
-  toggleBox:      {
-    width: 26, height: 26, borderRadius: 8,
-    borderWidth: 2, borderColor: COLORS.border,
-    justifyContent: 'center', alignItems: 'center',
+  agreeRow: { flexDirection: "row", alignItems: "flex-start", gap: 14 },
+  toggleBox: {
+    width: 26,
+    height: 26,
+    borderRadius: 8,
+    borderWidth: 2,
+    borderColor: COLORS.border,
+    justifyContent: "center",
+    alignItems: "center",
     marginTop: 2,
   },
-  toggleBoxActive:{ backgroundColor: COLORS.primary, borderColor: COLORS.primary },
-  agreeTitle:     { fontSize: 14, fontWeight: '700', color: COLORS.text, marginBottom: 4 },
-  agreeSubtitle:  { fontSize: 12.5, color: COLORS.textMuted, lineHeight: 18 },
-  agreeErrorRow:  { flexDirection: 'row', alignItems: 'center', marginTop: 10, gap: 5 },
-  agreeErrorText: { fontSize: 11.5, color: COLORS.error, fontWeight: '600' },
+  toggleBoxActive: {
+    backgroundColor: COLORS.primary,
+    borderColor: COLORS.primary,
+  },
+  agreeTitle: {
+    fontSize: 14,
+    fontWeight: "700",
+    color: COLORS.text,
+    marginBottom: 4,
+  },
+  agreeSubtitle: { fontSize: 12.5, color: COLORS.textMuted, lineHeight: 18 },
+  agreeErrorRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginTop: 10,
+    gap: 5,
+  },
+  agreeErrorText: { fontSize: 11.5, color: COLORS.error, fontWeight: "600" },
 
   /* CTA */
-  ctaSection:     { marginHorizontal: 20, alignItems: 'center' },
-  saveBtn:        {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
-    backgroundColor: COLORS.primary, borderRadius: 18,
-    paddingVertical: 16, width: '100%',
+  ctaSection: { marginHorizontal: 20, alignItems: "center" },
+  saveBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: COLORS.primary,
+    borderRadius: 18,
+    paddingVertical: 16,
+    width: "100%",
     ...SHADOWS.md,
   },
-  saveBtnDisabled:{ opacity: 0.45 },
-  saveBtnText:    { color: COLORS.white, fontWeight: '800', fontSize: 16, letterSpacing: 0.3 },
-  cancelText:     { fontSize: 13, color: COLORS.textMuted, fontWeight: '600', textDecorationLine: 'underline' },
+  saveBtnDisabled: { opacity: 0.45 },
+  saveBtnText: {
+    color: COLORS.white,
+    fontWeight: "800",
+    fontSize: 16,
+    letterSpacing: 0.3,
+  },
+  cancelText: {
+    fontSize: 13,
+    color: COLORS.textMuted,
+    fontWeight: "600",
+    textDecorationLine: "underline",
+  },
 });

@@ -43,6 +43,7 @@ import {
   View,
 } from "react-native";
 import { Divider, Text } from "react-native-paper";
+import { useLanguage } from "../../src/lib/language";
 
 // ─── Design Tokens ─────────────────────────────────────────────────────────────
 // Centralised so any future rebrand is a single-file change.
@@ -274,6 +275,7 @@ const sl = StyleSheet.create({
  * completion level so the feedback feels urgent or encouraging.
  */
 const StrengthBar = ({ percent }: { percent: number }) => {
+  const { t } = useLanguage();
   const STEPS = 5;
   const filled = Math.round((percent / 100) * STEPS);
   const color =
@@ -284,25 +286,25 @@ const StrengthBar = ({ percent }: { percent: number }) => {
         : COLORS.accent;
   const label =
     percent < 40
-      ? "Needs work"
+      ? t("profile.investorNeedsWork")
       : percent < 70
-        ? "Getting there"
-        : "Looking great!";
+        ? t("profile.investorGettingThere")
+        : t("profile.investorLookingGreat");
 
   // Actionable next steps
   const TIPS = [
-    "Add a photo",
-    "Verify NIC",
-    "Add bank account",
-    "Add 3+ skills",
-    "Complete address",
+    t("profile.investorTipAddPhoto"),
+    t("profile.investorTipVerifyNic"),
+    t("profile.investorTipAddBank"),
+    t("profile.investorTipAddSkills"),
+    t("profile.investorTipCompleteAddress"),
   ];
   const nextTip = TIPS[filled] ?? null;
 
   return (
     <View style={str.wrap}>
       <View style={str.topRow}>
-        <Text style={str.title}>Profile Strength</Text>
+        <Text style={str.title}>{t("profile.profileStrengthTitle")}</Text>
         <View style={[str.badge, { backgroundColor: color + "22" }]}>
           <Text style={[str.badgeText, { color }]}>
             {label} · {percent}%
@@ -335,7 +337,8 @@ const StrengthBar = ({ percent }: { percent: number }) => {
             color={COLORS.accentWarm}
           />
           <Text style={str.tipText}>
-            Next: <Text style={{ fontWeight: "700" }}>{nextTip}</Text>
+            {t("profile.investorNext")}{" "}
+            <Text style={{ fontWeight: "700" }}>{nextTip}</Text>
           </Text>
         </View>
       )}
@@ -368,6 +371,7 @@ const str = StyleSheet.create({
 // ─── Main Screen ──────────────────────────────────────────────────────────────
 export default function ProfileScreen() {
   const router = useRouter();
+  const { language, t } = useLanguage();
 
   return (
     <View style={s.root}>
@@ -392,7 +396,21 @@ export default function ProfileScreen() {
 
           {/* Title row */}
           <View style={s.headerTopRow}>
-            <Text style={s.headerTitle}>My Profile</Text>
+            <Text style={s.headerTitle}>{t("profile.myProfile")}</Text>
+            <View style={s.headerLanguageChip}>
+              <MaterialCommunityIcons
+                name="translate"
+                size={14}
+                color={COLORS.white}
+              />
+              <Text style={s.headerLanguageText}>
+                {language === "en"
+                  ? t("common.english")
+                  : language === "si"
+                    ? t("common.sinhala")
+                    : t("common.tamil")}
+              </Text>
+            </View>
             {/* Settings shortcut */}
             <TouchableOpacity style={s.settingsBtn} activeOpacity={0.8}>
               <MaterialCommunityIcons
@@ -428,12 +446,12 @@ export default function ProfileScreen() {
                   size={13}
                   color={COLORS.accent}
                 />
-                <Text style={s.verifiedText}>Verified</Text>
+                <Text style={s.verifiedText}>{t("common.verified")}</Text>
               </View>
             </View>
 
             {/* Role + ID */}
-            <Text style={s.role}>Farmer · ID: 20321212</Text>
+            <Text style={s.role}>{t("profile.investorRoleLine")}</Text>
           </View>
         </View>
 
@@ -447,21 +465,21 @@ export default function ProfileScreen() {
           <StatPill
             icon="sprout"
             value="8"
-            label="Active Crops"
+            label={t("profile.investorActiveCrops")}
             color={COLORS.accent}
           />
           <View style={s.statDivider} />
           <StatPill
             icon="cash-multiple"
             value="LKR 2.4M"
-            label="Total Invested"
+            label={t("profile.investorTotalInvested")}
             color={COLORS.accentWarm}
           />
           <View style={s.statDivider} />
           <StatPill
             icon="star"
             value="4.8"
-            label="Rating"
+            label={t("profile.investorRating")}
             color={COLORS.primary}
           />
         </View>
@@ -473,65 +491,62 @@ export default function ProfileScreen() {
 
         {/* ── MENU ─────────────────────────────────────────────────────────── */}
         <View style={s.menu}>
-          <SectionLabel title="Account Settings" />
+          <SectionLabel title={t("profile.accountSettings")} />
 
           <ProfileOption
             icon="account-edit"
-            label="Edit Personal Details"
-            sublabel="Name, NIC, address and more"
+            label={t("profile.editPersonalDetails")}
+            sublabel={t("profile.investorEditSub")}
             iconBg={COLORS.primaryPale}
             iconColor={COLORS.primary}
             onPress={() => router.push("/profile/edit")}
           />
           <ProfileOption
             icon="shield-lock"
-            label="Security & Password"
-            sublabel="2FA, password, login history"
+            label={t("profile.securityPassword")}
+            sublabel={t("profile.investorSecuritySub")}
             iconBg={COLORS.infoBg}
             iconColor={COLORS.info}
             onPress={() => router.push("/profile/security")}
           />
           <ProfileOption
             icon="bank"
-            label="Payment Methods"
-            sublabel="Add or manage bank accounts"
+            label={t("profile.paymentMethods")}
+            sublabel={t("profile.investorPaymentSub")}
             iconBg={COLORS.warningBg}
             iconColor={COLORS.accentWarm}
-            badge="New"
+            badge={t("common.new")}
             onPress={() =>
               Alert.alert(
-                "Payment methods",
-                "Bank account management is available from Settings.",
+                t("profile.paymentMethodsTitle"),
+                t("profile.paymentMethodsMessage"),
               )
             }
           />
 
-          <SectionLabel title="Support" />
+          <SectionLabel title={t("profile.support")} />
 
           <ProfileOption
             icon="help-circle-outline"
-            label="Help & Support"
-            sublabel="FAQs, live chat, report an issue"
+            label={t("profile.helpSupport")}
+            sublabel={t("profile.investorSupportSub")}
             iconBg={COLORS.primaryPale}
             iconColor={COLORS.accent}
             onPress={() =>
               Alert.alert(
-                "Help & Support",
-                "Contact support@agrolink.app for account or investment help.",
+                t("profile.helpSupportTitle"),
+                t("profile.helpSupportMessage"),
               )
             }
           />
           <ProfileOption
             icon="file-document-outline"
-            label="Terms & Conditions"
-            sublabel="Privacy policy and legal terms"
+            label={t("profile.termsConditions")}
+            sublabel={t("profile.investorTermsSub")}
             iconBg={COLORS.primaryPale}
             iconColor={COLORS.textSecondary}
             onPress={() =>
-              Alert.alert(
-                "Terms & Conditions",
-                "Legal and privacy details are available in the app documentation.",
-              )
+              Alert.alert(t("profile.termsTitle"), t("profile.termsMessage"))
             }
           />
 
@@ -540,7 +555,7 @@ export default function ProfileScreen() {
 
           <ProfileOption
             icon="logout"
-            label="Log Out"
+            label={t("profile.logout")}
             isDestructive
             onPress={() => router.replace("/")}
           />
@@ -594,6 +609,20 @@ const s = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "center",
     marginBottom: 22,
+  },
+  headerLanguageChip: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    backgroundColor: "rgba(255,255,255,0.16)",
+    borderRadius: 999,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+  },
+  headerLanguageText: {
+    color: COLORS.white,
+    fontSize: 11,
+    fontWeight: "700",
   },
   headerTitle: {
     fontSize: 20,
