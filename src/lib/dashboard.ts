@@ -1,4 +1,9 @@
-import { AuthSession, clearSession, SESSION_EXPIRED_MESSAGE } from "./auth";
+import {
+  AuthSession,
+  NETWORK_ERROR_MESSAGE,
+  clearSession,
+  SESSION_EXPIRED_MESSAGE,
+} from "./auth";
 
 const API_BASE_URL = "http://localhost:4000/api";
 
@@ -51,14 +56,20 @@ async function authorizedRequest<T>(
   path: string,
   init?: RequestInit,
 ): Promise<T> {
-  const response = await fetch(`${API_BASE_URL}${path}`, {
-    ...init,
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${session.token}`,
-      ...(init?.headers ?? {}),
-    },
-  });
+  let response: Response;
+
+  try {
+    response = await fetch(`${API_BASE_URL}${path}`, {
+      ...init,
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${session.token}`,
+        ...(init?.headers ?? {}),
+      },
+    });
+  } catch {
+    throw new Error(NETWORK_ERROR_MESSAGE);
+  }
 
   if (!response.ok) {
     if (response.status === 401) {
