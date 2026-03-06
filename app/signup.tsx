@@ -1,21 +1,21 @@
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import * as DocumentPicker from "expo-document-picker";
-import * as ImagePicker from "expo-image-picker";
 import { useRouter } from "expo-router";
 import React, { useState } from "react";
 import {
-    Alert,
-    Image,
-    KeyboardAvoidingView,
-    Platform,
-    ScrollView,
-    StatusBar,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  Alert,
+  Image,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  StatusBar,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from "react-native";
+import { saveSession } from "../src/lib/auth";
 
 // ─── Design Tokens ─────────────────────────────────────────────────────────────
 const COLORS = {
@@ -46,6 +46,8 @@ interface SignupInputProps {
   label: string;
   placeholder: string;
   icon: any;
+  value: string;
+  onChangeText: (text: string) => void;
   secureTextEntry?: boolean;
 }
 
@@ -58,6 +60,8 @@ const SignupInput = ({
   label,
   placeholder,
   icon,
+  value,
+  onChangeText,
   secureTextEntry = false,
 }: SignupInputProps) => (
   <View style={s.inputContainer}>
@@ -71,6 +75,8 @@ const SignupInput = ({
       />
       <TextInput
         style={s.input}
+        value={value}
+        onChangeText={onChangeText}
         placeholder={placeholder}
         placeholderTextColor={COLORS.textMuted}
         secureTextEntry={secureTextEntry}
@@ -83,45 +89,54 @@ const SignupInput = ({
 export default function SignupScreen() {
   const router = useRouter();
   const [isFarmer, setIsFarmer] = useState(true);
-  const [farmerPhoto, setFarmerPhoto] = useState<SelectedUpload | null>(null);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [farmerId, setFarmerId] = useState("");
+  const [nic, setNic] = useState("");
   const [gramaSevakaLetter, setGramaSevakaLetter] =
     useState<SelectedUpload | null>(null);
 
-  const pickFarmerPhoto = async () => {
-    try {
-      if (Platform.OS !== "web") {
-        const permission =
-          await ImagePicker.requestMediaLibraryPermissionsAsync();
-
-        if (!permission.granted) {
-          Alert.alert(
-            "Permission required",
-            "Please allow media library access to upload a farmer photo.",
-          );
-          return;
-        }
-      }
-
-      const result = await ImagePicker.launchImageLibraryAsync({
-        allowsEditing: true,
-        quality: 0.8,
-      });
-
-      if (result.canceled || result.assets.length === 0) {
-        return;
-      }
-
-      const asset = result.assets[0];
-      setFarmerPhoto({
-        name: asset.fileName ?? "farmer-photo.jpg",
-        uri: asset.uri,
-      });
-    } catch {
+  const handleSignup = async () => {
+    if (
+      !email.trim() ||
+      !password.trim() ||
+      !confirmPassword.trim() ||
+      !nic.trim()
+    ) {
       Alert.alert(
-        "Upload failed",
-        "Unable to pick a photo right now. Please try again.",
+        "Missing details",
+        "Please complete the required fields first.",
       );
+      return;
     }
+
+    if (password !== confirmPassword) {
+      Alert.alert(
+        "Password mismatch",
+        "Password and confirm password must match.",
+      );
+      return;
+    }
+
+    if (isFarmer && (!farmerId.trim() || !gramaSevakaLetter)) {
+      Alert.alert(
+        "Verification required",
+        "Farmers must enter a farmer ID and upload the required document.",
+      );
+      return;
+    }
+
+    await saveSession({
+      token: `signup-${isFarmer ? "farmer" : "investor"}-token`,
+      user: {
+        email,
+        name: email.split("@")[0] || "AgroLink User",
+        role: isFarmer ? "farmer" : "investor",
+      },
+    });
+
+    router.replace("/(tabs)/dashboard");
   };
 
   const pickGramaSevakaLetter = async () => {
@@ -225,17 +240,23 @@ export default function SignupScreen() {
               label="Username"
               placeholder="sample@email.com"
               icon="email-outline"
+              value={email}
+              onChangeText={setEmail}
             />
             <SignupInput
               label="Password"
               placeholder="••••••••"
               icon="lock-outline"
+              value={password}
+              onChangeText={setPassword}
               secureTextEntry
             />
             <SignupInput
               label="Confirm Password"
               placeholder="••••••••"
               icon="lock-check-outline"
+              value={confirmPassword}
+              onChangeText={setConfirmPassword}
               secureTextEntry
             />
 
@@ -245,43 +266,22 @@ export default function SignupScreen() {
                   label="Farmer ID"
                   placeholder="FM-2024-XXX"
                   icon="identifier"
+                  value={farmerId}
+                  onChangeText={setFarmerId}
                 />
                 <SignupInput
                   label="NIC Number"
                   placeholder="99xxxxxxxV"
                   icon="card-account-details-outline"
+                  value={nic}
+                  onChangeText={setNic}
                 />
 
                 <View style={s.uploadSection}>
                   <Text style={s.uploadTitle}>Verification Uploads</Text>
                   <Text style={s.uploadHint}>
-                    Add a farmer photo and the Grama Sevaka letter before
-                    creating the account.
+                    Upload the Grama Sevaka letter before creating the account.
                   </Text>
-
-                  <TouchableOpacity
-                    style={s.uploadCard}
-                    onPress={pickFarmerPhoto}
-                  >
-                    <View style={s.uploadIconWrap}>
-                      <MaterialCommunityIcons
-                        name="image-outline"
-                        size={22}
-                        color={COLORS.primary}
-                      />
-                    </View>
-                    <View style={s.uploadContent}>
-                      <Text style={s.uploadLabel}>Farmer Photo</Text>
-                      <Text style={s.uploadValue}>
-                        {farmerPhoto ? farmerPhoto.name : "Upload image"}
-                      </Text>
-                    </View>
-                    <MaterialCommunityIcons
-                      name="upload"
-                      size={20}
-                      color={COLORS.primary}
-                    />
-                  </TouchableOpacity>
 
                   <TouchableOpacity
                     style={s.uploadCard}
@@ -302,11 +302,25 @@ export default function SignupScreen() {
                           : "Upload PDF or image"}
                       </Text>
                     </View>
-                    <MaterialCommunityIcons
-                      name="upload"
-                      size={20}
-                      color={COLORS.primary}
-                    />
+                    {gramaSevakaLetter ? (
+                      <TouchableOpacity
+                        style={s.removeUploadBtn}
+                        onPress={() => setGramaSevakaLetter(null)}
+                      >
+                        <MaterialCommunityIcons
+                          name="close"
+                          size={18}
+                          color={COLORS.primary}
+                        />
+                        <Text style={s.removeUploadText}>Remove</Text>
+                      </TouchableOpacity>
+                    ) : (
+                      <MaterialCommunityIcons
+                        name="upload"
+                        size={20}
+                        color={COLORS.primary}
+                      />
+                    )}
                   </TouchableOpacity>
                 </View>
               </>
@@ -315,14 +329,13 @@ export default function SignupScreen() {
                 label="NIC Number"
                 placeholder="99xxxxxxxV"
                 icon="card-account-details-outline"
+                value={nic}
+                onChangeText={setNic}
               />
             )}
 
             {/* Signup Button */}
-            <TouchableOpacity
-              style={s.signupBtn}
-              onPress={() => router.replace("/(tabs)/home")}
-            >
+            <TouchableOpacity style={s.signupBtn} onPress={handleSignup}>
               <Text style={s.signupBtnText}>Sign Up</Text>
               <MaterialCommunityIcons
                 name="arrow-right"
@@ -508,6 +521,20 @@ const s = StyleSheet.create({
   },
   uploadContent: {
     flex: 1,
+  },
+  removeUploadBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    backgroundColor: COLORS.primaryPale,
+    borderRadius: 12,
+    paddingHorizontal: 8,
+    paddingVertical: 6,
+  },
+  removeUploadText: {
+    color: COLORS.primary,
+    fontSize: 11,
+    fontWeight: "800",
   },
   uploadLabel: {
     fontSize: 14,

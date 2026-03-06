@@ -33,6 +33,7 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import {
+  Alert,
   Image,
   Platform,
   ScrollView,
@@ -366,7 +367,7 @@ export default function ProfileScreen() {
             iconBg={COLORS.warningBg}
             iconColor={COLORS.accentWarm}
             badge="New"
-            onPress={() => console.log('Bank')}
+            onPress={() => Alert.alert('Payment methods', 'Bank account management is available from Settings.')}
           />
 
           <SectionLabel title="Support" />
@@ -377,7 +378,7 @@ export default function ProfileScreen() {
             sublabel="FAQs, live chat, report an issue"
             iconBg={COLORS.primaryPale}
             iconColor={COLORS.accent}
-            onPress={() => console.log('Help')}
+            onPress={() => Alert.alert('Help & Support', 'Contact support@agrolink.app for account or investment help.')}
           />
           <ProfileOption
             icon="file-document-outline"
@@ -385,7 +386,7 @@ export default function ProfileScreen() {
             sublabel="Privacy policy and legal terms"
             iconBg={COLORS.primaryPale}
             iconColor={COLORS.textSecondary}
-            onPress={() => console.log('Terms')}
+            onPress={() => Alert.alert('Terms & Conditions', 'Legal and privacy details are available in the app documentation.')}
           />
 
           {/* Danger zone separator */}

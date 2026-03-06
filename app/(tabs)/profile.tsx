@@ -2,6 +2,7 @@ import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import React, { useEffect, useState } from "react";
 import {
+  Alert,
   Image,
   ScrollView,
   StyleSheet,
@@ -136,19 +137,19 @@ export default function ProfileScreen() {
         <ProfileOption
           icon="bank"
           label="Payment Methods"
-          onPress={() => console.log("Bank")}
+          onPress={() => Alert.alert("Payment methods", "Bank account management is available from Settings.")}
         />
 
         <Text style={styles.sectionHeader}>Support</Text>
         <ProfileOption
           icon="help-circle"
           label="Help & Support"
-          onPress={() => console.log("Help")}
+          onPress={() => Alert.alert("Help & Support", "Contact support@agrolink.app for account or funding help.")}
         />
         <ProfileOption
           icon="file-document"
           label="Terms & Conditions"
-          onPress={() => console.log("Terms")}
+          onPress={() => Alert.alert("Terms & Conditions", "Legal and privacy details are available in the app documentation.")}
         />
 
         <Divider style={{ marginVertical: 20 }} />

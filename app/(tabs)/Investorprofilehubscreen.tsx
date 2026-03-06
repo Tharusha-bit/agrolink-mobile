@@ -20,6 +20,7 @@ import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React from 'react';
 import {
+  Alert,
   Platform,
   ScrollView,
   StatusBar,
@@ -364,7 +365,10 @@ export default function InvestorDashboardScreen() {
               <Ionicons name="arrow-back" size={18} color={C.forest} />
             </TouchableOpacity>
             <Text style={s.navTitle}>INVESTOR HUB</Text>
-            <TouchableOpacity style={s.navBtn}>
+            <TouchableOpacity
+              style={s.navBtn}
+              onPress={() => Alert.alert('Notifications', 'Portfolio alerts will appear here.')}
+            >
               <Ionicons name="notifications-outline" size={18} color={C.forest} />
               <View style={s.notifDot} />
             </TouchableOpacity>
@@ -388,7 +392,7 @@ export default function InvestorDashboardScreen() {
                 <MaterialCommunityIcons name="check-decagram" size={16} color={C.gold} />
               </View>
               {/* Camera dot */}
-              <TouchableOpacity style={s.camDot}>
+              <TouchableOpacity style={s.camDot} onPress={() => router.push('/profile/edit')}>
                 <Ionicons name="camera" size={10} color={C.white} />
               </TouchableOpacity>
             </TouchableOpacity>
@@ -417,7 +421,7 @@ export default function InvestorDashboardScreen() {
 
         {/* ── KPI CARDS ────────────────────────────────────────────────────── */}
         <View style={{ marginTop: 4 }}>
-          <SectionLabel title="Portfolio Overview" action="Full report" onAction={() => {}} />
+          <SectionLabel title="Portfolio Overview" action="Full report" onAction={() => router.push('/(tabs)/dashboard')} />
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.kpiStrip}>
             {KPI_DATA.map((k) => <KpiCard key={k.label} {...k} />)}
           </ScrollView>
@@ -444,7 +448,7 @@ export default function InvestorDashboardScreen() {
               sublabel="Portfolio performance insights"
               iconBg={C.forestPale}
               iconColor={C.forest}
-              onPress={() => {}}
+              onPress={() => router.push('/(tabs)/dashboard')}
             />
           </View>
           {/* Row 2 */}
@@ -455,7 +459,7 @@ export default function InvestorDashboardScreen() {
               sublabel="Transfer funds to your bank"
               iconBg={'#FFF8E6'}
               iconColor={C.pending}
-              onPress={() => {}}
+              onPress={() => router.push('/(tabs)/settings')}
             />
             <View style={s.actionGap} />
             <ActionCard
@@ -464,13 +468,13 @@ export default function InvestorDashboardScreen() {
               sublabel="Statements & tax documents"
               iconBg={C.infoBg}
               iconColor={C.info}
-              onPress={() => {}}
+              onPress={() => router.push('/(tabs)/dashboard')}
             />
           </View>
         </View>
 
         {/* ── ACTIVITY FEED ─────────────────────────────────────────────────── */}
-        <SectionLabel title="Recent Activity" action="See all" onAction={() => {}} />
+        <SectionLabel title="Recent Activity" action="See all" onAction={() => router.push('/(tabs)/dashboard')} />
         <View style={[s.feedCard, SH.sm]}>
           {ACTIVITIES.map((item, idx) => (
             <TimelineRow key={idx} {...item} isLast={idx === ACTIVITIES.length - 1} />
