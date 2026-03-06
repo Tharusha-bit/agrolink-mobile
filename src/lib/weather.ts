@@ -86,7 +86,9 @@ export function getWeatherIconColor(code: number) {
   return "#3A9BD5";
 }
 
-export async function fetchDistrictWeather(selection: StoredLocationSelection | null) {
+export async function fetchDistrictWeather(
+  selection: StoredLocationSelection | null,
+) {
   const resolvedSelection = selection ?? getDefaultLocationSelection();
   const districtSelection = getDistrictSelection(resolvedSelection);
 
@@ -107,7 +109,11 @@ export async function fetchDistrictWeather(selection: StoredLocationSelection | 
 
   const payload = await response.json();
   const soilTemperature = Array.isArray(payload?.hourly?.soil_temperature_0cm)
-    ? Number(payload.hourly.soil_temperature_0cm[0] ?? payload.current?.temperature_2m ?? 0)
+    ? Number(
+        payload.hourly.soil_temperature_0cm[0] ??
+          payload.current?.temperature_2m ??
+          0,
+      )
     : Number(payload?.current?.temperature_2m ?? 0);
 
   return {
@@ -121,6 +127,9 @@ export async function fetchDistrictWeather(selection: StoredLocationSelection | 
   } satisfies DistrictWeather;
 }
 
-export function getWeatherLabel(t: (key: string) => string, weatherCode: number) {
+export function getWeatherLabel(
+  t: (key: string) => string,
+  weatherCode: number,
+) {
   return t(getWeatherLabelKey(weatherCode));
 }

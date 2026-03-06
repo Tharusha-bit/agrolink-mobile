@@ -109,15 +109,21 @@ export async function getStoredLocationSelection() {
   }
 }
 
-export async function saveLocationSelection(selection: StoredLocationSelection) {
+export async function saveLocationSelection(
+  selection: StoredLocationSelection,
+) {
   await AsyncStorage.setItem(LOCATION_KEY, JSON.stringify(selection));
 }
 
 export function getProvince(provinceName: string) {
-  return sriLankaLocations.find((item) => item.province === provinceName) ?? null;
+  return (
+    sriLankaLocations.find((item) => item.province === provinceName) ?? null
+  );
 }
 
-export function getDistrictSelection(selection: StoredLocationSelection | null) {
+export function getDistrictSelection(
+  selection: StoredLocationSelection | null,
+) {
   if (!selection) {
     return null;
   }
@@ -128,7 +134,8 @@ export function getDistrictSelection(selection: StoredLocationSelection | null) 
   }
 
   const district =
-    province.districts.find((item) => item.district === selection.district) ?? null;
+    province.districts.find((item) => item.district === selection.district) ??
+    null;
 
   if (!district) {
     return null;

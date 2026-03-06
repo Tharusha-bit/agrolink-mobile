@@ -51,50 +51,25 @@ const COLORS = {
   overlay: "rgba(12, 25, 8, 0.45)",
 };
 
-const farmerStats = [
-  {
-    label: "Active Fields",
-    value: "08",
-    icon: "sprout",
-    color: COLORS.primary,
-  },
-  {
-    label: "Pending Funding",
-    value: "LKR 120K",
-    icon: "cash-clock",
-    color: COLORS.gold,
-  },
-  {
-    label: "Investors Visible",
-    value: "03",
-    icon: "account-group",
-    color: COLORS.blue,
-  },
-];
-
-const investorStats = [
-  {
-    label: "Live Deals",
-    value: "12",
-    icon: "briefcase-search",
-    color: COLORS.primary,
-  },
-  {
-    label: "Farmers Seeking Capital",
-    value: "03",
-    icon: "sprout",
-    color: COLORS.gold,
-  },
-  {
-    label: "Expected Return",
-    value: "18%",
-    icon: "trending-up",
-    color: COLORS.blue,
-  },
-];
-
 function formatCurrency(value: number) {
   return `LKR ${value.toLocaleString()}`;
+}
+
+function formatCompactLkr(value: number) {
+  if (value >= 1000000) {
+    return `LKR ${(value / 1000000).toFixed(value >= 10000000 ? 0 : 1)}M`;
+  }
+
+  if (value >= 1000) {
+    return `LKR ${(value / 1000).toFixed(value >= 100000 ? 0 : 1)}K`;
+  }
+
+  return `LKR ${value.toLocaleString()}`;
+}
+
+function parseReturnRate(value: string) {
+  const matched = value.match(/\d+(?:\.\d+)?/);
+  return matched ? Number(matched[0]) : 0;
 }
 
 function formatDateLabel(
@@ -354,7 +329,7 @@ export default function DashboardScreen() {
   const isFocused = useIsFocused();
   const { language, locale, t } = useLanguage();
   const [session, setSession] = useState<AuthSession | null>(null);
-  const [role, setRole] = useState<UserRole>("farmer");
+  const [role, setRole] = useState<UserRole | null>(null);
   const [name, setName] = useState("AgroLink User");
   const [investors, setInvestors] = useState<InvestorConnection[]>([]);
   const [requests, setRequests] = useState<FarmerOpportunity[]>([]);
@@ -379,6 +354,7 @@ export default function DashboardScreen() {
   const [requestSummary, setRequestSummary] = useState("");
   const [refreshing, setRefreshing] = useState(false);
   const compactLayout = width < 420;
+  const activeRole = role ?? session?.user.role ?? null;
 
   const applySessionExpiry = () => {
     setError(SESSION_EXPIRED_MESSAGE);
@@ -771,27 +747,79 @@ export default function DashboardScreen() {
     );
   };
 
+  const averageReturn =
+    requests.length > 0
+      ? requests.reduce(
+          (sum, item) => sum + parseReturnRate(item.historicalReturnRate),
+          0,
+        ) / requests.length
+      : 0;
+  const pendingFunding = requests.reduce(
+    (sum, item) => sum + Math.max(item.amountNeeded - item.raisedAmount, 0),
+    0,
+  );
+  const farmerCount = new Set(
+    requests.map((item) => item.farmerUserId ?? item.name.toLowerCase()),
+  ).size;
   const stats =
-    role === "farmer"
+    activeRole === "farmer"
       ? [
-          farmerStats[0],
           {
-            ...farmerStats[1],
-            value: `LKR ${requests.reduce((sum, item) => sum + item.amountNeeded, 0).toLocaleString()}`,
+            key: "active-fields",
+            label: t("dashboard.activeFields"),
+            value: String(requests.length).padStart(2, "0"),
+            icon: "sprout",
+            color: COLORS.primary,
           },
           {
-            ...farmerStats[2],
+            key: "pending-funding",
+            label: t("dashboard.pendingFunding"),
+            value: formatCompactLkr(pendingFunding),
+            icon: "cash-clock",
+            color: COLORS.gold,
+          },
+          {
+            key: "investors-visible",
+            label: t("dashboard.investorsVisible"),
             value: String(investors.length).padStart(2, "0"),
+            icon: "account-group",
+            color: COLORS.blue,
           },
         ]
       : [
-          investorStats[0],
           {
-            ...investorStats[1],
+            key: "live-deals",
+            label: t("dashboard.liveDeals"),
             value: String(requests.length).padStart(2, "0"),
+            icon: "briefcase-search",
+            color: COLORS.primary,
           },
-          investorStats[2],
+          {
+            key: "farmers-seeking-capital",
+            label: t("dashboard.farmersSeekingCapital"),
+            value: String(farmerCount).padStart(2, "0"),
+            icon: "sprout",
+            color: COLORS.gold,
+          },
+          {
+            key: "expected-return",
+            label: t("dashboard.expectedReturn"),
+            value: `${Math.round(averageReturn)}%`,
+            icon: "trending-up",
+            color: COLORS.blue,
+          },
         ];
+
+  if (loading && !activeRole) {
+    return (
+      <View style={styles.loadingState}>
+        <ActivityIndicator color={COLORS.primary} size="large" />
+        <Text style={styles.loadingStateText}>
+          {t("dashboard.loadingRoleData")}
+        </Text>
+      </View>
+    );
+  }
 
   return (
     <>
@@ -811,7 +839,7 @@ export default function DashboardScreen() {
         <View style={styles.hero}>
           <View style={styles.heroTopRow}>
             <Text style={styles.eyebrow}>
-              {role === "farmer"
+              {activeRole === "farmer"
                 ? t("dashboard.farmerDashboard")
                 : t("dashboard.investorDashboard")}
             </Text>
@@ -828,7 +856,7 @@ export default function DashboardScreen() {
           </View>
           <Text style={styles.title}>{name}</Text>
           <Text style={styles.subtitle}>
-            {role === "farmer"
+            {activeRole === "farmer"
               ? t("dashboard.farmerSubtitle")
               : t("dashboard.investorSubtitle")}
           </Text>
@@ -836,12 +864,14 @@ export default function DashboardScreen() {
 
         <View style={styles.roleBanner}>
           <MaterialCommunityIcons
-            name={role === "farmer" ? "shield-account" : "view-grid-outline"}
+            name={
+              activeRole === "farmer" ? "shield-account" : "view-grid-outline"
+            }
             size={18}
             color={COLORS.primary}
           />
           <Text style={styles.roleBannerText}>
-            {role === "farmer"
+            {activeRole === "farmer"
               ? t("dashboard.roleBannerFarmer")
               : t("dashboard.roleBannerInvestor")}
           </Text>
@@ -861,7 +891,7 @@ export default function DashboardScreen() {
         <View style={[styles.grid, compactLayout && styles.gridCompact]}>
           {stats.map((item) => (
             <View
-              key={item.label}
+              key={item.key}
               style={[styles.card, compactLayout && styles.cardCompact]}
             >
               <View
@@ -877,37 +907,25 @@ export default function DashboardScreen() {
                 />
               </View>
               <Text style={styles.cardValue}>{item.value}</Text>
-              <Text style={styles.cardLabel}>
-                {item.label === "Active Fields"
-                  ? t("dashboard.activeFields")
-                  : item.label === "Pending Funding"
-                    ? t("dashboard.pendingFunding")
-                    : item.label === "Investors Visible"
-                      ? t("dashboard.investorsVisible")
-                      : item.label === "Live Deals"
-                        ? t("dashboard.liveDeals")
-                        : item.label === "Farmers Seeking Capital"
-                          ? t("dashboard.farmersSeekingCapital")
-                          : t("dashboard.expectedReturn")}
-              </Text>
+              <Text style={styles.cardLabel}>{item.label}</Text>
             </View>
           ))}
         </View>
 
         <View style={styles.panel}>
           <Text style={styles.panelTitle}>
-            {role === "farmer"
+            {activeRole === "farmer"
               ? t("dashboard.investmentRequests")
               : t("dashboard.farmerOpportunityFeed")}
           </Text>
           <Text style={styles.panelText}>
-            {role === "farmer"
+            {activeRole === "farmer"
               ? t("dashboard.farmerPanelText")
               : t("dashboard.investorPanelText")}
           </Text>
         </View>
 
-        {role === "farmer" ? (
+        {activeRole === "farmer" ? (
           <View style={styles.requestComposer}>
             <Text style={styles.requestComposerTitle}>
               {t("dashboard.createInvestmentRequest")}
@@ -1011,7 +1029,7 @@ export default function DashboardScreen() {
         ) : null}
 
         <Text style={styles.sectionTitle}>
-          {role === "farmer"
+          {activeRole === "farmer"
             ? t("dashboard.yourLiveRequests")
             : t("dashboard.requestsOpenForInvestment")}
         </Text>
@@ -1029,7 +1047,7 @@ export default function DashboardScreen() {
           <Text style={styles.errorText}>{error}</Text>
         ) : null}
 
-        {!loading && !error && role === "farmer"
+        {!loading && !error && activeRole === "farmer"
           ? requests.map((item) => (
               <InvestorFarmerCard
                 key={item.id}
@@ -1057,7 +1075,7 @@ export default function DashboardScreen() {
             ))
           : null}
 
-        {!loading && !error && role === "investor"
+        {!loading && !error && activeRole === "investor"
           ? requests.map((item) => (
               <InvestorFarmerCard
                 key={item.id}
@@ -1090,30 +1108,32 @@ export default function DashboardScreen() {
           <View style={styles.emptyState}>
             <MaterialCommunityIcons
               name={
-                role === "farmer" ? "clipboard-text-outline" : "sprout-outline"
+                activeRole === "farmer"
+                  ? "clipboard-text-outline"
+                  : "sprout-outline"
               }
               size={28}
               color={COLORS.primary}
             />
             <Text style={styles.emptyStateTitle}>
-              {role === "farmer"
+              {activeRole === "farmer"
                 ? t("dashboard.noRequestsCreated")
                 : t("dashboard.noInvestmentRequestsAvailable")}
             </Text>
             <Text style={styles.emptyStateText}>
-              {role === "farmer"
+              {activeRole === "farmer"
                 ? t("dashboard.noRequestsCreatedText")
                 : t("dashboard.noInvestmentRequestsAvailableText")}
             </Text>
           </View>
         ) : null}
 
-        {role === "farmer" ? (
+        {activeRole === "farmer" ? (
           <Text style={styles.sectionTitle}>
             {t("dashboard.investorsBackingYou")}
           </Text>
         ) : null}
-        {!loading && !error && role === "farmer"
+        {!loading && !error && activeRole === "farmer"
           ? investors.map((item) => (
               <FarmerInvestorCard
                 key={item.id}
@@ -1300,6 +1320,18 @@ export default function DashboardScreen() {
 }
 
 const styles = StyleSheet.create({
+  loadingState: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: COLORS.surface,
+    gap: 12,
+  },
+  loadingStateText: {
+    color: COLORS.text,
+    fontSize: 14,
+    fontWeight: "700",
+  },
   container: { flex: 1, backgroundColor: COLORS.surface },
   content: { padding: 20, paddingBottom: 120 },
   hero: {
