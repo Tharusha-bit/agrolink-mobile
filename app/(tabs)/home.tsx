@@ -1,4 +1,4 @@
-import { FontAwesome5, Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React from 'react';
 import {
@@ -12,68 +12,35 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import { useProjects } from '../../src/context/ProjectContext'; // <--- CONNECTS TO YOUR CREATE PAGE
 
-// ─── Design Tokens ────────────────────────────────────────────────────────────
+// ─── Design Tokens (Matches Global Theme) ──────────────────────────────────────
 const COLORS = {
   primary: '#216000',       // Deep Forest Green
-  primaryLight: '#2E8B00',  // Lighter Green for gradients/highlights
-  primaryPale: '#E8F5E1',   // Very light green for backgrounds
-  accent: '#76C442',        // Bright Apple Green
-  accentWarm: '#F5A623',    // Orange/Gold for warnings/highlights
+  primaryLight: '#2E8B00',
+  primaryPale: '#E8F5E1',
+  accent: '#76C442',
+  accentWarm: '#F5A623',
   white: '#FFFFFF',
-  surface: '#F7F9F4',       // Off-white background
+  surface: '#F7F9F4',
   card: '#FFFFFF',
-  text: '#1A2E0D',          // Very dark green text
-  textSecondary: '#5C7A4A', // Muted green text
-  textMuted: '#9BB08A',     // Placeholder text
+  text: '#1A2E0D',
+  textSecondary: '#5C7A4A',
+  textMuted: '#9BB08A',
   border: '#DDE8D4',
   danger: '#E05252',
   info: '#3A9BD5',
 };
 
 const SHADOWS = {
-  sm: Platform.select({
-    ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.08, shadowRadius: 6 },
-    android: { elevation: 3 },
-  }),
   md: Platform.select({
-    ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.13, shadowRadius: 16 },
-    android: { elevation: 8 },
+    ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.1, shadowRadius: 10 },
+    android: { elevation: 6 },
   }),
-  lg: Platform.select({
-    ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.18, shadowRadius: 24 },
-    android: { elevation: 14 },
-  }),
+  sm: { elevation: 2 },
 };
 
-// ─── Data (Moved Outside Component for Performance) ───────────────────────────
-const INVESTMENTS_DATA = [
-  {
-    id: '1',
-    farmer: 'Suriyakumar',
-    since: '19 Nov 2025',
-    description: 'Committed farmer seeking investment partners for 8 acres of fertile paddy field. Excellent soil quality and reliable water access.',
-    progress: 0.8,
-    raisedAmount: 48000,
-    targetAmount: 60000,
-    riskLevel: 'Low',
-    tags: ['Paddy', 'Rice'],
-    image: 'https://cdn.pixabay.com/photo/2016/09/21/04/46/barley-field-1684052_1280.jpg',
-  },
-  {
-    id: '2',
-    farmer: 'Priya Devi',
-    since: '2 Jan 2026',
-    description: 'Organic vegetable farm in Jaffna district seeking working capital. Specialises in export-grade green beans and okra.',
-    progress: 0.47,
-    raisedAmount: 14100,
-    targetAmount: 30000,
-    riskLevel: 'Medium',
-    tags: ['Organic', 'Veg'],
-    image: 'https://cdn.pixabay.com/photo/2018/03/11/01/25/vegetable-3215091_1280.jpg',
-  },
-];
-
+// ─── Mock KPI Data (Platform Stats) ────────────────────────────────────────────
 const KPI_DATA = [
   { label: 'Active Crops', value: '142', icon: 'sprout', color: COLORS.accent },
   { label: 'Investors', value: '3.4k', icon: 'account-group', color: COLORS.primary },
@@ -81,41 +48,29 @@ const KPI_DATA = [
   { label: 'Avg Return', value: '18%', icon: 'chart-line', color: COLORS.info },
 ];
 
-// ─── Reusable Components ──────────────────────────────────────────────────────
+// ─── Components ────────────────────────────────────────────────────────────────
 
-const StatBadge = ({ icon, iconFamily = 'mci', label, value, color = COLORS.primary }: any) => {
-  const IconComponent = iconFamily === 'fa5' ? FontAwesome5 : iconFamily === 'ion' ? Ionicons : MaterialCommunityIcons;
-  return (
-    <View style={badge.wrap}>
-      <View style={[badge.iconCircle, { backgroundColor: color + '18' }]}>
-        <IconComponent name={icon as any} size={22} color={color} />
-      </View>
-      <Text style={badge.value}>{value}</Text>
-      <Text style={badge.label}>{label}</Text>
+const StatBadge = ({ icon, label, value, color }: any) => (
+  <View style={s.statBadge}>
+    <View style={[s.statIconCircle, { backgroundColor: color + '15' }]}>
+      <MaterialCommunityIcons name={icon} size={22} color={color} />
     </View>
-  );
-};
-
-const SectionHeader = ({ title, actionLabel, onAction }: any) => (
-  <View style={sh.row}>
-    <View style={sh.titleWrap}>
-      <View style={sh.pill} />
-      <Text style={sh.title}>{title}</Text>
-    </View>
-    {actionLabel && (
-      <TouchableOpacity onPress={onAction}>
-        <Text style={sh.action}>{actionLabel}</Text>
-      </TouchableOpacity>
-    )}
+    <Text style={s.statValue}>{value}</Text>
+    <Text style={s.statLabel}>{label}</Text>
   </View>
 );
 
-const InvestmentCard = ({ farmer, since, description, progress, image, tags, riskLevel, targetAmount, raisedAmount }: any) => {
+const InvestmentCard = ({ id, title, farmer, since, description, progress, image, tags, riskLevel, goal, raised }: any) => {
+  const router = useRouter();
   const progressPct = Math.min(Math.max(progress, 0), 1);
   const riskColor = riskLevel === 'Low' ? COLORS.accent : riskLevel === 'Medium' ? COLORS.accentWarm : COLORS.danger;
 
   return (
-    <View style={[ic.card, SHADOWS.md]}>
+    <TouchableOpacity 
+      style={[ic.card, SHADOWS.md]} 
+      activeOpacity={0.9}
+      onPress={() => router.push(`/investment/${id}`)} // <--- Links to Detail Page
+    >
       {/* Hero Image */}
       <View style={ic.imageWrap}>
         <Image source={{ uri: image }} style={ic.image} />
@@ -129,8 +84,8 @@ const InvestmentCard = ({ farmer, since, description, progress, image, tags, ris
 
         {/* Tags */}
         <View style={ic.tagRow}>
-          {tags.map((t: string) => (
-            <View key={t} style={ic.tagPill}>
+          {tags.map((t: string, index: number) => (
+            <View key={index} style={ic.tagPill}>
               <Text style={ic.tagText}>{t}</Text>
             </View>
           ))}
@@ -141,11 +96,11 @@ const InvestmentCard = ({ farmer, since, description, progress, image, tags, ris
       <View style={ic.body}>
         <View style={ic.farmerRow}>
           <View style={ic.avatarWrap}>
-            <MaterialCommunityIcons name="account" size={20} color={COLORS.white} />
+            <MaterialCommunityIcons name="account" size={18} color={COLORS.white} />
           </View>
           <View style={{ flex: 1 }}>
-            <Text style={ic.farmerName}>{farmer}</Text>
-            <Text style={ic.memberSince}>Member since {since}</Text>
+            <Text style={ic.title}>{title}</Text>
+            <Text style={ic.farmerName}>by {farmer} • {since}</Text>
           </View>
           <View style={ic.verifiedBadge}>
             <MaterialCommunityIcons name="check-decagram" size={14} color={COLORS.primary} />
@@ -153,7 +108,7 @@ const InvestmentCard = ({ farmer, since, description, progress, image, tags, ris
           </View>
         </View>
 
-        <Text style={ic.description} numberOfLines={3}>{description}</Text>
+        <Text style={ic.description} numberOfLines={2}>{description}</Text>
 
         {/* Progress Bar */}
         <View style={ic.progressBlock}>
@@ -165,24 +120,25 @@ const InvestmentCard = ({ farmer, since, description, progress, image, tags, ris
             <View style={[ic.fill, { width: `${progressPct * 100}%` }]} />
           </View>
           <View style={ic.amountRow}>
-            <Text style={ic.raised}>Raised: <Text style={ic.raisedBold}>${raisedAmount.toLocaleString()}</Text></Text>
-            <Text style={ic.target}>Goal: ${targetAmount.toLocaleString()}</Text>
+            <Text style={ic.raised}>Raised: <Text style={ic.raisedBold}>LKR {raised.toLocaleString()}</Text></Text>
+            <Text style={ic.target}>Goal: LKR {goal.toLocaleString()}</Text>
           </View>
         </View>
 
-        {/* Invest Button */}
-        <TouchableOpacity style={ic.investBtn} activeOpacity={0.85}>
-          <Text style={ic.investText}>Invest Now</Text>
+        {/* Invest CTA */}
+        <View style={ic.investBtn}>
+          <Text style={ic.investText}>View Details</Text>
           <MaterialCommunityIcons name="arrow-right" size={16} color="#fff" />
-        </TouchableOpacity>
+        </View>
       </View>
-    </View>
+    </TouchableOpacity>
   );
 };
 
-// ─── Main Screen Component ────────────────────────────────────────────────────
+// ─── Main Screen ──────────────────────────────────────────────────────────────
 export default function HomeScreen() {
   const router = useRouter();
+  const { projects } = useProjects(); // <--- This gets the data from Create Page
 
   return (
     <View style={s.container}>
@@ -190,19 +146,20 @@ export default function HomeScreen() {
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 120 }}>
         
-        {/* HEADER SECTION */}
+        {/* ── HEADER ── */}
         <View style={s.header}>
           {/* Decorative Circles */}
           <View style={s.decCircleLg} />
           <View style={s.decCircleSm} />
 
+          {/* Top Bar */}
           <View style={s.topBar}>
             <View>
               <Text style={s.greeting}>Good morning 🌱</Text>
               <Text style={s.userName}>Fernando</Text>
               <Text style={s.date}>Monday, 24 November 2025</Text>
             </View>
-            <TouchableOpacity onPress={() => router.push('/(tabs)/Investorprofilehubscreen')} style={s.avatarBtn} activeOpacity={0.85}>
+            <TouchableOpacity onPress={() => router.push('/profile/investorprofile')} style={s.avatarBtn} activeOpacity={0.85}>
               <View style={s.notifDot} />
               <MaterialCommunityIcons name="account" size={26} color={COLORS.primary} />
             </TouchableOpacity>
@@ -218,8 +175,8 @@ export default function HomeScreen() {
           </View>
         </View>
 
-        {/* WEATHER WIDGET */}
-        <View style={[s.weatherCard, SHADOWS.lg]}>
+        {/* ── WEATHER WIDGET (Floating) ── */}
+        <View style={[s.weatherCard, SHADOWS.md]}>
           <View style={s.weatherTopRow}>
             <View>
               <View style={s.locationRow}>
@@ -239,13 +196,13 @@ export default function HomeScreen() {
           <View style={s.statsRow}>
             <StatBadge icon="water-percent" label="Humidity" value="59%" color={COLORS.info} />
             <View style={s.statDivider} />
-            <StatBadge icon="thermometer" label="Soil Temp" value="22°C" color={COLORS.accentWarm} iconFamily="mci" />
+            <StatBadge icon="thermometer" label="Soil Temp" value="22°C" color={COLORS.accentWarm} />
             <View style={s.statDivider} />
             <StatBadge icon="weather-windy" label="Wind" value="6 m/s" color={COLORS.accent} />
           </View>
         </View>
 
-        {/* QUICK STATS STRIP */}
+        {/* ── KPI STRIP ── */}
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.kpiStrip}>
           {KPI_DATA.map((k) => (
             <View key={k.label} style={[s.kpiCard, SHADOWS.sm]}>
@@ -258,10 +215,19 @@ export default function HomeScreen() {
           ))}
         </ScrollView>
 
-        {/* INVESTMENTS LIST */}
-        <SectionHeader title="Top Investments" actionLabel="See all" onAction={() => {}} />
+        {/* ── INVESTMENT LIST ── */}
+        <View style={s.sectionHeader}>
+          <View style={{flexDirection: 'row', alignItems: 'center'}}>
+            <View style={s.pill} />
+            <Text style={s.sectionTitle}>Top Investments</Text>
+          </View>
+          <TouchableOpacity>
+            <Text style={s.sectionAction}>See all</Text>
+          </TouchableOpacity>
+        </View>
         
-        {INVESTMENTS_DATA.map((inv) => (
+        {/* Dynamic List from Context */}
+        {projects.map((inv) => (
           <InvestmentCard key={inv.id} {...inv} />
         ))}
 
@@ -271,23 +237,66 @@ export default function HomeScreen() {
 }
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
-const badge = StyleSheet.create({
-  wrap: { alignItems: 'center', flex: 1 },
-  iconCircle: { width: 44, height: 44, borderRadius: 22, justifyContent: 'center', alignItems: 'center', marginBottom: 6 },
-  value: { fontSize: 14, fontWeight: '700', color: COLORS.text },
-  label: { fontSize: 10, color: COLORS.textMuted, marginTop: 2 },
-});
+const s = StyleSheet.create({
+  container: { flex: 1, backgroundColor: COLORS.surface },
+  
+  /* HEADER */
+  header: {
+    backgroundColor: COLORS.primary,
+    paddingTop: Platform.OS === 'ios' ? 60 : 48,
+    paddingHorizontal: 24,
+    paddingBottom: 72,
+    borderBottomLeftRadius: 36,
+    borderBottomRightRadius: 36,
+    position: 'relative', overflow: 'hidden'
+  },
+  decCircleLg: { position: 'absolute', width: 220, height: 220, borderRadius: 110, backgroundColor: COLORS.primaryLight, top: -60, right: -50, opacity: 0.5 },
+  decCircleSm: { position: 'absolute', width: 100, height: 100, borderRadius: 50, backgroundColor: COLORS.accent, bottom: 20, left: -30, opacity: 0.18 },
+  topBar: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 22 },
+  greeting: { fontSize: 12, color: '#B6D9A0', fontWeight: '600', letterSpacing: 0.5 },
+  userName: { fontSize: 26, fontWeight: '900', color: COLORS.white, marginTop: 2 },
+  date: { fontSize: 11, color: '#A8CFA0', marginTop: 2 },
+  avatarBtn: { width: 44, height: 44, borderRadius: 22, backgroundColor: 'rgba(255,255,255,0.95)', justifyContent: 'center', alignItems: 'center' },
+  notifDot: { width: 10, height: 10, borderRadius: 5, backgroundColor: COLORS.danger, position: 'absolute', top: 0, right: 0, borderWidth: 2, borderColor: COLORS.primary, zIndex: 1 },
+  searchBar: { flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.95)', borderRadius: 16, paddingHorizontal: 16, height: 48 },
+  searchInput: { flex: 1, fontSize: 14, color: COLORS.text },
+  micBtn: { width: 32, height: 32, borderRadius: 16, backgroundColor: COLORS.primaryPale, justifyContent: 'center', alignItems: 'center' },
 
-const sh = StyleSheet.create({
-  row: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginHorizontal: 24, marginBottom: 16, marginTop: 8 },
-  titleWrap: { flexDirection: 'row', alignItems: 'center' },
+  /* WEATHER CARD */
+  weatherCard: { backgroundColor: COLORS.card, marginHorizontal: 24, marginTop: -50, borderRadius: 24, padding: 20 },
+  weatherTopRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 14 },
+  locationRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 2 },
+  cityText: { fontSize: 15, fontWeight: '700', color: COLORS.text, marginLeft: 6 },
+  weatherDesc: { fontSize: 11, color: COLORS.textMuted, marginLeft: 24 },
+  tempBlock: { alignItems: 'flex-end' },
+  tempText: { fontSize: 28, fontWeight: '900', color: COLORS.text, letterSpacing: -1 },
+  divider: { height: 1, backgroundColor: COLORS.border, marginBottom: 16 },
+  statsRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-around' },
+  statDivider: { width: 1, height: 40, backgroundColor: COLORS.border },
+  
+  /* STAT BADGE */
+  statBadge: { alignItems: 'center', width: 70 },
+  statIconCircle: { width: 40, height: 40, borderRadius: 20, justifyContent: 'center', alignItems: 'center', marginBottom: 4 },
+  statValue: { fontSize: 14, fontWeight: '700', color: COLORS.text },
+  statLabel: { fontSize: 10, color: COLORS.textMuted },
+
+  /* KPI STRIP */
+  kpiStrip: { paddingLeft: 24, paddingRight: 12, marginTop: 20, marginBottom: 20 },
+  kpiCard: { backgroundColor: COLORS.card, borderRadius: 18, padding: 14, marginRight: 12, alignItems: 'center', minWidth: 90 },
+  kpiIcon: { width: 36, height: 36, borderRadius: 18, justifyContent: 'center', alignItems: 'center', marginBottom: 8 },
+  kpiValue: { fontSize: 15, fontWeight: '800', color: COLORS.text },
+  kpiLabel: { fontSize: 10, color: COLORS.textMuted, marginTop: 2 },
+
+  /* SECTION HEADER */
+  sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginHorizontal: 24, marginBottom: 16, marginTop: 8 },
   pill: { width: 4, height: 18, borderRadius: 2, backgroundColor: COLORS.accent, marginRight: 10 },
-  title: { fontSize: 18, fontWeight: '800', color: COLORS.text },
-  action: { fontSize: 12, fontWeight: '600', color: COLORS.primary },
+  sectionTitle: { fontSize: 18, fontWeight: '800', color: COLORS.text },
+  sectionAction: { fontSize: 12, fontWeight: '600', color: COLORS.primary },
 });
 
+/* INVESTMENT CARD STYLES */
 const ic = StyleSheet.create({
-  card: { backgroundColor: COLORS.card, borderRadius: 24, marginHorizontal: 24, marginBottom: 20 },
+  card: { backgroundColor: COLORS.card, borderRadius: 24, marginHorizontal: 24, marginBottom: 20, overflow: 'hidden' },
   imageWrap: { height: 160, position: 'relative' },
   image: { width: '100%', height: '100%' },
   imageFade: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.2)' },
@@ -297,13 +306,13 @@ const ic = StyleSheet.create({
   tagPill: { backgroundColor: 'rgba(255,255,255,0.2)', borderRadius: 20, paddingHorizontal: 8, paddingVertical: 2, borderWidth: 1, borderColor: 'rgba(255,255,255,0.4)' },
   tagText: { fontSize: 10, fontWeight: '600', color: '#fff' },
   body: { padding: 18 },
-  farmerRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 12 },
+  farmerRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 8 },
   avatarWrap: { width: 32, height: 32, borderRadius: 16, backgroundColor: COLORS.primary, justifyContent: 'center', alignItems: 'center', marginRight: 10 },
-  farmerName: { fontSize: 14, fontWeight: '700', color: COLORS.text },
-  memberSince: { fontSize: 10, color: COLORS.textMuted },
+  title: { fontSize: 16, fontWeight: '800', color: COLORS.text },
+  farmerName: { fontSize: 11, color: COLORS.textMuted },
   verifiedBadge: { flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.primaryPale, borderRadius: 12, paddingHorizontal: 6, paddingVertical: 2, marginLeft: 'auto', gap: 2 },
   verifiedText: { fontSize: 10, fontWeight: '600', color: COLORS.primary },
-  description: { fontSize: 12, color: COLORS.textSecondary, lineHeight: 18, marginBottom: 16 },
+  description: { fontSize: 12, color: COLORS.textSecondary, lineHeight: 18, marginBottom: 16, marginTop: 6 },
   progressBlock: { marginBottom: 16 },
   progressLabels: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 6 },
   progressTitle: { fontSize: 11, fontWeight: '600', color: COLORS.textSecondary },
@@ -316,37 +325,4 @@ const ic = StyleSheet.create({
   target: { fontSize: 10, color: COLORS.textMuted },
   investBtn: { flexDirection: 'row', backgroundColor: COLORS.primary, borderRadius: 14, paddingVertical: 12, justifyContent: 'center', alignItems: 'center', gap: 8 },
   investText: { color: '#fff', fontWeight: '700', fontSize: 14 },
-});
-
-const s = StyleSheet.create({
-  container: { flex: 1, backgroundColor: COLORS.surface },
-  header: { backgroundColor: COLORS.primary, paddingTop: Platform.OS === 'ios' ? 60 : 48, paddingHorizontal: 24, paddingBottom: 72, borderBottomLeftRadius: 36, borderBottomRightRadius: 36, position: 'relative' },
-  decCircleLg: { position: 'absolute', width: 220, height: 220, borderRadius: 110, backgroundColor: COLORS.primaryLight, top: -60, right: -50, opacity: 0.5 },
-  decCircleSm: { position: 'absolute', width: 100, height: 100, borderRadius: 50, backgroundColor: COLORS.accent, bottom: 20, left: -30, opacity: 0.18 },
-  topBar: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 22 },
-  greeting: { fontSize: 12, color: '#B6D9A0', fontWeight: '600', letterSpacing: 0.5 },
-  userName: { fontSize: 26, fontWeight: '900', color: COLORS.white, marginTop: 2 },
-  date: { fontSize: 11, color: '#A8CFA0', marginTop: 2 },
-  avatarBtn: { width: 44, height: 44, borderRadius: 22, backgroundColor: 'rgba(255,255,255,0.95)', justifyContent: 'center', alignItems: 'center' },
-  notifDot: { width: 10, height: 10, borderRadius: 5, backgroundColor: COLORS.danger, position: 'absolute', top: 0, right: 0, borderWidth: 2, borderColor: COLORS.primary, zIndex: 1 },
-  searchBar: { flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.95)', borderRadius: 16, paddingHorizontal: 16, height: 48 },
-  searchInput: { flex: 1, fontSize: 14, color: COLORS.text },
-  micBtn: { width: 32, height: 32, borderRadius: 16, backgroundColor: COLORS.primaryPale, justifyContent: 'center', alignItems: 'center' },
-  
-  weatherCard: { backgroundColor: COLORS.card, marginHorizontal: 24, marginTop: -50, borderRadius: 24, padding: 20 },
-  weatherTopRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 14 },
-  locationRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 2 },
-  cityText: { fontSize: 15, fontWeight: '700', color: COLORS.text, marginLeft: 6 },
-  weatherDesc: { fontSize: 11, color: COLORS.textMuted, marginLeft: 24 },
-  tempBlock: { alignItems: 'flex-end' },
-  tempText: { fontSize: 28, fontWeight: '900', color: COLORS.text, letterSpacing: -1 },
-  divider: { height: 1, backgroundColor: COLORS.border, marginBottom: 16 },
-  statsRow: { flexDirection: 'row', alignItems: 'center' },
-  statDivider: { width: 1, height: 40, backgroundColor: COLORS.border },
-
-  kpiStrip: { paddingLeft: 24, paddingRight: 12, marginTop: 20, marginBottom: 20 },
-  kpiCard: { backgroundColor: COLORS.card, borderRadius: 18, padding: 14, marginRight: 12, alignItems: 'center', minWidth: 90 },
-  kpiIcon: { width: 36, height: 36, borderRadius: 18, justifyContent: 'center', alignItems: 'center', marginBottom: 8 },
-  kpiValue: { fontSize: 15, fontWeight: '800', color: COLORS.text },
-  kpiLabel: { fontSize: 10, color: COLORS.textMuted, marginTop: 2 },
 });
