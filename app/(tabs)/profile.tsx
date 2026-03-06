@@ -83,7 +83,10 @@ export default function ProfileScreen() {
   );
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.contentContainer}>
+    <ScrollView
+      style={styles.container}
+      contentContainerStyle={styles.contentContainer}
+    >
       {/* 1. Profile Header */}
       <View style={styles.header}>
         <Text style={styles.headerTitle}>My Profile</Text>
@@ -137,19 +140,34 @@ export default function ProfileScreen() {
         <ProfileOption
           icon="bank"
           label="Payment Methods"
-          onPress={() => Alert.alert("Payment methods", "Bank account management is available from Settings.")}
+          onPress={() =>
+            Alert.alert(
+              "Payment methods",
+              "Bank account management is available from Settings.",
+            )
+          }
         />
 
         <Text style={styles.sectionHeader}>Support</Text>
         <ProfileOption
           icon="help-circle"
           label="Help & Support"
-          onPress={() => Alert.alert("Help & Support", "Contact support@agrolink.app for account or funding help.")}
+          onPress={() =>
+            Alert.alert(
+              "Help & Support",
+              "Contact support@agrolink.app for account or funding help.",
+            )
+          }
         />
         <ProfileOption
           icon="file-document"
           label="Terms & Conditions"
-          onPress={() => Alert.alert("Terms & Conditions", "Legal and privacy details are available in the app documentation.")}
+          onPress={() =>
+            Alert.alert(
+              "Terms & Conditions",
+              "Legal and privacy details are available in the app documentation.",
+            )
+          }
         />
 
         <Divider style={{ marginVertical: 20 }} />
@@ -259,5 +277,11 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginRight: 15,
   },
-  optionLabel: { flex: 1, flexShrink: 1, fontSize: 16, fontWeight: "500", color: "#333" },
+  optionLabel: {
+    flex: 1,
+    flexShrink: 1,
+    fontSize: 16,
+    fontWeight: "500",
+    color: "#333",
+  },
 });

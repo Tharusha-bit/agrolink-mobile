@@ -1,5 +1,4 @@
 import { MaterialCommunityIcons } from "@expo/vector-icons";
-import { useRouter } from "expo-router";
 import React, { useEffect, useState } from "react";
 import {
   ScrollView,
@@ -8,7 +7,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { clearSession, getSession } from "../../src/lib/auth";
+import { getSession } from "../../src/lib/auth";
 
 const COLORS = {
   primary: "#216000",
@@ -22,7 +21,6 @@ const COLORS = {
 };
 
 export default function SettingsScreen() {
-  const router = useRouter();
   const [roleLabel, setRoleLabel] = useState("Guest");
   const [email, setEmail] = useState("Not signed in");
 
@@ -47,11 +45,6 @@ export default function SettingsScreen() {
       active = false;
     };
   }, []);
-
-  const handleLogout = async () => {
-    await clearSession();
-    router.replace("/login");
-  };
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
@@ -85,10 +78,6 @@ export default function SettingsScreen() {
         </View>
       </View>
 
-      <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
-        <MaterialCommunityIcons name="logout" size={20} color={COLORS.white} />
-        <Text style={styles.logoutText}>Log Out</Text>
-      </TouchableOpacity>
     </ScrollView>
   );
 }
@@ -130,14 +119,4 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   rowValue: { color: COLORS.textMuted, fontSize: 12, lineHeight: 18 },
-  logoutButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 8,
-    backgroundColor: COLORS.danger,
-    borderRadius: 16,
-    paddingVertical: 16,
-  },
-  logoutText: { color: COLORS.white, fontSize: 15, fontWeight: "800" },
 });

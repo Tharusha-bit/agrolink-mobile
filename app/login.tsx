@@ -135,7 +135,9 @@ export default function LoginScreen() {
   }, [router]);
 
   const applyDemoAccount = (accountEmail: string) => {
-    const account = demoAccounts.find((item) => item.user.email === accountEmail);
+    const account = demoAccounts.find(
+      (item) => item.user.email === accountEmail,
+    );
     if (!account) {
       return;
     }
