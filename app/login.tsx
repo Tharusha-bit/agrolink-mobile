@@ -15,7 +15,18 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { demoAccounts, getSession, loginUser, UserRole } from "../src/lib/auth";
+import {
+  NETWORK_ERROR_MESSAGE,
+  demoAccounts,
+  getSession,
+  loginUser,
+  UserRole,
+} from "../src/lib/auth";
+import {
+  authenticateWithBiometrics,
+  getBiometricSupport,
+  isBiometricUnlockEnabled,
+} from "../src/lib/biometrics";
 import { useLanguage } from "../src/lib/language";
 
 // ─── Design Tokens ─────────────────────────────────────────────────────────────
@@ -115,6 +126,10 @@ export default function LoginScreen() {
   const [passwordVisible, setPasswordVisible] = useState(false);
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
+  const [quickUnlockVisible, setQuickUnlockVisible] = useState(false);
+  const [quickUnlockName, setQuickUnlockName] = useState("");
+  const [biometricAvailable, setBiometricAvailable] = useState(false);
+  const [biometricBusy, setBiometricBusy] = useState(false);
   const visibleDemoAccounts = demoAccounts.filter(
     (item) => item.user.role === role,
   );
@@ -124,7 +139,31 @@ export default function LoginScreen() {
 
     const restoreSession = async () => {
       const session = await getSession();
-      if (active && session) {
+      const biometricEnabled = await isBiometricUnlockEnabled();
+      const support = await getBiometricSupport().catch(() => ({
+        available: false,
+        enrolled: false,
+        label: "Biometric unlock",
+      }));
+
+      if (!active) {
+        return;
+      }
+
+      setBiometricAvailable(support.available);
+
+      if (session && biometricEnabled) {
+        setQuickUnlockVisible(true);
+        setQuickUnlockName(session.user.name);
+        setRole(session.user.role);
+        setEmail(session.user.email);
+        setErrorMessage(
+          support.available ? "" : t("login.quickUnlockUnavailable"),
+        );
+        return;
+      }
+
+      if (session) {
         router.replace("/(tabs)/home");
       }
     };
@@ -134,7 +173,28 @@ export default function LoginScreen() {
     return () => {
       active = false;
     };
-  }, [router]);
+  }, [router, t]);
+
+  const handleQuickUnlock = async () => {
+    setBiometricBusy(true);
+    setErrorMessage("");
+
+    try {
+      const result = await authenticateWithBiometrics(
+        t("login.quickUnlockTitle"),
+      );
+      if (!result.success) {
+        setErrorMessage(t("login.quickUnlockFailed"));
+        return;
+      }
+
+      router.replace("/(tabs)/home");
+    } catch {
+      setErrorMessage(t("login.quickUnlockFailed"));
+    } finally {
+      setBiometricBusy(false);
+    }
+  };
 
   const applyDemoAccount = (accountEmail: string) => {
     const account = demoAccounts.find(
@@ -176,7 +236,11 @@ export default function LoginScreen() {
     } catch (error) {
       setLoading(false);
       setErrorMessage(
-        error instanceof Error ? error.message : t("login.unableToSignIn"),
+        error instanceof Error
+          ? error.message === NETWORK_ERROR_MESSAGE
+            ? NETWORK_ERROR_MESSAGE
+            : error.message
+          : t("login.unableToSignIn"),
       );
     }
   };
@@ -216,6 +280,43 @@ export default function LoginScreen() {
           <View style={[s.card, SHADOWS.md]}>
             <Text style={s.cardTitle}>{t("login.welcomeBack")}</Text>
             <Text style={s.cardSub}>{t("login.signInToManage")}</Text>
+
+            {quickUnlockVisible ? (
+              <View style={s.quickUnlockCard}>
+                <View style={s.quickUnlockIconWrap}>
+                  <MaterialCommunityIcons
+                    name="fingerprint"
+                    size={24}
+                    color={COLORS.primary}
+                  />
+                </View>
+                <View style={s.quickUnlockTextWrap}>
+                  <Text style={s.quickUnlockTitle}>
+                    {t("login.quickUnlockTitle")}
+                  </Text>
+                  <Text style={s.quickUnlockBody}>
+                    {t("login.quickUnlockMessage", { name: quickUnlockName })}
+                  </Text>
+                </View>
+                <TouchableOpacity
+                  style={[
+                    s.quickUnlockButton,
+                    (!biometricAvailable || biometricBusy) &&
+                      s.quickUnlockButtonDisabled,
+                  ]}
+                  onPress={handleQuickUnlock}
+                  disabled={!biometricAvailable || biometricBusy}
+                >
+                  {biometricBusy ? (
+                    <ActivityIndicator color={COLORS.white} />
+                  ) : (
+                    <Text style={s.quickUnlockButtonText}>
+                      {t("login.quickUnlockButton")}
+                    </Text>
+                  )}
+                </TouchableOpacity>
+              </View>
+            ) : null}
 
             <View style={s.roleToggleContainer}>
               <TouchableOpacity
@@ -451,6 +552,51 @@ const s = StyleSheet.create({
     color: COLORS.textMuted,
     textAlign: "center",
     marginBottom: 24,
+  },
+  quickUnlockCard: {
+    backgroundColor: COLORS.primaryPale,
+    borderRadius: 16,
+    padding: 14,
+    marginBottom: 18,
+  },
+  quickUnlockIconWrap: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    backgroundColor: COLORS.white,
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: 10,
+  },
+  quickUnlockTextWrap: {
+    marginBottom: 12,
+  },
+  quickUnlockTitle: {
+    color: COLORS.text,
+    fontSize: 14,
+    fontWeight: "800",
+    marginBottom: 4,
+  },
+  quickUnlockBody: {
+    color: COLORS.textMuted,
+    fontSize: 12,
+    lineHeight: 18,
+  },
+  quickUnlockButton: {
+    backgroundColor: COLORS.primary,
+    borderRadius: 12,
+    minHeight: 44,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 14,
+  },
+  quickUnlockButtonDisabled: {
+    opacity: 0.55,
+  },
+  quickUnlockButtonText: {
+    color: COLORS.white,
+    fontSize: 13,
+    fontWeight: "800",
   },
 
   roleToggleContainer: {

@@ -1,5 +1,11 @@
 import React, { useEffect } from "react";
-import { View, ActivityIndicator, StyleSheet, StatusBar, Text } from "react-native";
+import {
+  View,
+  ActivityIndicator,
+  StyleSheet,
+  StatusBar,
+  Text,
+} from "react-native";
 import { useRouter } from "expo-router";
 import { useLanguage } from "../src/lib/language";
 

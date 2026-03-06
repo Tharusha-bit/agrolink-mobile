@@ -9,6 +9,7 @@ import {
   View,
 } from "react-native";
 import { getSession } from "../src/lib/auth";
+import { isBiometricUnlockEnabled } from "../src/lib/biometrics";
 import { useLanguage } from "../src/lib/language";
 
 // ─── Design Tokens (Matching your new theme) ──────────────────────────────────
@@ -29,6 +30,7 @@ export default function SplashScreen() {
 
     const bootstrap = async () => {
       const session = await getSession();
+      const biometricEnabled = await isBiometricUnlockEnabled();
 
       setTimeout(() => {
         if (!active) {
@@ -36,6 +38,11 @@ export default function SplashScreen() {
         }
 
         if (session) {
+          if (biometricEnabled) {
+            router.replace("/login");
+            return;
+          }
+
           router.replace("/(tabs)/home");
           return;
         }
