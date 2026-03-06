@@ -139,7 +139,7 @@ export default function LoginScreen() {
       if (response.status === 200) {
         // ✅ Trigger the custom popup instead of jumping instantly
         showSuccessToast(() => {
-          router.replace("/(tabs)/home");
+          router.replace("/(tabs)/home" as any);
         });
       }
     } catch (error: any) {

@@ -137,7 +137,10 @@ export default function SignupScreen() {
 
       if (response.status === 200) {
         Alert.alert("Success", "Account created successfully!", [
-          { text: "Continue", onPress: () => router.replace("/(tabs)/home") },
+          {
+            text: "Continue",
+            onPress: () => router.replace("/(tabs)/home" as any),
+          },
         ]);
       }
     } catch (error: any) {
