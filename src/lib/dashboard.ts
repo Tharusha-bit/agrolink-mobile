@@ -29,6 +29,13 @@ export interface FarmerOpportunity {
   riskLevel: "Low" | "Medium" | "High";
   summary: string;
   createdAt?: string;
+  investments?: Array<{
+    id: string;
+    investorUserId: string;
+    investorName: string;
+    amount: number;
+    investedAt: string;
+  }>;
 }
 
 export interface FarmerInvestmentRequestsResponse {

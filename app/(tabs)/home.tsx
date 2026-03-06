@@ -24,6 +24,7 @@ import {
   NETWORK_ERROR_MESSAGE,
   getSession,
   SESSION_EXPIRED_MESSAGE,
+  type UserRole,
 } from "../../src/lib/auth";
 import {
   buildAlertsForSession,
@@ -35,6 +36,14 @@ import {
   type FarmerOpportunity,
 } from "../../src/lib/dashboard";
 import { useLanguage } from "../../src/lib/language";
+import { getStoredLocationSelection } from "../../src/lib/sri-lanka-locations";
+import {
+  fetchDistrictWeather,
+  getWeatherIconColor,
+  getWeatherIconName,
+  getWeatherLabel,
+  type DistrictWeather,
+} from "../../src/lib/weather";
 
 // ─── Design Tokens ────────────────────────────────────────────────────────────
 const COLORS = {
@@ -101,22 +110,39 @@ const CROP_IMAGES: Record<string, string> = {
     "https://cdn.pixabay.com/photo/2018/03/17/15/35/chilli-3233861_1280.jpg",
 };
 
-const KPI_DATA = [
-  { label: "Active Crops", value: "142", icon: "sprout", color: COLORS.accent },
-  {
-    label: "Investors",
-    value: "3.4k",
-    icon: "account-group",
-    color: COLORS.primary,
-  },
-  {
-    label: "Funded Today",
-    value: "$28k",
-    icon: "cash-multiple",
-    color: COLORS.accentWarm,
-  },
-  { label: "Avg Return", value: "18%", icon: "chart-line", color: COLORS.info },
-];
+function parseReturnRate(value: string) {
+  const matched = value.match(/\d+(?:\.\d+)?/);
+  return matched ? Number(matched[0]) : 0;
+}
+
+function formatCompactLkr(value: number) {
+  if (value >= 1000000) {
+    return `LKR ${(value / 1000000).toFixed(value >= 10000000 ? 0 : 1)}M`;
+  }
+
+  if (value >= 1000) {
+    return `LKR ${(value / 1000).toFixed(value >= 100000 ? 0 : 1)}K`;
+  }
+
+  return `LKR ${value.toLocaleString()}`;
+}
+
+function isSameCalendarDay(dateText: string | undefined, compareDate: Date) {
+  if (!dateText) {
+    return false;
+  }
+
+  const value = new Date(dateText);
+  if (Number.isNaN(value.getTime())) {
+    return false;
+  }
+
+  return (
+    value.getFullYear() === compareDate.getFullYear() &&
+    value.getMonth() === compareDate.getMonth() &&
+    value.getDate() === compareDate.getDate()
+  );
+}
 
 // ─── Reusable Components ──────────────────────────────────────────────────────
 
@@ -166,6 +192,7 @@ const InvestmentCard = ({
   image,
   tags,
   riskLevel,
+  riskTone,
   targetAmount,
   raisedAmount,
   actionLabel,
@@ -179,9 +206,9 @@ const InvestmentCard = ({
 }: any) => {
   const progressPct = Math.min(Math.max(progress, 0), 1);
   const riskColor =
-    riskLevel === "Low"
+    riskTone === "Low"
       ? COLORS.accent
-      : riskLevel === "Medium"
+      : riskTone === "Medium"
         ? COLORS.accentWarm
         : COLORS.danger;
 
@@ -276,26 +303,34 @@ export default function HomeScreen() {
   const router = useRouter();
   const isFocused = useIsFocused();
   const { language, locale, t } = useLanguage();
-  const [userName, setUserName] = useState("Fernando");
+  const [userName, setUserName] = useState("AgroLink User");
   const [greeting, setGreeting] = useState(t("home.welcomeFarmer"));
   const [searchPlaceholder, setSearchPlaceholder] = useState(
     t("home.searchFarmer"),
   );
-  const [role, setRole] = useState<"farmer" | "investor">("farmer");
+  const [role, setRole] = useState<UserRole | null>(null);
   const [requests, setRequests] = useState<FarmerOpportunity[]>([]);
   const [loadError, setLoadError] = useState("");
+  const [weather, setWeather] = useState<DistrictWeather | null>(null);
+  const [weatherError, setWeatherError] = useState("");
   const [refreshing, setRefreshing] = useState(false);
   const [unreadAlerts, setUnreadAlerts] = useState(0);
+  const [sessionLoaded, setSessionLoaded] = useState(false);
   const compactLayout = width < 390;
+  const activeRole = role ?? "farmer";
 
   useEffect(() => {
     setGreeting(
-      role === "farmer" ? t("home.welcomeFarmer") : t("home.welcomeInvestor"),
+      activeRole === "farmer"
+        ? t("home.welcomeFarmer")
+        : t("home.welcomeInvestor"),
     );
     setSearchPlaceholder(
-      role === "farmer" ? t("home.searchFarmer") : t("home.searchInvestor"),
+      activeRole === "farmer"
+        ? t("home.searchFarmer")
+        : t("home.searchInvestor"),
     );
-  }, [role, t]);
+  }, [activeRole, t]);
 
   const syncAlertBadge = useCallback(
     async (
@@ -314,6 +349,19 @@ export default function HomeScreen() {
     [t],
   );
 
+  const loadWeather = useCallback(async () => {
+    try {
+      setWeatherError("");
+      const selection = await getStoredLocationSelection();
+      const liveWeather = await fetchDistrictWeather(selection);
+      setWeather(liveWeather);
+    } catch (error) {
+      setWeatherError(
+        error instanceof Error ? error.message : t("weather.unavailable"),
+      );
+    }
+  }, [t]);
+
   const loadSession = useCallback(
     async (active = true) => {
       setLoadError("");
@@ -324,6 +372,7 @@ export default function HomeScreen() {
       }
 
       setUserName(session.user.name);
+      setSessionLoaded(true);
       setGreeting(
         session.user.role === "farmer"
           ? t("home.welcomeFarmer")
@@ -378,6 +427,10 @@ export default function HomeScreen() {
               : error.message
             : "Unable to load request data.",
         );
+      } finally {
+        if (active) {
+          setSessionLoaded(true);
+        }
       }
     },
     [router, syncAlertBadge, t],
@@ -391,6 +444,7 @@ export default function HomeScreen() {
     let active = true;
 
     loadSession();
+    loadWeather();
 
     const intervalId = setInterval(() => {
       loadSession();
@@ -400,23 +454,130 @@ export default function HomeScreen() {
       active = false;
       clearInterval(intervalId);
     };
-  }, [isFocused, loadSession]);
+  }, [isFocused, loadSession, loadWeather]);
 
   const handleRefresh = useCallback(async () => {
     setRefreshing(true);
     try {
-      await loadSession(true);
+      await Promise.all([loadSession(true), loadWeather()]);
     } finally {
       setRefreshing(false);
     }
-  }, [loadSession]);
+  }, [loadSession, loadWeather]);
 
   const handlePrimaryAction = () => {
     router.push("/(tabs)/dashboard");
   };
 
   const visibleRequests =
-    role === "investor" ? requests.slice(0, 3) : requests.slice(0, 2);
+    activeRole === "investor" ? requests.slice(0, 3) : requests.slice(0, 2);
+  const today = new Date();
+  const activeCropCount = new Set(
+    requests
+      .map((request) => request.crop.trim().toLowerCase())
+      .filter(Boolean),
+  ).size;
+  const activeFarmerCount = new Set(
+    requests
+      .map(
+        (request) => request.farmerUserId ?? request.name.trim().toLowerCase(),
+      )
+      .filter(Boolean),
+  ).size;
+  const visibleInvestorCount = new Set(
+    requests.flatMap((request) =>
+      (request.investments ?? []).map(
+        (investment) => investment.investorUserId,
+      ),
+    ),
+  ).size;
+  const fundedToday = requests.reduce(
+    (sum, request) =>
+      sum +
+      (request.investments ?? []).reduce(
+        (innerSum, investment) =>
+          innerSum +
+          (isSameCalendarDay(investment.investedAt, today)
+            ? investment.amount
+            : 0),
+        0,
+      ),
+    0,
+  );
+  const pendingFunding = requests.reduce(
+    (sum, request) =>
+      sum + Math.max(request.amountNeeded - request.raisedAmount, 0),
+    0,
+  );
+  const averageReturn =
+    requests.length > 0
+      ? requests.reduce(
+          (sum, request) => sum + parseReturnRate(request.historicalReturnRate),
+          0,
+        ) / requests.length
+      : 0;
+  const kpiItems =
+    activeRole === "farmer"
+      ? [
+          {
+            key: "active-crops",
+            label: t("home.activeCrops"),
+            value: String(activeCropCount).padStart(2, "0"),
+            icon: "sprout",
+            color: COLORS.accent,
+          },
+          {
+            key: "investors",
+            label: t("home.investors"),
+            value: String(visibleInvestorCount).padStart(2, "0"),
+            icon: "account-group",
+            color: COLORS.primary,
+          },
+          {
+            key: "funded-today",
+            label: t("home.fundedToday"),
+            value: formatCompactLkr(fundedToday),
+            icon: "cash-multiple",
+            color: COLORS.accentWarm,
+          },
+          {
+            key: "avg-return",
+            label: t("home.avgReturn"),
+            value: `${Math.round(averageReturn)}%`,
+            icon: "chart-line",
+            color: COLORS.info,
+          },
+        ]
+      : [
+          {
+            key: "live-deals",
+            label: t("dashboard.liveDeals"),
+            value: String(requests.length).padStart(2, "0"),
+            icon: "briefcase-search",
+            color: COLORS.primary,
+          },
+          {
+            key: "farmers-seeking-capital",
+            label: t("dashboard.farmersSeekingCapital"),
+            value: String(activeFarmerCount).padStart(2, "0"),
+            icon: "account-group-outline",
+            color: COLORS.accent,
+          },
+          {
+            key: "pending-funding",
+            label: t("dashboard.pendingFunding"),
+            value: formatCompactLkr(pendingFunding),
+            icon: "cash-clock",
+            color: COLORS.accentWarm,
+          },
+          {
+            key: "expected-return",
+            label: t("dashboard.expectedReturn"),
+            value: `${Math.round(averageReturn)}%`,
+            icon: "chart-line",
+            color: COLORS.info,
+          },
+        ];
 
   const mapRequestToCard = (request: FarmerOpportunity) => {
     const normalizedCrop = request.crop.toLowerCase();
@@ -439,16 +600,25 @@ export default function HomeScreen() {
       progress,
       raisedAmount,
       targetAmount,
-      riskLevel:
+      riskLabel:
         request.riskLevel === "Low"
           ? t("common.low")
           : request.riskLevel === "Medium"
             ? t("common.medium")
             : t("common.high"),
+      riskTone: request.riskLevel,
       tags: [request.crop, request.location],
       image,
     };
   };
+
+  if (!sessionLoaded && !loadError) {
+    return (
+      <View style={s.loadingState}>
+        <Text style={s.loadingStateText}>{t("dashboard.loadingRoleData")}</Text>
+      </View>
+    );
+  }
 
   return (
     <View style={s.container}>
@@ -547,7 +717,7 @@ export default function HomeScreen() {
               onPress={() =>
                 Alert.alert(
                   t("home.searchHintTitle"),
-                  role === "farmer"
+                  activeRole === "farmer"
                     ? t("home.searchHintFarmer")
                     : t("home.searchHintInvestor"),
                 )
@@ -563,17 +733,18 @@ export default function HomeScreen() {
 
           <View style={s.roleBanner}>
             <MaterialCommunityIcons
-              name={role === "farmer" ? "shield-account" : "view-grid-outline"}
+              name={
+                activeRole === "farmer" ? "shield-account" : "view-grid-outline"
+              }
               size={18}
               color={COLORS.primary}
             />
             <Text style={s.roleBannerText}>
-              {role === "farmer"
+              {activeRole === "farmer"
                 ? t("home.roleBannerFarmer")
                 : t("home.roleBannerInvestor")}
             </Text>
           </View>
-
         </View>
 
         {/* WEATHER WIDGET */}
@@ -586,17 +757,25 @@ export default function HomeScreen() {
                   size={18}
                   color={COLORS.primary}
                 />
-                <Text style={s.cityText}>Anuradhapura</Text>
+                <Text style={s.cityText}>
+                  {weather?.district ?? t("settings.district")}
+                </Text>
               </View>
-              <Text style={s.weatherDesc}>{t("home.lightRainExpected")}</Text>
+              <Text style={s.weatherDesc}>
+                {weather
+                  ? `${getWeatherLabel(t, weather.weatherCode)} · ${weather.province}`
+                  : weatherError || t("weather.loading")}
+              </Text>
             </View>
             <View style={s.tempBlock}>
               <MaterialCommunityIcons
-                name="weather-rainy"
+                name={getWeatherIconName(weather?.weatherCode ?? 1)}
                 size={32}
-                color={COLORS.info}
+                color={getWeatherIconColor(weather?.weatherCode ?? 1)}
               />
-              <Text style={s.tempText}>17°C</Text>
+              <Text style={s.tempText}>
+                {weather ? `${Math.round(weather.temperature)}°C` : "--"}
+              </Text>
             </View>
           </View>
 
@@ -606,14 +785,16 @@ export default function HomeScreen() {
             <StatBadge
               icon="water-percent"
               label={t("home.humidity")}
-              value="59%"
+              value={weather ? `${Math.round(weather.humidity)}%` : "--"}
               color={COLORS.info}
             />
             {!compactLayout ? <View style={s.statDivider} /> : null}
             <StatBadge
               icon="thermometer"
               label={t("home.soilTemp")}
-              value="22°C"
+              value={
+                weather ? `${Math.round(weather.soilTemperature)}°C` : "--"
+              }
               color={COLORS.accentWarm}
               iconFamily="mci"
             />
@@ -621,7 +802,7 @@ export default function HomeScreen() {
             <StatBadge
               icon="weather-windy"
               label={t("home.wind")}
-              value="6 m/s"
+              value={weather ? `${Math.round(weather.windSpeed)} km/h` : "--"}
               color={COLORS.accent}
             />
           </View>
@@ -633,25 +814,17 @@ export default function HomeScreen() {
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={s.kpiStrip}
         >
-          {KPI_DATA.map((k) => (
-            <View key={k.label} style={[s.kpiCard, SHADOWS.sm]}>
-              <View style={[s.kpiIcon, { backgroundColor: k.color + "15" }]}>
+          {kpiItems.map((item) => (
+            <View key={item.key} style={[s.kpiCard, SHADOWS.sm]}>
+              <View style={[s.kpiIcon, { backgroundColor: item.color + "15" }]}>
                 <MaterialCommunityIcons
-                  name={k.icon as any}
+                  name={item.icon as any}
                   size={22}
-                  color={k.color}
+                  color={item.color}
                 />
               </View>
-              <Text style={s.kpiValue}>{k.value}</Text>
-              <Text style={s.kpiLabel}>
-                {k.label === "Active Crops"
-                  ? t("home.activeCrops")
-                  : k.label === "Investors"
-                    ? t("home.investors")
-                    : k.label === "Funded Today"
-                      ? t("home.fundedToday")
-                      : t("home.avgReturn")}
-              </Text>
+              <Text style={s.kpiValue}>{item.value}</Text>
+              <Text style={s.kpiLabel}>{item.label}</Text>
             </View>
           ))}
         </ScrollView>
@@ -659,7 +832,7 @@ export default function HomeScreen() {
         {/* INVESTMENTS LIST */}
         <SectionHeader
           title={
-            role === "investor"
+            activeRole === "investor"
               ? t("home.openInvestmentRequests")
               : t("home.yourActiveRequests")
           }
@@ -681,12 +854,12 @@ export default function HomeScreen() {
         {!loadError && visibleRequests.length === 0 ? (
           <View style={s.emptyCard}>
             <Text style={s.emptyTitle}>
-              {role === "farmer"
+              {activeRole === "farmer"
                 ? t("home.noPersonalRequests")
                 : t("home.noFarmerRequests")}
             </Text>
             <Text style={s.emptyText}>
-              {role === "farmer"
+              {activeRole === "farmer"
                 ? t("home.noPersonalRequestsText")
                 : t("home.noFarmerRequestsText")}
             </Text>
@@ -695,7 +868,7 @@ export default function HomeScreen() {
               onPress={handlePrimaryAction}
             >
               <Text style={s.emptyButtonText}>
-                {role === "farmer"
+                {activeRole === "farmer"
                   ? t("home.openDashboard")
                   : t("home.viewDashboard")}
               </Text>
@@ -712,7 +885,7 @@ export default function HomeScreen() {
                 {...card}
                 compact={compactLayout}
                 actionLabel={
-                  role === "investor"
+                  activeRole === "investor"
                     ? t("home.investNow")
                     : t("home.manageRequest")
                 }
@@ -726,6 +899,8 @@ export default function HomeScreen() {
                   amount: `$${card.targetAmount.toLocaleString()}`,
                 })}
                 onPress={handlePrimaryAction}
+                riskLevel={card.riskLabel}
+                riskTone={card.riskTone}
               />
             );
           })}
@@ -892,6 +1067,19 @@ const ic = StyleSheet.create({
 });
 
 const s = StyleSheet.create({
+  loadingState: {
+    flex: 1,
+    backgroundColor: COLORS.surface,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 24,
+  },
+  loadingStateText: {
+    color: COLORS.text,
+    fontSize: 14,
+    fontWeight: "700",
+    textAlign: "center",
+  },
   container: { flex: 1, backgroundColor: COLORS.surface },
   header: {
     backgroundColor: COLORS.primary,

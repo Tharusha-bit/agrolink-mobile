@@ -83,33 +83,32 @@ export default function TabLayout() {
         name="home"
         options={{
           title: t("tabs.home"),
-          tabBarIcon: ({ color, focused }) => (
-            renderCircleIcon("home-variant", color, focused)
-          ),
+          tabBarIcon: ({ color, focused }) =>
+            renderCircleIcon("home-variant", color, focused),
         }}
       />
       <Tabs.Screen
         name="dashboard"
         options={{
           title: t("tabs.dashboard"),
-          tabBarIcon: ({ color, focused }) => (
-            renderCircleIcon("chart-box-outline", color, focused)
-          ),
+          tabBarIcon: ({ color, focused }) =>
+            renderCircleIcon("chart-box-outline", color, focused),
         }}
       />
       <Tabs.Screen
         name="settings"
         options={{
-          href: null,
+          title: t("tabs.settings"),
+          tabBarIcon: ({ color, focused }) =>
+            renderCircleIcon("cog-outline", color, focused),
         }}
       />
       <Tabs.Screen
         name="profile"
         options={{
           title: t("tabs.profile"),
-          tabBarIcon: ({ color, focused }) => (
-            renderCircleIcon("account-circle", color, focused)
-          ),
+          tabBarIcon: ({ color, focused }) =>
+            renderCircleIcon("account-circle", color, focused),
         }}
       />
       <Tabs.Screen
