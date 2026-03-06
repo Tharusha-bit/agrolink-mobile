@@ -143,7 +143,7 @@ export default function SignupScreen() {
         nic: nic.trim(),
         farmerId: isFarmer ? farmerId.trim() : undefined,
       });
-      router.replace("/(tabs)/dashboard");
+      router.replace("/(tabs)/home");
     } catch (error) {
       Alert.alert(
         t("signup.signupFailed"),

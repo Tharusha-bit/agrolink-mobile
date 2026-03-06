@@ -125,7 +125,7 @@ export default function LoginScreen() {
     const restoreSession = async () => {
       const session = await getSession();
       if (active && session) {
-        router.replace("/(tabs)/dashboard");
+        router.replace("/(tabs)/home");
       }
     };
 
@@ -172,7 +172,7 @@ export default function LoginScreen() {
           }),
         );
       }
-      router.replace("/(tabs)/dashboard");
+      router.replace("/(tabs)/home");
     } catch (error) {
       setLoading(false);
       setErrorMessage(

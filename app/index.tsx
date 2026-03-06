@@ -36,7 +36,7 @@ export default function SplashScreen() {
         }
 
         if (session) {
-          router.replace("/(tabs)/dashboard");
+          router.replace("/(tabs)/home");
           return;
         }
 
