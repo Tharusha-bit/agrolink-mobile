@@ -1,12 +1,13 @@
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useIsFocused } from "@react-navigation/native";
 import { useRouter } from "expo-router";
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
   Modal,
   Pressable,
+  RefreshControl,
   ScrollView,
   StyleSheet,
   Text,
@@ -16,6 +17,7 @@ import {
   View,
 } from "react-native";
 import {
+  NETWORK_ERROR_MESSAGE,
   SESSION_EXPIRED_MESSAGE,
   getSession,
   type AuthSession,
@@ -95,7 +97,11 @@ function formatCurrency(value: number) {
   return `LKR ${value.toLocaleString()}`;
 }
 
-function formatDateLabel(date: string | undefined, locale: string, fallback: string) {
+function formatDateLabel(
+  date: string | undefined,
+  locale: string,
+  fallback: string,
+) {
   if (!date) {
     return fallback;
   }
@@ -232,7 +238,8 @@ function InvestorFarmerCard({
             {item.crop} • {item.location}
           </Text>
           <Text style={styles.feedCardDate}>
-            {updatedLabel} {formatDateLabel(item.createdAt, locale, recentlyUpdatedLabel)}
+            {updatedLabel}{" "}
+            {formatDateLabel(item.createdAt, locale, recentlyUpdatedLabel)}
           </Text>
         </View>
         <View
@@ -269,7 +276,9 @@ function InvestorFarmerCard({
         <View style={styles.progressTrack}>
           <View style={[styles.progressFill, { width: `${progress}%` }]} />
         </View>
-        <Text style={styles.progressText}>{fundedLabel.replace("{progress}", String(progress))}</Text>
+        <Text style={styles.progressText}>
+          {fundedLabel.replace("{progress}", String(progress))}
+        </Text>
       </View>
 
       {showInvestorActions ? (
@@ -343,7 +352,7 @@ export default function DashboardScreen() {
   const { width } = useWindowDimensions();
   const router = useRouter();
   const isFocused = useIsFocused();
-  const { locale, t } = useLanguage();
+  const { language, locale, t } = useLanguage();
   const [session, setSession] = useState<AuthSession | null>(null);
   const [role, setRole] = useState<UserRole>("farmer");
   const [name, setName] = useState("AgroLink User");
@@ -368,6 +377,7 @@ export default function DashboardScreen() {
     "Medium",
   );
   const [requestSummary, setRequestSummary] = useState("");
+  const [refreshing, setRefreshing] = useState(false);
   const compactLayout = width < 420;
 
   const applySessionExpiry = () => {
@@ -397,14 +407,8 @@ export default function DashboardScreen() {
     );
   };
 
-  useEffect(() => {
-    if (!isFocused) {
-      return;
-    }
-
-    let active = true;
-
-    const loadDashboard = async () => {
+  const loadDashboard = useCallback(
+    async (active = true) => {
       try {
         setLoading(true);
         setError("");
@@ -432,7 +436,9 @@ export default function DashboardScreen() {
 
           setError(
             loadError instanceof Error
-              ? loadError.message
+              ? loadError.message === NETWORK_ERROR_MESSAGE
+                ? NETWORK_ERROR_MESSAGE
+                : loadError.message
               : "Unable to load dashboard data.",
           );
         }
@@ -441,7 +447,16 @@ export default function DashboardScreen() {
           setLoading(false);
         }
       }
-    };
+    },
+    [router, t],
+  );
+
+  useEffect(() => {
+    if (!isFocused) {
+      return;
+    }
+
+    let active = true;
 
     loadDashboard();
 
@@ -471,7 +486,16 @@ export default function DashboardScreen() {
       active = false;
       clearInterval(intervalId);
     };
-  }, [isFocused, router]);
+  }, [isFocused, loadDashboard]);
+
+  const handleRefresh = useCallback(async () => {
+    setRefreshing(true);
+    try {
+      await loadDashboard(true);
+    } finally {
+      setRefreshing(false);
+    }
+  }, [loadDashboard]);
 
   const handleAskAi = async (entityId: string) => {
     if (!session || session.user.role !== "investor") {
@@ -533,28 +557,43 @@ export default function DashboardScreen() {
     }
 
     if (crop.length < 2) {
-      Alert.alert(t("dashboard.invalidCrop"), t("dashboard.invalidCropMessage"));
+      Alert.alert(
+        t("dashboard.invalidCrop"),
+        t("dashboard.invalidCropMessage"),
+      );
       return;
     }
 
     if (location.length < 2) {
-      Alert.alert(t("dashboard.invalidLocation"), t("dashboard.invalidLocationMessage"));
+      Alert.alert(
+        t("dashboard.invalidLocation"),
+        t("dashboard.invalidLocationMessage"),
+      );
       return;
     }
 
     if (summary.length < 10) {
-      Alert.alert(t("dashboard.invalidSummary"), t("dashboard.invalidSummaryMessage"));
+      Alert.alert(
+        t("dashboard.invalidSummary"),
+        t("dashboard.invalidSummaryMessage"),
+      );
       return;
     }
 
     const amountNeeded = Number(normalizedAmount);
     if (!Number.isFinite(amountNeeded) || amountNeeded < 1000) {
-      Alert.alert(t("dashboard.invalidAmount"), t("dashboard.invalidAmountMessage"));
+      Alert.alert(
+        t("dashboard.invalidAmount"),
+        t("dashboard.invalidAmountMessage"),
+      );
       return;
     }
 
     if (amountNeeded > 10000000) {
-      Alert.alert(t("dashboard.invalidAmount"), t("dashboard.invalidRequestAmountMax"));
+      Alert.alert(
+        t("dashboard.invalidAmount"),
+        t("dashboard.invalidRequestAmountMax"),
+      );
       return;
     }
 
@@ -623,12 +662,18 @@ export default function DashboardScreen() {
     }
 
     if (!Number.isFinite(amount) || amount < 1000) {
-      Alert.alert(t("dashboard.invalidAmount"), t("dashboard.invalidAmountMessage"));
+      Alert.alert(
+        t("dashboard.invalidAmount"),
+        t("dashboard.invalidAmountMessage"),
+      );
       return;
     }
 
     if (amount > 1000000) {
-      Alert.alert(t("dashboard.invalidAmount"), t("dashboard.invalidInvestmentAmountMax"));
+      Alert.alert(
+        t("dashboard.invalidAmount"),
+        t("dashboard.invalidInvestmentAmountMax"),
+      );
       return;
     }
 
@@ -753,13 +798,34 @@ export default function DashboardScreen() {
       <ScrollView
         style={styles.container}
         contentContainerStyle={styles.content}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={handleRefresh}
+            tintColor={COLORS.primary}
+            colors={[COLORS.primary, COLORS.gold]}
+            progressBackgroundColor={COLORS.white}
+          />
+        }
       >
         <View style={styles.hero}>
-          <Text style={styles.eyebrow}>
-            {role === "farmer"
-              ? t("dashboard.farmerDashboard")
-              : t("dashboard.investorDashboard")}
-          </Text>
+          <View style={styles.heroTopRow}>
+            <Text style={styles.eyebrow}>
+              {role === "farmer"
+                ? t("dashboard.farmerDashboard")
+                : t("dashboard.investorDashboard")}
+            </Text>
+            <View style={styles.languageChip}>
+              <MaterialCommunityIcons
+                name="translate"
+                size={14}
+                color={COLORS.primary}
+              />
+              <Text style={styles.languageChipText}>
+                {language === "en" ? "EN" : language === "si" ? "සි" : "TA"}
+              </Text>
+            </View>
+          </View>
           <Text style={styles.title}>{name}</Text>
           <Text style={styles.subtitle}>
             {role === "farmer"
@@ -935,7 +1001,9 @@ export default function DashboardScreen() {
                     size={18}
                     color={COLORS.white}
                   />
-                  <Text style={styles.aiButtonText}>{t("dashboard.submitRequest")}</Text>
+                  <Text style={styles.aiButtonText}>
+                    {t("dashboard.submitRequest")}
+                  </Text>
                 </>
               )}
             </TouchableOpacity>
@@ -951,7 +1019,9 @@ export default function DashboardScreen() {
         {loading ? (
           <View style={styles.loadingWrap}>
             <ActivityIndicator color={COLORS.primary} />
-            <Text style={styles.loadingText}>{t("dashboard.loadingRoleData")}</Text>
+            <Text style={styles.loadingText}>
+              {t("dashboard.loadingRoleData")}
+            </Text>
           </View>
         ) : null}
 
@@ -1039,7 +1109,9 @@ export default function DashboardScreen() {
         ) : null}
 
         {role === "farmer" ? (
-          <Text style={styles.sectionTitle}>{t("dashboard.investorsBackingYou")}</Text>
+          <Text style={styles.sectionTitle}>
+            {t("dashboard.investorsBackingYou")}
+          </Text>
         ) : null}
         {!loading && !error && role === "farmer"
           ? investors.map((item) => (
@@ -1093,19 +1165,25 @@ export default function DashboardScreen() {
                 </Text>
 
                 <View style={styles.aiInfoBox}>
-                  <Text style={styles.aiInfoLabel}>{t("dashboard.previousRates")}</Text>
+                  <Text style={styles.aiInfoLabel}>
+                    {t("dashboard.previousRates")}
+                  </Text>
                   <Text style={styles.aiInfoText}>
                     {aiAssessment.previousRate}
                   </Text>
                 </View>
 
                 <View style={styles.aiInfoBox}>
-                  <Text style={styles.aiInfoLabel}>{t("dashboard.outlook")}</Text>
+                  <Text style={styles.aiInfoLabel}>
+                    {t("dashboard.outlook")}
+                  </Text>
                   <Text style={styles.aiInfoText}>{aiAssessment.outlook}</Text>
                 </View>
 
                 <View style={styles.aiInfoBox}>
-                  <Text style={styles.aiInfoLabel}>{t("dashboard.confidence")}</Text>
+                  <Text style={styles.aiInfoLabel}>
+                    {t("dashboard.confidence")}
+                  </Text>
                   <Text style={styles.aiInfoText}>
                     {aiAssessment.confidence}
                   </Text>
@@ -1136,7 +1214,9 @@ export default function DashboardScreen() {
                 color={COLORS.primary}
               />
             </View>
-            <Text style={styles.successModalTitle}>{t("dashboard.requestSent")}</Text>
+            <Text style={styles.successModalTitle}>
+              {t("dashboard.requestSent")}
+            </Text>
             <Text style={styles.successModalText}>
               {t("dashboard.requestSentMessage")}
             </Text>
@@ -1144,7 +1224,9 @@ export default function DashboardScreen() {
               style={styles.successModalButton}
               onPress={() => setRequestSuccessVisible(false)}
             >
-              <Text style={styles.successModalButtonText}>{t("common.ok")}</Text>
+              <Text style={styles.successModalButtonText}>
+                {t("common.ok")}
+              </Text>
             </TouchableOpacity>
           </Pressable>
         </Pressable>
@@ -1162,7 +1244,9 @@ export default function DashboardScreen() {
         >
           <Pressable style={styles.modalCard} onPress={() => undefined}>
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>{t("dashboard.chooseInvestmentAmount")}</Text>
+              <Text style={styles.modalTitle}>
+                {t("dashboard.chooseInvestmentAmount")}
+              </Text>
               <TouchableOpacity onPress={() => setInvestModalVisible(false)}>
                 <MaterialCommunityIcons
                   name="close"
@@ -1190,7 +1274,9 @@ export default function DashboardScreen() {
                 style={styles.secondaryButton}
                 onPress={() => setInvestModalVisible(false)}
               >
-                <Text style={styles.secondaryButtonText}>{t("common.cancel")}</Text>
+                <Text style={styles.secondaryButtonText}>
+                  {t("common.cancel")}
+                </Text>
               </TouchableOpacity>
               <TouchableOpacity
                 style={styles.aiButton}
@@ -1200,7 +1286,9 @@ export default function DashboardScreen() {
                 {investingRequestId === selectedRequestId ? (
                   <ActivityIndicator color={COLORS.white} />
                 ) : (
-                  <Text style={styles.aiButtonText}>{t("dashboard.confirmInvestment")}</Text>
+                  <Text style={styles.aiButtonText}>
+                    {t("dashboard.confirmInvestment")}
+                  </Text>
                 )}
               </TouchableOpacity>
             </View>
@@ -1220,12 +1308,32 @@ const styles = StyleSheet.create({
     padding: 22,
     marginBottom: 20,
   },
+  heroTopRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    gap: 12,
+  },
   eyebrow: {
     color: "rgba(255,255,255,0.75)",
     fontSize: 12,
     fontWeight: "700",
     textTransform: "uppercase",
     letterSpacing: 1,
+  },
+  languageChip: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    backgroundColor: "rgba(255,255,255,0.92)",
+    borderRadius: 999,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+  },
+  languageChipText: {
+    color: COLORS.primary,
+    fontSize: 11,
+    fontWeight: "800",
   },
   title: { color: COLORS.white, fontSize: 28, fontWeight: "900", marginTop: 8 },
   subtitle: {
@@ -1392,24 +1500,42 @@ const styles = StyleSheet.create({
     borderRadius: 999,
   },
   progressText: { color: COLORS.textMuted, fontSize: 11, fontWeight: "700" },
-  actionRow: { flexDirection: "row", flexWrap: "wrap", gap: 10 },
+  actionRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 10,
+    alignItems: "stretch",
+  },
   aiButton: {
+    flex: 1,
+    minWidth: 140,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
     gap: 8,
     backgroundColor: COLORS.primary,
     borderRadius: 16,
+    paddingHorizontal: 14,
     paddingVertical: 14,
+    minHeight: 52,
   },
-  aiButtonText: { color: COLORS.white, fontSize: 13, fontWeight: "800" },
+  aiButtonText: {
+    color: COLORS.white,
+    fontSize: 13,
+    fontWeight: "800",
+    textAlign: "center",
+    flexShrink: 1,
+  },
   secondaryButton: {
+    flex: 1,
+    minWidth: 140,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
     gap: 8,
     backgroundColor: COLORS.primaryPale,
     borderRadius: 16,
+    minHeight: 52,
     paddingVertical: 14,
     paddingHorizontal: 16,
   },
@@ -1417,6 +1543,8 @@ const styles = StyleSheet.create({
     color: COLORS.primary,
     fontSize: 13,
     fontWeight: "800",
+    textAlign: "center",
+    flexShrink: 1,
   },
   statusBadge: {
     flexDirection: "row",
@@ -1445,16 +1573,25 @@ const styles = StyleSheet.create({
     flexShrink: 1,
   },
   dangerButton: {
+    flex: 1,
+    minWidth: 120,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
     gap: 8,
     backgroundColor: COLORS.danger,
     borderRadius: 16,
+    minHeight: 52,
     paddingVertical: 14,
     paddingHorizontal: 16,
   },
-  dangerButtonText: { color: COLORS.white, fontSize: 13, fontWeight: "800" },
+  dangerButtonText: {
+    color: COLORS.white,
+    fontSize: 13,
+    fontWeight: "800",
+    textAlign: "center",
+    flexShrink: 1,
+  },
   requestComposer: {
     backgroundColor: COLORS.white,
     borderRadius: 22,

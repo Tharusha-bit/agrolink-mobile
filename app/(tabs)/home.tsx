@@ -5,11 +5,12 @@ import {
 } from "@expo/vector-icons";
 import { useIsFocused } from "@react-navigation/native";
 import { useRouter } from "expo-router";
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import {
   Alert,
   Image,
   Platform,
+  RefreshControl,
   ScrollView,
   StatusBar,
   StyleSheet,
@@ -19,7 +20,15 @@ import {
   useWindowDimensions,
   View,
 } from "react-native";
-import { getSession, SESSION_EXPIRED_MESSAGE } from "../../src/lib/auth";
+import {
+  NETWORK_ERROR_MESSAGE,
+  getSession,
+  SESSION_EXPIRED_MESSAGE,
+} from "../../src/lib/auth";
+import {
+  buildAlertsForSession,
+  getUnreadAlertCount,
+} from "../../src/lib/alerts";
 import {
   fetchFarmerInvestmentRequests,
   fetchInvestmentRequests,
@@ -266,7 +275,7 @@ export default function HomeScreen() {
   const { width } = useWindowDimensions();
   const router = useRouter();
   const isFocused = useIsFocused();
-  const { locale, t } = useLanguage();
+  const { language, locale, t } = useLanguage();
   const [userName, setUserName] = useState("Fernando");
   const [greeting, setGreeting] = useState(t("home.welcomeFarmer"));
   const [searchPlaceholder, setSearchPlaceholder] = useState(
@@ -275,6 +284,8 @@ export default function HomeScreen() {
   const [role, setRole] = useState<"farmer" | "investor">("farmer");
   const [requests, setRequests] = useState<FarmerOpportunity[]>([]);
   const [loadError, setLoadError] = useState("");
+  const [refreshing, setRefreshing] = useState(false);
+  const [unreadAlerts, setUnreadAlerts] = useState(0);
   const compactLayout = width < 390;
 
   useEffect(() => {
@@ -286,14 +297,25 @@ export default function HomeScreen() {
     );
   }, [role, t]);
 
-  useEffect(() => {
-    if (!isFocused) {
-      return;
-    }
+  const syncAlertBadge = useCallback(
+    async (
+      session: Awaited<ReturnType<typeof getSession>>,
+      nextRequests: FarmerOpportunity[],
+    ) => {
+      if (!session) {
+        setUnreadAlerts(0);
+        return;
+      }
 
-    let active = true;
+      const alerts = buildAlertsForSession(session, nextRequests, t);
+      const unreadCount = await getUnreadAlertCount(alerts);
+      setUnreadAlerts(unreadCount);
+    },
+    [t],
+  );
 
-    const loadSession = async () => {
+  const loadSession = useCallback(
+    async (active = true) => {
       setLoadError("");
       const session = await getSession();
       if (!active || !session) {
@@ -321,12 +343,14 @@ export default function HomeScreen() {
             return;
           }
           setRequests(farmerRequests.requests);
+          await syncAlertBadge(session, farmerRequests.requests);
         } else {
           const investorRequests = await fetchInvestmentRequests(session);
           if (!active) {
             return;
           }
           setRequests(investorRequests.requests);
+          await syncAlertBadge(session, investorRequests.requests);
         }
         setLoadError("");
       } catch (error) {
@@ -339,18 +363,32 @@ export default function HomeScreen() {
           error.message === SESSION_EXPIRED_MESSAGE
         ) {
           Alert.alert("Session expired", SESSION_EXPIRED_MESSAGE, [
-            { text: t("dashboard.signIn"), onPress: () => router.replace("/login") },
+            {
+              text: t("dashboard.signIn"),
+              onPress: () => router.replace("/login"),
+            },
           ]);
           return;
         }
 
         setLoadError(
           error instanceof Error
-            ? error.message
+            ? error.message === NETWORK_ERROR_MESSAGE
+              ? NETWORK_ERROR_MESSAGE
+              : error.message
             : "Unable to load request data.",
         );
       }
-    };
+    },
+    [router, syncAlertBadge, t],
+  );
+
+  useEffect(() => {
+    if (!isFocused) {
+      return;
+    }
+
+    let active = true;
 
     loadSession();
 
@@ -362,7 +400,16 @@ export default function HomeScreen() {
       active = false;
       clearInterval(intervalId);
     };
-  }, [isFocused, router]);
+  }, [isFocused, loadSession]);
+
+  const handleRefresh = useCallback(async () => {
+    setRefreshing(true);
+    try {
+      await loadSession(true);
+    } finally {
+      setRefreshing(false);
+    }
+  }, [loadSession]);
 
   const handlePrimaryAction = () => {
     router.push("/(tabs)/dashboard");
@@ -410,6 +457,15 @@ export default function HomeScreen() {
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: 120 }}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={handleRefresh}
+            tintColor={COLORS.primary}
+            colors={[COLORS.primary, COLORS.accent]}
+            progressBackgroundColor={COLORS.white}
+          />
+        }
       >
         {/* HEADER SECTION */}
         <View style={s.header}>
@@ -430,18 +486,47 @@ export default function HomeScreen() {
                 })}
               </Text>
             </View>
-            <TouchableOpacity
-              onPress={() => router.push("/(tabs)/profile")}
-              style={s.avatarBtn}
-              activeOpacity={0.85}
-            >
-              <View style={s.notifDot} />
-              <MaterialCommunityIcons
-                name="account"
-                size={26}
-                color={COLORS.primary}
-              />
-            </TouchableOpacity>
+            <View style={s.headerActions}>
+              <TouchableOpacity
+                onPress={() => router.push("/alerts")}
+                style={s.iconCircleButton}
+                activeOpacity={0.85}
+              >
+                {unreadAlerts > 0 ? (
+                  <View style={s.alertBadge}>
+                    <Text style={s.alertBadgeText}>
+                      {unreadAlerts > 9 ? "9+" : unreadAlerts}
+                    </Text>
+                  </View>
+                ) : null}
+                <MaterialCommunityIcons
+                  name="bell-outline"
+                  size={22}
+                  color={COLORS.primary}
+                />
+              </TouchableOpacity>
+              <View style={s.languageChip}>
+                <MaterialCommunityIcons
+                  name="translate"
+                  size={14}
+                  color={COLORS.primary}
+                />
+                <Text style={s.languageChipText}>
+                  {language === "en" ? "EN" : language === "si" ? "සි" : "TA"}
+                </Text>
+              </View>
+              <TouchableOpacity
+                onPress={() => router.push("/(tabs)/profile")}
+                style={s.iconCircleButton}
+                activeOpacity={0.85}
+              >
+                <MaterialCommunityIcons
+                  name="account"
+                  size={26}
+                  color={COLORS.primary}
+                />
+              </TouchableOpacity>
+            </View>
           </View>
 
           {/* Search Bar */}
@@ -488,6 +573,7 @@ export default function HomeScreen() {
                 : t("home.roleBannerInvestor")}
             </Text>
           </View>
+
         </View>
 
         {/* WEATHER WIDGET */}
@@ -789,12 +875,20 @@ const ic = StyleSheet.create({
     flexDirection: "row",
     backgroundColor: COLORS.primary,
     borderRadius: 14,
+    minHeight: 48,
+    paddingHorizontal: 14,
     paddingVertical: 12,
     justifyContent: "center",
     alignItems: "center",
     gap: 8,
   },
-  investText: { color: "#fff", fontWeight: "700", fontSize: 14 },
+  investText: {
+    color: "#fff",
+    fontWeight: "700",
+    fontSize: 14,
+    textAlign: "center",
+    flexShrink: 1,
+  },
 });
 
 const s = StyleSheet.create({
@@ -834,6 +928,25 @@ const s = StyleSheet.create({
     alignItems: "flex-start",
     marginBottom: 22,
   },
+  headerActions: {
+    flexDirection: "row",
+    alignItems: "flex-end",
+    gap: 10,
+  },
+  languageChip: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    backgroundColor: "rgba(255,255,255,0.92)",
+    borderRadius: 999,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+  },
+  languageChipText: {
+    color: COLORS.primary,
+    fontSize: 11,
+    fontWeight: "800",
+  },
   greeting: {
     fontSize: 12,
     color: "#B6D9A0",
@@ -847,7 +960,7 @@ const s = StyleSheet.create({
     marginTop: 2,
   },
   date: { fontSize: 11, color: "#A8CFA0", marginTop: 2 },
-  avatarBtn: {
+  iconCircleButton: {
     width: 44,
     height: 44,
     borderRadius: 22,
@@ -855,17 +968,25 @@ const s = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
-  notifDot: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
+  alertBadge: {
+    minWidth: 18,
+    height: 18,
+    borderRadius: 9,
     backgroundColor: COLORS.danger,
     position: "absolute",
-    top: 0,
-    right: 0,
+    top: 2,
+    right: 2,
+    paddingHorizontal: 4,
+    justifyContent: "center",
+    alignItems: "center",
     borderWidth: 2,
     borderColor: COLORS.primary,
     zIndex: 1,
+  },
+  alertBadgeText: {
+    color: COLORS.white,
+    fontSize: 10,
+    fontWeight: "800",
   },
   searchBar: {
     flexDirection: "row",
