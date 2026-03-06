@@ -1,37 +1,42 @@
-import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
-import * as DocumentPicker from 'expo-document-picker';
-import * as ImagePicker from 'expo-image-picker';
-import { useRouter } from 'expo-router';
-import React, { useState } from 'react';
+import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
+import * as DocumentPicker from "expo-document-picker";
+import * as ImagePicker from "expo-image-picker";
+import { useRouter } from "expo-router";
+import React, { useState } from "react";
 import {
-  Alert,
-  Image,
-  KeyboardAvoidingView,
-  Platform,
-  ScrollView,
-  StatusBar,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View
-} from 'react-native';
+    Alert,
+    Image,
+    KeyboardAvoidingView,
+    Platform,
+    ScrollView,
+    StatusBar,
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View,
+} from "react-native";
 
 // ─── Design Tokens ─────────────────────────────────────────────────────────────
 const COLORS = {
-  primary: '#216000',       // Deep Forest Green
-  primaryLight: '#2E8B00',
-  primaryPale: '#E8F5E1',
-  white: '#FFFFFF',
-  surface: '#F7F9F4',
-  text: '#1A2E0D',
-  textMuted: '#9BB08A',
-  border: '#DDE8D4',
+  primary: "#216000", // Deep Forest Green
+  primaryLight: "#2E8B00",
+  primaryPale: "#E8F5E1",
+  white: "#FFFFFF",
+  surface: "#F7F9F4",
+  text: "#1A2E0D",
+  textMuted: "#9BB08A",
+  border: "#DDE8D4",
 };
 
 const SHADOWS = {
   md: Platform.select({
-    ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.15, shadowRadius: 10 },
+    ios: {
+      shadowColor: "#000",
+      shadowOffset: { width: 0, height: 6 },
+      shadowOpacity: 0.15,
+      shadowRadius: 10,
+    },
     android: { elevation: 6 },
   }),
 };
@@ -49,11 +54,21 @@ interface SelectedUpload {
   uri: string;
 }
 
-const SignupInput = ({ label, placeholder, icon, secureTextEntry = false }: SignupInputProps) => (
+const SignupInput = ({
+  label,
+  placeholder,
+  icon,
+  secureTextEntry = false,
+}: SignupInputProps) => (
   <View style={s.inputContainer}>
     <Text style={s.inputLabel}>{label}</Text>
     <View style={s.inputWrapper}>
-      <MaterialCommunityIcons name={icon} size={20} color={COLORS.primary} style={s.inputIcon} />
+      <MaterialCommunityIcons
+        name={icon}
+        size={20}
+        color={COLORS.primary}
+        style={s.inputIcon}
+      />
       <TextInput
         style={s.input}
         placeholder={placeholder}
@@ -69,15 +84,20 @@ export default function SignupScreen() {
   const router = useRouter();
   const [isFarmer, setIsFarmer] = useState(true);
   const [farmerPhoto, setFarmerPhoto] = useState<SelectedUpload | null>(null);
-  const [gramaSevakaLetter, setGramaSevakaLetter] = useState<SelectedUpload | null>(null);
+  const [gramaSevakaLetter, setGramaSevakaLetter] =
+    useState<SelectedUpload | null>(null);
 
   const pickFarmerPhoto = async () => {
     try {
-      if (Platform.OS !== 'web') {
-        const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (Platform.OS !== "web") {
+        const permission =
+          await ImagePicker.requestMediaLibraryPermissionsAsync();
 
         if (!permission.granted) {
-          Alert.alert('Permission required', 'Please allow media library access to upload a farmer photo.');
+          Alert.alert(
+            "Permission required",
+            "Please allow media library access to upload a farmer photo.",
+          );
           return;
         }
       }
@@ -93,11 +113,14 @@ export default function SignupScreen() {
 
       const asset = result.assets[0];
       setFarmerPhoto({
-        name: asset.fileName ?? 'farmer-photo.jpg',
+        name: asset.fileName ?? "farmer-photo.jpg",
         uri: asset.uri,
       });
     } catch {
-      Alert.alert('Upload failed', 'Unable to pick a photo right now. Please try again.');
+      Alert.alert(
+        "Upload failed",
+        "Unable to pick a photo right now. Please try again.",
+      );
     }
   };
 
@@ -106,7 +129,7 @@ export default function SignupScreen() {
       const result = await DocumentPicker.getDocumentAsync({
         copyToCacheDirectory: true,
         multiple: false,
-        type: ['application/pdf', 'image/*'],
+        type: ["application/pdf", "image/*"],
       });
 
       if (result.canceled || result.assets.length === 0) {
@@ -119,7 +142,10 @@ export default function SignupScreen() {
         uri: asset.uri,
       });
     } catch {
-      Alert.alert('Upload failed', 'Unable to pick the Grama Sevaka letter right now. Please try again.');
+      Alert.alert(
+        "Upload failed",
+        "Unable to pick the Grama Sevaka letter right now. Please try again.",
+      );
     }
   };
 
@@ -127,14 +153,19 @@ export default function SignupScreen() {
     <View style={s.root}>
       <StatusBar barStyle="light-content" backgroundColor={COLORS.primary} />
 
-      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
-        <ScrollView contentContainerStyle={s.scrollContent} showsVerticalScrollIndicator={false}>
-          
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        style={{ flex: 1 }}
+      >
+        <ScrollView
+          contentContainerStyle={s.scrollContent}
+          showsVerticalScrollIndicator={false}
+        >
           {/* ── HEADER ── */}
           <View style={s.header}>
             {/* Decorative Background Circles */}
             <View style={s.decCircle} />
-            
+
             <TouchableOpacity style={s.backBtn} onPress={() => router.back()}>
               <Ionicons name="arrow-back" size={24} color={COLORS.white} />
             </TouchableOpacity>
@@ -142,13 +173,13 @@ export default function SignupScreen() {
             <View style={s.logoSection}>
               {/*  FIX: Logo Badge Container  */}
               <View style={s.logoBadge}>
-                <Image 
-                  source={require('../src/assets/logo.png')} 
-                  style={s.logo} 
-                  resizeMode="contain" 
+                <Image
+                  source={require("../src/assets/logo.png")}
+                  style={s.logo}
+                  resizeMode="contain"
                 />
               </View>
-              
+
               <Text style={s.appName}>AgroLink</Text>
               <Text style={s.tagline}>Future of Agri-Finance</Text>
             </View>
@@ -160,67 +191,149 @@ export default function SignupScreen() {
 
             {/* User Type Toggle */}
             <View style={s.toggleContainer}>
-              <TouchableOpacity style={[s.toggleBtn, isFarmer && s.toggleBtnActive]} onPress={() => setIsFarmer(true)}>
-                <MaterialCommunityIcons name="sprout" size={18} color={isFarmer ? COLORS.white : COLORS.textMuted} />
-                <Text style={[s.toggleText, isFarmer && s.toggleTextActive]}>Farmer</Text>
+              <TouchableOpacity
+                style={[s.toggleBtn, isFarmer && s.toggleBtnActive]}
+                onPress={() => setIsFarmer(true)}
+              >
+                <MaterialCommunityIcons
+                  name="sprout"
+                  size={18}
+                  color={isFarmer ? COLORS.white : COLORS.textMuted}
+                />
+                <Text style={[s.toggleText, isFarmer && s.toggleTextActive]}>
+                  Farmer
+                </Text>
               </TouchableOpacity>
 
-              <TouchableOpacity style={[s.toggleBtn, !isFarmer && s.toggleBtnActive]} onPress={() => setIsFarmer(false)}>
-                <MaterialCommunityIcons name="briefcase-outline" size={18} color={!isFarmer ? COLORS.white : COLORS.textMuted} />
-                <Text style={[s.toggleText, !isFarmer && s.toggleTextActive]}>Investor</Text>
+              <TouchableOpacity
+                style={[s.toggleBtn, !isFarmer && s.toggleBtnActive]}
+                onPress={() => setIsFarmer(false)}
+              >
+                <MaterialCommunityIcons
+                  name="briefcase-outline"
+                  size={18}
+                  color={!isFarmer ? COLORS.white : COLORS.textMuted}
+                />
+                <Text style={[s.toggleText, !isFarmer && s.toggleTextActive]}>
+                  Investor
+                </Text>
               </TouchableOpacity>
             </View>
 
             {/* Inputs */}
-            <SignupInput label="Username" placeholder="sample@email.com" icon="email-outline" />
-            <SignupInput label="Password" placeholder="••••••••" icon="lock-outline" secureTextEntry />
-            <SignupInput label="Confirm Password" placeholder="••••••••" icon="lock-check-outline" secureTextEntry />
+            <SignupInput
+              label="Username"
+              placeholder="sample@email.com"
+              icon="email-outline"
+            />
+            <SignupInput
+              label="Password"
+              placeholder="••••••••"
+              icon="lock-outline"
+              secureTextEntry
+            />
+            <SignupInput
+              label="Confirm Password"
+              placeholder="••••••••"
+              icon="lock-check-outline"
+              secureTextEntry
+            />
 
             {isFarmer ? (
               <>
-                <SignupInput label="Farmer ID" placeholder="FM-2024-XXX" icon="identifier" />
-                <SignupInput label="NIC Number" placeholder="99xxxxxxxV" icon="card-account-details-outline" />
+                <SignupInput
+                  label="Farmer ID"
+                  placeholder="FM-2024-XXX"
+                  icon="identifier"
+                />
+                <SignupInput
+                  label="NIC Number"
+                  placeholder="99xxxxxxxV"
+                  icon="card-account-details-outline"
+                />
 
                 <View style={s.uploadSection}>
                   <Text style={s.uploadTitle}>Verification Uploads</Text>
-                  <Text style={s.uploadHint}>Add a farmer photo and the Grama Sevaka letter before creating the account.</Text>
+                  <Text style={s.uploadHint}>
+                    Add a farmer photo and the Grama Sevaka letter before
+                    creating the account.
+                  </Text>
 
-                  <TouchableOpacity style={s.uploadCard} onPress={pickFarmerPhoto}>
+                  <TouchableOpacity
+                    style={s.uploadCard}
+                    onPress={pickFarmerPhoto}
+                  >
                     <View style={s.uploadIconWrap}>
-                      <MaterialCommunityIcons name="image-outline" size={22} color={COLORS.primary} />
+                      <MaterialCommunityIcons
+                        name="image-outline"
+                        size={22}
+                        color={COLORS.primary}
+                      />
                     </View>
                     <View style={s.uploadContent}>
                       <Text style={s.uploadLabel}>Farmer Photo</Text>
-                      <Text style={s.uploadValue}>{farmerPhoto ? farmerPhoto.name : 'Upload image'}</Text>
+                      <Text style={s.uploadValue}>
+                        {farmerPhoto ? farmerPhoto.name : "Upload image"}
+                      </Text>
                     </View>
-                    <MaterialCommunityIcons name="upload" size={20} color={COLORS.primary} />
+                    <MaterialCommunityIcons
+                      name="upload"
+                      size={20}
+                      color={COLORS.primary}
+                    />
                   </TouchableOpacity>
 
-                  <TouchableOpacity style={s.uploadCard} onPress={pickGramaSevakaLetter}>
+                  <TouchableOpacity
+                    style={s.uploadCard}
+                    onPress={pickGramaSevakaLetter}
+                  >
                     <View style={s.uploadIconWrap}>
-                      <MaterialCommunityIcons name="file-document-outline" size={22} color={COLORS.primary} />
+                      <MaterialCommunityIcons
+                        name="file-document-outline"
+                        size={22}
+                        color={COLORS.primary}
+                      />
                     </View>
                     <View style={s.uploadContent}>
                       <Text style={s.uploadLabel}>Grama Sevaka Letter</Text>
-                      <Text style={s.uploadValue}>{gramaSevakaLetter ? gramaSevakaLetter.name : 'Upload PDF or image'}</Text>
+                      <Text style={s.uploadValue}>
+                        {gramaSevakaLetter
+                          ? gramaSevakaLetter.name
+                          : "Upload PDF or image"}
+                      </Text>
                     </View>
-                    <MaterialCommunityIcons name="upload" size={20} color={COLORS.primary} />
+                    <MaterialCommunityIcons
+                      name="upload"
+                      size={20}
+                      color={COLORS.primary}
+                    />
                   </TouchableOpacity>
                 </View>
               </>
             ) : (
-              <SignupInput label="NIC Number" placeholder="99xxxxxxxV" icon="card-account-details-outline" />
+              <SignupInput
+                label="NIC Number"
+                placeholder="99xxxxxxxV"
+                icon="card-account-details-outline"
+              />
             )}
 
             {/* Signup Button */}
-            <TouchableOpacity style={s.signupBtn} onPress={() => router.replace('/(tabs)/home')}>
+            <TouchableOpacity
+              style={s.signupBtn}
+              onPress={() => router.replace("/(tabs)/home")}
+            >
               <Text style={s.signupBtnText}>Sign Up</Text>
-              <MaterialCommunityIcons name="arrow-right" size={20} color={COLORS.white} />
+              <MaterialCommunityIcons
+                name="arrow-right"
+                size={20}
+                color={COLORS.white}
+              />
             </TouchableOpacity>
 
             <View style={s.footer}>
               <Text style={s.footerText}>Already have an account? </Text>
-              <TouchableOpacity onPress={() => router.replace('/login')}>
+              <TouchableOpacity onPress={() => router.replace("/login")}>
                 <Text style={s.loginLink}>Login</Text>
               </TouchableOpacity>
             </View>
@@ -241,42 +354,58 @@ const s = StyleSheet.create({
     height: 280, // Made slightly taller to fit the new badge
     borderBottomLeftRadius: 40,
     borderBottomRightRadius: 40,
-    alignItems: 'center',
+    alignItems: "center",
     paddingTop: 50,
-    position: 'relative',
-    overflow: 'hidden',
+    position: "relative",
+    overflow: "hidden",
   },
   decCircle: {
-    position: 'absolute', width: 300, height: 300, borderRadius: 150,
-    backgroundColor: COLORS.primaryLight, top: -100, right: -80, opacity: 0.4,
+    position: "absolute",
+    width: 300,
+    height: 300,
+    borderRadius: 150,
+    backgroundColor: COLORS.primaryLight,
+    top: -100,
+    right: -80,
+    opacity: 0.4,
   },
-  backBtn: { position: 'absolute', top: 50, left: 20, padding: 8, zIndex: 10 },
-  
-  logoSection: { alignItems: 'center', marginTop: 10 },
-  
+  backBtn: { position: "absolute", top: 50, left: 20, padding: 8, zIndex: 10 },
+
+  logoSection: { alignItems: "center", marginTop: 10 },
+
   /*  NEW LOGO BADGE STYLE  */
   logoBadge: {
     width: 80,
     height: 80,
     borderRadius: 40, // Makes it a perfect circle
-    backgroundColor: '#ffffff', // White background to blend with the image
-    justifyContent: 'center',
-    alignItems: 'center',
+    backgroundColor: "#ffffff", // White background to blend with the image
+    justifyContent: "center",
+    alignItems: "center",
     marginBottom: 12,
     // Add Shadow to make it pop
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.2,
     shadowRadius: 5,
     elevation: 8,
   },
-  logo: { 
+  logo: {
     width: 55, // Smaller than container so it has "padding"
-    height: 55, 
+    height: 55,
   },
 
-  appName: { fontSize: 30, fontWeight: '900', color: COLORS.white, letterSpacing: -0.5 },
-  tagline: { fontSize: 13, color: 'rgba(255,255,255,0.8)', fontWeight: '500', letterSpacing: 1 },
+  appName: {
+    fontSize: 30,
+    fontWeight: "900",
+    color: COLORS.white,
+    letterSpacing: -0.5,
+  },
+  tagline: {
+    fontSize: 13,
+    color: "rgba(255,255,255,0.8)",
+    fontWeight: "500",
+    letterSpacing: 1,
+  },
 
   /* CARD STYLES */
   card: {
@@ -287,19 +416,54 @@ const s = StyleSheet.create({
     padding: 24,
     marginBottom: 20,
   },
-  cardTitle: { fontSize: 20, fontWeight: '800', color: COLORS.text, textAlign: 'center', marginBottom: 20 },
+  cardTitle: {
+    fontSize: 20,
+    fontWeight: "800",
+    color: COLORS.text,
+    textAlign: "center",
+    marginBottom: 20,
+  },
 
   /* TOGGLE */
-  toggleContainer: { flexDirection: 'row', backgroundColor: COLORS.surface, borderRadius: 12, padding: 4, marginBottom: 24 },
-  toggleBtn: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingVertical: 10, borderRadius: 10, gap: 6 },
+  toggleContainer: {
+    flexDirection: "row",
+    backgroundColor: COLORS.surface,
+    borderRadius: 12,
+    padding: 4,
+    marginBottom: 24,
+  },
+  toggleBtn: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 10,
+    borderRadius: 10,
+    gap: 6,
+  },
   toggleBtnActive: { backgroundColor: COLORS.primary },
-  toggleText: { fontSize: 14, fontWeight: '600', color: COLORS.textMuted },
+  toggleText: { fontSize: 14, fontWeight: "600", color: COLORS.textMuted },
   toggleTextActive: { color: COLORS.white },
 
   /* INPUTS */
   inputContainer: { marginBottom: 16 },
-  inputLabel: { fontSize: 12, fontWeight: '700', color: COLORS.text, marginBottom: 6, marginLeft: 4 },
-  inputWrapper: { flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.surface, borderWidth: 1, borderColor: COLORS.border, borderRadius: 14, paddingHorizontal: 12, height: 50 },
+  inputLabel: {
+    fontSize: 12,
+    fontWeight: "700",
+    color: COLORS.text,
+    marginBottom: 6,
+    marginLeft: 4,
+  },
+  inputWrapper: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: COLORS.surface,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    borderRadius: 14,
+    paddingHorizontal: 12,
+    height: 50,
+  },
   inputIcon: { marginRight: 10 },
   input: { flex: 1, fontSize: 14, color: COLORS.text },
 
@@ -312,7 +476,7 @@ const s = StyleSheet.create({
   },
   uploadTitle: {
     fontSize: 15,
-    fontWeight: '800',
+    fontWeight: "800",
     color: COLORS.text,
     marginBottom: 4,
   },
@@ -323,8 +487,8 @@ const s = StyleSheet.create({
     marginBottom: 14,
   },
   uploadCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     backgroundColor: COLORS.white,
     borderRadius: 16,
     borderWidth: 1,
@@ -338,8 +502,8 @@ const s = StyleSheet.create({
     width: 42,
     height: 42,
     borderRadius: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     backgroundColor: COLORS.primaryPale,
   },
   uploadContent: {
@@ -347,7 +511,7 @@ const s = StyleSheet.create({
   },
   uploadLabel: {
     fontSize: 14,
-    fontWeight: '700',
+    fontWeight: "700",
     color: COLORS.text,
     marginBottom: 2,
   },
@@ -357,11 +521,26 @@ const s = StyleSheet.create({
   },
 
   /* BUTTON */
-  signupBtn: { flexDirection: 'row', backgroundColor: COLORS.primary, borderRadius: 16, height: 56, justifyContent: 'center', alignItems: 'center', marginTop: 10, gap: 8, elevation: 4 },
-  signupBtnText: { color: COLORS.white, fontSize: 16, fontWeight: '800', letterSpacing: 0.5 },
+  signupBtn: {
+    flexDirection: "row",
+    backgroundColor: COLORS.primary,
+    borderRadius: 16,
+    height: 56,
+    justifyContent: "center",
+    alignItems: "center",
+    marginTop: 10,
+    gap: 8,
+    elevation: 4,
+  },
+  signupBtnText: {
+    color: COLORS.white,
+    fontSize: 16,
+    fontWeight: "800",
+    letterSpacing: 0.5,
+  },
 
   /* FOOTER */
-  footer: { flexDirection: 'row', justifyContent: 'center', marginTop: 20 },
+  footer: { flexDirection: "row", justifyContent: "center", marginTop: 20 },
   footerText: { color: COLORS.textMuted, fontSize: 14 },
-  loginLink: { color: COLORS.primary, fontWeight: '700', fontSize: 14 },
+  loginLink: { color: COLORS.primary, fontWeight: "700", fontSize: 14 },
 });
