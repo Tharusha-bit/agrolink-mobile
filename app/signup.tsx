@@ -1,7 +1,10 @@
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+import * as DocumentPicker from 'expo-document-picker';
+import * as ImagePicker from 'expo-image-picker';
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import {
+  Alert,
   Image,
   KeyboardAvoidingView,
   Platform,
@@ -41,6 +44,11 @@ interface SignupInputProps {
   secureTextEntry?: boolean;
 }
 
+interface SelectedUpload {
+  name: string;
+  uri: string;
+}
+
 const SignupInput = ({ label, placeholder, icon, secureTextEntry = false }: SignupInputProps) => (
   <View style={s.inputContainer}>
     <Text style={s.inputLabel}>{label}</Text>
@@ -60,6 +68,60 @@ const SignupInput = ({ label, placeholder, icon, secureTextEntry = false }: Sign
 export default function SignupScreen() {
   const router = useRouter();
   const [isFarmer, setIsFarmer] = useState(true);
+  const [farmerPhoto, setFarmerPhoto] = useState<SelectedUpload | null>(null);
+  const [gramaSevakaLetter, setGramaSevakaLetter] = useState<SelectedUpload | null>(null);
+
+  const pickFarmerPhoto = async () => {
+    try {
+      if (Platform.OS !== 'web') {
+        const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+
+        if (!permission.granted) {
+          Alert.alert('Permission required', 'Please allow media library access to upload a farmer photo.');
+          return;
+        }
+      }
+
+      const result = await ImagePicker.launchImageLibraryAsync({
+        allowsEditing: true,
+        quality: 0.8,
+      });
+
+      if (result.canceled || result.assets.length === 0) {
+        return;
+      }
+
+      const asset = result.assets[0];
+      setFarmerPhoto({
+        name: asset.fileName ?? 'farmer-photo.jpg',
+        uri: asset.uri,
+      });
+    } catch {
+      Alert.alert('Upload failed', 'Unable to pick a photo right now. Please try again.');
+    }
+  };
+
+  const pickGramaSevakaLetter = async () => {
+    try {
+      const result = await DocumentPicker.getDocumentAsync({
+        copyToCacheDirectory: true,
+        multiple: false,
+        type: ['application/pdf', 'image/*'],
+      });
+
+      if (result.canceled || result.assets.length === 0) {
+        return;
+      }
+
+      const asset = result.assets[0];
+      setGramaSevakaLetter({
+        name: asset.name,
+        uri: asset.uri,
+      });
+    } catch {
+      Alert.alert('Upload failed', 'Unable to pick the Grama Sevaka letter right now. Please try again.');
+    }
+  };
 
   return (
     <View style={s.root}>
@@ -118,6 +180,33 @@ export default function SignupScreen() {
               <>
                 <SignupInput label="Farmer ID" placeholder="FM-2024-XXX" icon="identifier" />
                 <SignupInput label="NIC Number" placeholder="99xxxxxxxV" icon="card-account-details-outline" />
+
+                <View style={s.uploadSection}>
+                  <Text style={s.uploadTitle}>Verification Uploads</Text>
+                  <Text style={s.uploadHint}>Add a farmer photo and the Grama Sevaka letter before creating the account.</Text>
+
+                  <TouchableOpacity style={s.uploadCard} onPress={pickFarmerPhoto}>
+                    <View style={s.uploadIconWrap}>
+                      <MaterialCommunityIcons name="image-outline" size={22} color={COLORS.primary} />
+                    </View>
+                    <View style={s.uploadContent}>
+                      <Text style={s.uploadLabel}>Farmer Photo</Text>
+                      <Text style={s.uploadValue}>{farmerPhoto ? farmerPhoto.name : 'Upload image'}</Text>
+                    </View>
+                    <MaterialCommunityIcons name="upload" size={20} color={COLORS.primary} />
+                  </TouchableOpacity>
+
+                  <TouchableOpacity style={s.uploadCard} onPress={pickGramaSevakaLetter}>
+                    <View style={s.uploadIconWrap}>
+                      <MaterialCommunityIcons name="file-document-outline" size={22} color={COLORS.primary} />
+                    </View>
+                    <View style={s.uploadContent}>
+                      <Text style={s.uploadLabel}>Grama Sevaka Letter</Text>
+                      <Text style={s.uploadValue}>{gramaSevakaLetter ? gramaSevakaLetter.name : 'Upload PDF or image'}</Text>
+                    </View>
+                    <MaterialCommunityIcons name="upload" size={20} color={COLORS.primary} />
+                  </TouchableOpacity>
+                </View>
               </>
             ) : (
               <SignupInput label="NIC Number" placeholder="99xxxxxxxV" icon="card-account-details-outline" />
@@ -213,6 +302,59 @@ const s = StyleSheet.create({
   inputWrapper: { flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.surface, borderWidth: 1, borderColor: COLORS.border, borderRadius: 14, paddingHorizontal: 12, height: 50 },
   inputIcon: { marginRight: 10 },
   input: { flex: 1, fontSize: 14, color: COLORS.text },
+
+  /* UPLOADS */
+  uploadSection: {
+    backgroundColor: COLORS.primaryPale,
+    borderRadius: 18,
+    padding: 16,
+    marginBottom: 8,
+  },
+  uploadTitle: {
+    fontSize: 15,
+    fontWeight: '800',
+    color: COLORS.text,
+    marginBottom: 4,
+  },
+  uploadHint: {
+    fontSize: 12,
+    color: COLORS.textMuted,
+    lineHeight: 18,
+    marginBottom: 14,
+  },
+  uploadCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: COLORS.white,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    paddingHorizontal: 14,
+    paddingVertical: 14,
+    marginBottom: 12,
+    gap: 12,
+  },
+  uploadIconWrap: {
+    width: 42,
+    height: 42,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: COLORS.primaryPale,
+  },
+  uploadContent: {
+    flex: 1,
+  },
+  uploadLabel: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: COLORS.text,
+    marginBottom: 2,
+  },
+  uploadValue: {
+    fontSize: 12,
+    color: COLORS.textMuted,
+  },
 
   /* BUTTON */
   signupBtn: { flexDirection: 'row', backgroundColor: COLORS.primary, borderRadius: 16, height: 56, justifyContent: 'center', alignItems: 'center', marginTop: 10, gap: 8, elevation: 4 },
