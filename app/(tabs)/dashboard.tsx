@@ -33,6 +33,7 @@ import {
   type FarmerOpportunity,
   type InvestorConnection,
 } from "../../src/lib/dashboard";
+import { useLanguage } from "../../src/lib/language";
 
 const COLORS = {
   primary: "#216000",
@@ -94,24 +95,34 @@ function formatCurrency(value: number) {
   return `LKR ${value.toLocaleString()}`;
 }
 
-function formatDateLabel(date?: string) {
+function formatDateLabel(date: string | undefined, locale: string, fallback: string) {
   if (!date) {
-    return "Recently updated";
+    return fallback;
   }
 
   const parsed = new Date(date);
   if (Number.isNaN(parsed.getTime())) {
-    return "Recently updated";
+    return fallback;
   }
 
-  return parsed.toLocaleDateString("en-GB", {
+  return parsed.toLocaleDateString(locale, {
     day: "2-digit",
     month: "short",
     year: "numeric",
   });
 }
 
-function FarmerInvestorCard({ item }: { item: InvestorConnection }) {
+function FarmerInvestorCard({
+  item,
+  avgReturnLabel,
+  projectsLabel,
+  connectedLabel,
+}: {
+  item: InvestorConnection;
+  avgReturnLabel: string;
+  projectsLabel: string;
+  connectedLabel: string;
+}) {
   return (
     <View style={styles.feedCard}>
       <View style={styles.feedCardHeader}>
@@ -137,11 +148,11 @@ function FarmerInvestorCard({ item }: { item: InvestorConnection }) {
 
       <View style={styles.metaRow}>
         <View style={styles.metaBox}>
-          <Text style={styles.metaLabel}>Avg Return</Text>
+          <Text style={styles.metaLabel}>{avgReturnLabel}</Text>
           <Text style={styles.metaValue}>{item.preferredReturnRate}</Text>
         </View>
         <View style={styles.metaBox}>
-          <Text style={styles.metaLabel}>Projects</Text>
+          <Text style={styles.metaLabel}>{projectsLabel}</Text>
           <Text style={styles.metaValue}>{item.activeProjects}</Text>
         </View>
       </View>
@@ -152,9 +163,7 @@ function FarmerInvestorCard({ item }: { item: InvestorConnection }) {
           size={16}
           color={COLORS.primary}
         />
-        <Text style={styles.statusBadgeText}>
-          Investor already connected to your farm
-        </Text>
+        <Text style={styles.statusBadgeText}>{connectedLabel}</Text>
       </View>
     </View>
   );
@@ -167,6 +176,18 @@ function InvestorFarmerCard({
   onDeleteRequest,
   showInvestorActions,
   busy,
+  locale,
+  updatedLabel,
+  recentlyUpdatedLabel,
+  raisedLabel,
+  needLabel,
+  pastRateLabel,
+  askAiLabel,
+  investNowLabel,
+  deleteLabel,
+  liveRequestLabel,
+  riskLabels,
+  fundedLabel,
 }: {
   item: FarmerOpportunity;
   onAskAi?: (entityId: string) => void;
@@ -174,6 +195,18 @@ function InvestorFarmerCard({
   onDeleteRequest?: (requestId: string) => void;
   showInvestorActions: boolean;
   busy?: boolean;
+  locale: string;
+  updatedLabel: string;
+  recentlyUpdatedLabel: string;
+  raisedLabel: string;
+  needLabel: string;
+  pastRateLabel: string;
+  askAiLabel: string;
+  investNowLabel: string;
+  deleteLabel: string;
+  liveRequestLabel: string;
+  riskLabels: Record<"Low" | "Medium" | "High", string>;
+  fundedLabel: string;
 }) {
   const progress = Math.round((item.raisedAmount / item.amountNeeded) * 100);
   const riskColor =
@@ -199,14 +232,14 @@ function InvestorFarmerCard({
             {item.crop} • {item.location}
           </Text>
           <Text style={styles.feedCardDate}>
-            Updated {formatDateLabel(item.createdAt)}
+            {updatedLabel} {formatDateLabel(item.createdAt, locale, recentlyUpdatedLabel)}
           </Text>
         </View>
         <View
           style={[styles.metricPill, { backgroundColor: `${riskColor}18` }]}
         >
           <Text style={[styles.metricPillText, { color: riskColor }]}>
-            {item.riskLevel} Risk
+            {riskLabels[item.riskLevel]}
           </Text>
         </View>
       </View>
@@ -215,19 +248,19 @@ function InvestorFarmerCard({
 
       <View style={styles.metaRow}>
         <View style={styles.metaBox}>
-          <Text style={styles.metaLabel}>Raised</Text>
+          <Text style={styles.metaLabel}>{raisedLabel}</Text>
           <Text style={styles.metaValue}>
             {formatCurrency(item.raisedAmount)}
           </Text>
         </View>
         <View style={styles.metaBox}>
-          <Text style={styles.metaLabel}>Need</Text>
+          <Text style={styles.metaLabel}>{needLabel}</Text>
           <Text style={styles.metaValue}>
             {formatCurrency(item.amountNeeded)}
           </Text>
         </View>
         <View style={styles.metaBox}>
-          <Text style={styles.metaLabel}>Past Rate</Text>
+          <Text style={styles.metaLabel}>{pastRateLabel}</Text>
           <Text style={styles.metaValue}>{item.historicalReturnRate}</Text>
         </View>
       </View>
@@ -236,7 +269,7 @@ function InvestorFarmerCard({
         <View style={styles.progressTrack}>
           <View style={[styles.progressFill, { width: `${progress}%` }]} />
         </View>
-        <Text style={styles.progressText}>{progress}% funded</Text>
+        <Text style={styles.progressText}>{fundedLabel.replace("{progress}", String(progress))}</Text>
       </View>
 
       {showInvestorActions ? (
@@ -251,7 +284,7 @@ function InvestorFarmerCard({
               size={18}
               color={COLORS.primary}
             />
-            <Text style={styles.secondaryButtonText}>Ask AI</Text>
+            <Text style={styles.secondaryButtonText}>{askAiLabel}</Text>
           </TouchableOpacity>
           <TouchableOpacity
             style={styles.aiButton}
@@ -267,7 +300,7 @@ function InvestorFarmerCard({
                   size={18}
                   color={COLORS.white}
                 />
-                <Text style={styles.aiButtonText}>Invest Now</Text>
+                <Text style={styles.aiButtonText}>{investNowLabel}</Text>
               </>
             )}
           </TouchableOpacity>
@@ -280,9 +313,7 @@ function InvestorFarmerCard({
               size={16}
               color={COLORS.primary}
             />
-            <Text style={styles.statusBadgeText}>
-              This is your live investment request
-            </Text>
+            <Text style={styles.statusBadgeText}>{liveRequestLabel}</Text>
           </View>
           <TouchableOpacity
             style={styles.dangerButton}
@@ -298,7 +329,7 @@ function InvestorFarmerCard({
                   size={18}
                   color={COLORS.white}
                 />
-                <Text style={styles.dangerButtonText}>Delete</Text>
+                <Text style={styles.dangerButtonText}>{deleteLabel}</Text>
               </>
             )}
           </TouchableOpacity>
@@ -312,6 +343,7 @@ export default function DashboardScreen() {
   const { width } = useWindowDimensions();
   const router = useRouter();
   const isFocused = useIsFocused();
+  const { locale, t } = useLanguage();
   const [session, setSession] = useState<AuthSession | null>(null);
   const [role, setRole] = useState<UserRole>("farmer");
   const [name, setName] = useState("AgroLink User");
@@ -340,8 +372,8 @@ export default function DashboardScreen() {
 
   const applySessionExpiry = () => {
     setError(SESSION_EXPIRED_MESSAGE);
-    Alert.alert("Session expired", SESSION_EXPIRED_MESSAGE, [
-      { text: "Sign in", onPress: () => router.replace("/login") },
+    Alert.alert(t("dashboard.sessionExpired"), SESSION_EXPIRED_MESSAGE, [
+      { text: t("dashboard.signIn"), onPress: () => router.replace("/login") },
     ]);
   };
 
@@ -466,15 +498,15 @@ export default function DashboardScreen() {
 
       setAiAssessment({
         entityId,
-        headline: "AI insight unavailable",
-        recommendation: "Try again once the backend is reachable.",
-        previousRate: "No historical rate could be loaded.",
-        outlook: "Connection issue prevented a fresh dummy assessment.",
-        confidence: "Low confidence",
+        headline: t("dashboard.aiUnavailable"),
+        recommendation: t("dashboard.aiTryAgain"),
+        previousRate: t("dashboard.aiNoHistoricalRate"),
+        outlook: t("dashboard.aiConnectionIssue"),
+        confidence: t("common.low"),
         summary:
           aiError instanceof Error
             ? aiError.message
-            : "Unknown AI request error.",
+            : t("dashboard.aiUnknownError"),
       });
     } finally {
       setAiLoading(false);
@@ -494,41 +526,35 @@ export default function DashboardScreen() {
 
     if (!crop || !location || !normalizedAmount || !summary) {
       Alert.alert(
-        "Missing details",
-        "Enter crop, location, amount, and summary before submitting the request.",
+        t("dashboard.missingDetails"),
+        t("dashboard.missingDetailsMessage"),
       );
       return;
     }
 
     if (crop.length < 2) {
-      Alert.alert("Invalid crop", "Crop name must be at least 2 characters.");
+      Alert.alert(t("dashboard.invalidCrop"), t("dashboard.invalidCropMessage"));
       return;
     }
 
     if (location.length < 2) {
-      Alert.alert(
-        "Invalid location",
-        "Location must be at least 2 characters.",
-      );
+      Alert.alert(t("dashboard.invalidLocation"), t("dashboard.invalidLocationMessage"));
       return;
     }
 
     if (summary.length < 10) {
-      Alert.alert(
-        "Invalid summary",
-        "Summary must be at least 10 characters so investors can understand the request.",
-      );
+      Alert.alert(t("dashboard.invalidSummary"), t("dashboard.invalidSummaryMessage"));
       return;
     }
 
     const amountNeeded = Number(normalizedAmount);
     if (!Number.isFinite(amountNeeded) || amountNeeded < 1000) {
-      Alert.alert("Invalid amount", "Enter an amount of at least LKR 1,000.");
+      Alert.alert(t("dashboard.invalidAmount"), t("dashboard.invalidAmountMessage"));
       return;
     }
 
     if (amountNeeded > 10000000) {
-      Alert.alert("Invalid amount", "Amount must be LKR 10,000,000 or less.");
+      Alert.alert(t("dashboard.invalidAmount"), t("dashboard.invalidRequestAmountMax"));
       return;
     }
 
@@ -562,14 +588,14 @@ export default function DashboardScreen() {
       setError(
         requestError instanceof Error
           ? requestError.message
-          : "Unable to submit request.",
+          : t("dashboard.unableToSubmitRequest"),
       );
 
       Alert.alert(
-        "Unable to submit request",
+        t("dashboard.unableToSubmitRequest"),
         requestError instanceof Error
           ? requestError.message
-          : "Unknown request error.",
+          : t("dashboard.unknownRequestError"),
       );
     } finally {
       setSubmittingRequest(false);
@@ -597,15 +623,12 @@ export default function DashboardScreen() {
     }
 
     if (!Number.isFinite(amount) || amount < 1000) {
-      Alert.alert("Invalid amount", "Enter an amount of at least LKR 1,000.");
+      Alert.alert(t("dashboard.invalidAmount"), t("dashboard.invalidAmountMessage"));
       return;
     }
 
     if (amount > 1000000) {
-      Alert.alert(
-        "Invalid amount",
-        "Investment amount must be LKR 1,000,000 or less.",
-      );
+      Alert.alert(t("dashboard.invalidAmount"), t("dashboard.invalidInvestmentAmountMax"));
       return;
     }
 
@@ -618,8 +641,10 @@ export default function DashboardScreen() {
       setSelectedRequestId("");
       setInvestAmount("5000");
       Alert.alert(
-        "Investment recorded",
-        `LKR ${amount.toLocaleString()} has been added to this request.`,
+        t("dashboard.investmentRecorded"),
+        t("dashboard.investmentRecordedMessage", {
+          amount: amount.toLocaleString(),
+        }),
       );
     } catch (investmentError) {
       if (
@@ -633,14 +658,14 @@ export default function DashboardScreen() {
       setError(
         investmentError instanceof Error
           ? investmentError.message
-          : "Investment failed.",
+          : t("dashboard.investmentFailed"),
       );
 
       Alert.alert(
-        "Investment failed",
+        t("dashboard.investmentFailed"),
         investmentError instanceof Error
           ? investmentError.message
-          : "Unknown investment error.",
+          : t("dashboard.unknownInvestmentError"),
       );
     } finally {
       setInvestingRequestId("");
@@ -654,12 +679,12 @@ export default function DashboardScreen() {
     }
 
     Alert.alert(
-      "Delete request",
-      "This will remove the request from the active database and from the investor feed.",
+      t("dashboard.deleteRequest"),
+      t("dashboard.deleteRequestMessage"),
       [
-        { text: "Cancel", style: "cancel" },
+        { text: t("common.cancel"), style: "cancel" },
         {
-          text: "Delete",
+          text: t("dashboard.delete"),
           style: "destructive",
           onPress: async () => {
             try {
@@ -668,8 +693,8 @@ export default function DashboardScreen() {
               await deleteInvestmentRequest(session, requestId);
               await loadDashboardData(session);
               Alert.alert(
-                "Request deleted",
-                "The request was removed from your account and the shared database.",
+                t("dashboard.requestDeleted"),
+                t("dashboard.requestDeletedMessage"),
               );
             } catch (deleteError) {
               if (
@@ -683,14 +708,14 @@ export default function DashboardScreen() {
               setError(
                 deleteError instanceof Error
                   ? deleteError.message
-                  : "Delete failed.",
+                  : t("dashboard.deleteFailed"),
               );
 
               Alert.alert(
-                "Delete failed",
+                t("dashboard.deleteFailed"),
                 deleteError instanceof Error
                   ? deleteError.message
-                  : "Unknown delete error.",
+                  : t("dashboard.unknownDeleteError"),
               );
             } finally {
               setDeletingRequestId("");
@@ -731,13 +756,15 @@ export default function DashboardScreen() {
       >
         <View style={styles.hero}>
           <Text style={styles.eyebrow}>
-            {role === "farmer" ? "Farmer Dashboard" : "Investor Dashboard"}
+            {role === "farmer"
+              ? t("dashboard.farmerDashboard")
+              : t("dashboard.investorDashboard")}
           </Text>
           <Text style={styles.title}>{name}</Text>
           <Text style={styles.subtitle}>
             {role === "farmer"
-              ? "See the investors backing your farm and create investment requests that investors can review."
-              : "See farmer investment requests, use AI before investing, and fund requests directly from this screen."}
+              ? t("dashboard.farmerSubtitle")
+              : t("dashboard.investorSubtitle")}
           </Text>
         </View>
 
@@ -749,8 +776,8 @@ export default function DashboardScreen() {
           />
           <Text style={styles.roleBannerText}>
             {role === "farmer"
-              ? "Private farmer view: only your own requests are shown here."
-              : "Investor marketplace: all live farmer requests are shown here."}
+              ? t("dashboard.roleBannerFarmer")
+              : t("dashboard.roleBannerInvestor")}
           </Text>
         </View>
 
@@ -784,7 +811,19 @@ export default function DashboardScreen() {
                 />
               </View>
               <Text style={styles.cardValue}>{item.value}</Text>
-              <Text style={styles.cardLabel}>{item.label}</Text>
+              <Text style={styles.cardLabel}>
+                {item.label === "Active Fields"
+                  ? t("dashboard.activeFields")
+                  : item.label === "Pending Funding"
+                    ? t("dashboard.pendingFunding")
+                    : item.label === "Investors Visible"
+                      ? t("dashboard.investorsVisible")
+                      : item.label === "Live Deals"
+                        ? t("dashboard.liveDeals")
+                        : item.label === "Farmers Seeking Capital"
+                          ? t("dashboard.farmersSeekingCapital")
+                          : t("dashboard.expectedReturn")}
+              </Text>
             </View>
           ))}
         </View>
@@ -792,23 +831,23 @@ export default function DashboardScreen() {
         <View style={styles.panel}>
           <Text style={styles.panelTitle}>
             {role === "farmer"
-              ? "Investment Requests"
-              : "Farmer Opportunity Feed"}
+              ? t("dashboard.investmentRequests")
+              : t("dashboard.farmerOpportunityFeed")}
           </Text>
           <Text style={styles.panelText}>
             {role === "farmer"
-              ? "Use the existing dashboard to submit requests and track what investors have already funded, while keeping your connected investors visible below."
-              : "These live requests can be reviewed, checked with AI, and funded directly from the existing dashboard UI."}
+              ? t("dashboard.farmerPanelText")
+              : t("dashboard.investorPanelText")}
           </Text>
         </View>
 
         {role === "farmer" ? (
           <View style={styles.requestComposer}>
             <Text style={styles.requestComposerTitle}>
-              Create Investment Request
+              {t("dashboard.createInvestmentRequest")}
             </Text>
             <Text style={styles.requestComposerSubtitle}>
-              Add a request so investors can review and fund it.
+              {t("dashboard.createInvestmentRequestSubtitle")}
             </Text>
 
             <View
@@ -817,14 +856,14 @@ export default function DashboardScreen() {
               <TextInput
                 value={requestCrop}
                 onChangeText={setRequestCrop}
-                placeholder="Crop"
+                placeholder={t("dashboard.crop")}
                 placeholderTextColor={COLORS.textMuted}
                 style={[styles.input, compactLayout && styles.inputCompact]}
               />
               <TextInput
                 value={requestLocation}
                 onChangeText={setRequestLocation}
-                placeholder="Location"
+                placeholder={t("dashboard.location")}
                 placeholderTextColor={COLORS.textMuted}
                 style={[styles.input, compactLayout && styles.inputCompact]}
               />
@@ -836,7 +875,7 @@ export default function DashboardScreen() {
               <TextInput
                 value={requestAmount}
                 onChangeText={setRequestAmount}
-                placeholder="Amount needed"
+                placeholder={t("dashboard.amountNeeded")}
                 placeholderTextColor={COLORS.textMuted}
                 keyboardType="numeric"
                 style={[styles.input, compactLayout && styles.inputCompact]}
@@ -862,7 +901,11 @@ export default function DashboardScreen() {
                         requestRisk === risk && styles.riskChipTextActive,
                       ]}
                     >
-                      {risk}
+                      {risk === "Low"
+                        ? t("common.low")
+                        : risk === "Medium"
+                          ? t("common.medium")
+                          : t("common.high")}
                     </Text>
                   </TouchableOpacity>
                 ))}
@@ -872,7 +915,7 @@ export default function DashboardScreen() {
             <TextInput
               value={requestSummary}
               onChangeText={setRequestSummary}
-              placeholder="What will this investment be used for?"
+              placeholder={t("dashboard.requestSummaryPlaceholder")}
               placeholderTextColor={COLORS.textMuted}
               multiline
               style={[styles.input, styles.textArea]}
@@ -892,7 +935,7 @@ export default function DashboardScreen() {
                     size={18}
                     color={COLORS.white}
                   />
-                  <Text style={styles.aiButtonText}>Submit Request</Text>
+                  <Text style={styles.aiButtonText}>{t("dashboard.submitRequest")}</Text>
                 </>
               )}
             </TouchableOpacity>
@@ -901,14 +944,14 @@ export default function DashboardScreen() {
 
         <Text style={styles.sectionTitle}>
           {role === "farmer"
-            ? "Your Live Requests"
-            : "Requests Open For Investment"}
+            ? t("dashboard.yourLiveRequests")
+            : t("dashboard.requestsOpenForInvestment")}
         </Text>
 
         {loading ? (
           <View style={styles.loadingWrap}>
             <ActivityIndicator color={COLORS.primary} />
-            <Text style={styles.loadingText}>Loading role data...</Text>
+            <Text style={styles.loadingText}>{t("dashboard.loadingRoleData")}</Text>
           </View>
         ) : null}
 
@@ -921,6 +964,22 @@ export default function DashboardScreen() {
               <InvestorFarmerCard
                 key={item.id}
                 item={item}
+                locale={locale}
+                updatedLabel={t("common.updated")}
+                recentlyUpdatedLabel={t("common.recentlyUpdated")}
+                raisedLabel={t("dashboard.raised")}
+                needLabel={t("dashboard.need")}
+                pastRateLabel={t("dashboard.pastRate")}
+                askAiLabel={t("dashboard.askAi")}
+                investNowLabel={t("dashboard.investNow")}
+                deleteLabel={t("dashboard.delete")}
+                liveRequestLabel={t("dashboard.yourLiveInvestmentRequest")}
+                riskLabels={{
+                  Low: t("common.low"),
+                  Medium: t("common.medium"),
+                  High: t("common.high"),
+                }}
+                fundedLabel={t("dashboard.funded", { progress: "{progress}" })}
                 showInvestorActions={false}
                 onDeleteRequest={handleDeleteRequest}
                 busy={deletingRequestId === item.id}
@@ -933,6 +992,22 @@ export default function DashboardScreen() {
               <InvestorFarmerCard
                 key={item.id}
                 item={item}
+                locale={locale}
+                updatedLabel={t("common.updated")}
+                recentlyUpdatedLabel={t("common.recentlyUpdated")}
+                raisedLabel={t("dashboard.raised")}
+                needLabel={t("dashboard.need")}
+                pastRateLabel={t("dashboard.pastRate")}
+                askAiLabel={t("dashboard.askAi")}
+                investNowLabel={t("dashboard.investNow")}
+                deleteLabel={t("dashboard.delete")}
+                liveRequestLabel={t("dashboard.yourLiveInvestmentRequest")}
+                riskLabels={{
+                  Low: t("common.low"),
+                  Medium: t("common.medium"),
+                  High: t("common.high"),
+                }}
+                fundedLabel={t("dashboard.funded", { progress: "{progress}" })}
                 onAskAi={handleAskAi}
                 onInvestNow={handleInvestNow}
                 showInvestorActions
@@ -952,23 +1027,29 @@ export default function DashboardScreen() {
             />
             <Text style={styles.emptyStateTitle}>
               {role === "farmer"
-                ? "No requests created yet"
-                : "No investment requests available"}
+                ? t("dashboard.noRequestsCreated")
+                : t("dashboard.noInvestmentRequestsAvailable")}
             </Text>
             <Text style={styles.emptyStateText}>
               {role === "farmer"
-                ? "Create your own investment request above. Only your requests appear in this view."
-                : "Investor accounts can review and invest in all live farmer requests from here."}
+                ? t("dashboard.noRequestsCreatedText")
+                : t("dashboard.noInvestmentRequestsAvailableText")}
             </Text>
           </View>
         ) : null}
 
         {role === "farmer" ? (
-          <Text style={styles.sectionTitle}>Investors Backing You</Text>
+          <Text style={styles.sectionTitle}>{t("dashboard.investorsBackingYou")}</Text>
         ) : null}
         {!loading && !error && role === "farmer"
           ? investors.map((item) => (
-              <FarmerInvestorCard key={item.id} item={item} />
+              <FarmerInvestorCard
+                key={item.id}
+                item={item}
+                avgReturnLabel={t("dashboard.avgReturn")}
+                projectsLabel={t("dashboard.projects")}
+                connectedLabel={t("dashboard.investorConnected")}
+              />
             ))
           : null}
       </ScrollView>
@@ -985,7 +1066,7 @@ export default function DashboardScreen() {
         >
           <Pressable style={styles.modalCard} onPress={() => undefined}>
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>AI Investment Insight</Text>
+              <Text style={styles.modalTitle}>{t("dashboard.aiInsight")}</Text>
               <TouchableOpacity onPress={() => setAiVisible(false)}>
                 <MaterialCommunityIcons
                   name="close"
@@ -999,7 +1080,7 @@ export default function DashboardScreen() {
               <View style={styles.modalLoadingWrap}>
                 <ActivityIndicator color={COLORS.primary} />
                 <Text style={styles.loadingText}>
-                  Preparing dummy AI response...
+                  {t("dashboard.preparingAi")}
                 </Text>
               </View>
             ) : null}
@@ -1012,19 +1093,19 @@ export default function DashboardScreen() {
                 </Text>
 
                 <View style={styles.aiInfoBox}>
-                  <Text style={styles.aiInfoLabel}>Previous rates</Text>
+                  <Text style={styles.aiInfoLabel}>{t("dashboard.previousRates")}</Text>
                   <Text style={styles.aiInfoText}>
                     {aiAssessment.previousRate}
                   </Text>
                 </View>
 
                 <View style={styles.aiInfoBox}>
-                  <Text style={styles.aiInfoLabel}>Outlook</Text>
+                  <Text style={styles.aiInfoLabel}>{t("dashboard.outlook")}</Text>
                   <Text style={styles.aiInfoText}>{aiAssessment.outlook}</Text>
                 </View>
 
                 <View style={styles.aiInfoBox}>
-                  <Text style={styles.aiInfoLabel}>Confidence</Text>
+                  <Text style={styles.aiInfoLabel}>{t("dashboard.confidence")}</Text>
                   <Text style={styles.aiInfoText}>
                     {aiAssessment.confidence}
                   </Text>
@@ -1055,16 +1136,15 @@ export default function DashboardScreen() {
                 color={COLORS.primary}
               />
             </View>
-            <Text style={styles.successModalTitle}>Request has been sent</Text>
+            <Text style={styles.successModalTitle}>{t("dashboard.requestSent")}</Text>
             <Text style={styles.successModalText}>
-              Your investment request was submitted successfully and is now
-              visible to investors.
+              {t("dashboard.requestSentMessage")}
             </Text>
             <TouchableOpacity
               style={styles.successModalButton}
               onPress={() => setRequestSuccessVisible(false)}
             >
-              <Text style={styles.successModalButtonText}>OK</Text>
+              <Text style={styles.successModalButtonText}>{t("common.ok")}</Text>
             </TouchableOpacity>
           </Pressable>
         </Pressable>
@@ -1082,7 +1162,7 @@ export default function DashboardScreen() {
         >
           <Pressable style={styles.modalCard} onPress={() => undefined}>
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Choose Investment Amount</Text>
+              <Text style={styles.modalTitle}>{t("dashboard.chooseInvestmentAmount")}</Text>
               <TouchableOpacity onPress={() => setInvestModalVisible(false)}>
                 <MaterialCommunityIcons
                   name="close"
@@ -1093,13 +1173,13 @@ export default function DashboardScreen() {
             </View>
 
             <Text style={styles.investModalText}>
-              Enter how much you want to invest in this farmer request.
+              {t("dashboard.chooseInvestmentAmountText")}
             </Text>
 
             <TextInput
               value={investAmount}
               onChangeText={setInvestAmount}
-              placeholder="Amount in LKR"
+              placeholder={t("dashboard.amountInLkr")}
               placeholderTextColor={COLORS.textMuted}
               keyboardType="numeric"
               style={styles.input}
@@ -1110,7 +1190,7 @@ export default function DashboardScreen() {
                 style={styles.secondaryButton}
                 onPress={() => setInvestModalVisible(false)}
               >
-                <Text style={styles.secondaryButtonText}>Cancel</Text>
+                <Text style={styles.secondaryButtonText}>{t("common.cancel")}</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 style={styles.aiButton}
@@ -1120,7 +1200,7 @@ export default function DashboardScreen() {
                 {investingRequestId === selectedRequestId ? (
                   <ActivityIndicator color={COLORS.white} />
                 ) : (
-                  <Text style={styles.aiButtonText}>Confirm Investment</Text>
+                  <Text style={styles.aiButtonText}>{t("dashboard.confirmInvestment")}</Text>
                 )}
               </TouchableOpacity>
             </View>

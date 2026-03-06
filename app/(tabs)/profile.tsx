@@ -12,6 +12,7 @@ import {
 import { Divider, Text } from "react-native-paper";
 import { Colors } from "../../src/constants/Colors";
 import { clearSession, getSession } from "../../src/lib/auth";
+import { AppLanguage, useLanguage } from "../../src/lib/language";
 
 // Define the type for the props to avoid TypeScript warnings (Optional but good practice)
 interface ProfileOptionProps {
@@ -23,8 +24,11 @@ interface ProfileOptionProps {
 
 export default function ProfileScreen() {
   const router = useRouter();
+  const { language, setLanguage, t } = useLanguage();
   const [profileName, setProfileName] = useState("AgroLink User");
-  const [profileRole, setProfileRole] = useState("Member");
+  const [profileRole, setProfileRole] = useState<"farmer" | "investor">(
+    "farmer",
+  );
   const [profileId, setProfileId] = useState("AL-0000");
 
   useEffect(() => {
@@ -37,7 +41,7 @@ export default function ProfileScreen() {
       }
 
       setProfileName(session.user.name);
-      setProfileRole(session.user.role === "farmer" ? "Farmer" : "Investor");
+      setProfileRole(session.user.role);
       setProfileId(
         session.user.role === "farmer" ? "FM-20321212" : "IV-88421019",
       );
@@ -89,7 +93,7 @@ export default function ProfileScreen() {
     >
       {/* 1. Profile Header */}
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>My Profile</Text>
+        <Text style={styles.headerTitle}>{t("profile.myProfile")}</Text>
       </View>
 
       <View style={styles.profileCard}>
@@ -104,68 +108,104 @@ export default function ProfileScreen() {
         </View>
         <Text style={styles.name}>{profileName}</Text>
         <Text style={styles.role}>
-          {profileRole} | ID: {profileId}
+          {profileRole === "farmer"
+            ? t("profile.roleFarmer")
+            : t("profile.roleInvestor")} | ID: {profileId}
         </Text>
 
         {/* Profile Strength */}
         <View style={styles.strengthContainer}>
-          <Text style={styles.strengthLabel}>Profile Strength: 40%</Text>
+          <Text style={styles.strengthLabel}>
+            {t("profile.profileStrength", { percent: 40 })}
+          </Text>
           <View style={styles.strengthBarBg}>
             <View style={[styles.strengthBarFill, { width: "40%" }]} />
           </View>
           <Text style={styles.strengthHint}>
-            Complete your profile to increase trust.
+            {t("profile.completeProfile")}
           </Text>
         </View>
       </View>
 
       {/* 2. Menu Options */}
       <View style={styles.menuContainer}>
-        <Text style={styles.sectionHeader}>Account Settings</Text>
+        <Text style={styles.sectionHeader}>{t("profile.accountSettings")}</Text>
 
         {/* ✅ FIXED: Linked to 'app/profile/edit.tsx' */}
         <ProfileOption
           icon="account-edit"
-          label="Edit Personal Details"
+          label={t("profile.editPersonalDetails")}
           onPress={() => router.push("/profile/edit")}
         />
 
         {/* ✅ FIXED: Linked to 'app/profile/security.tsx' */}
         <ProfileOption
           icon="shield-lock"
-          label="Security & Password"
+          label={t("profile.securityPassword")}
           onPress={() => router.push("/profile/security")}
         />
 
         <ProfileOption
           icon="bank"
-          label="Payment Methods"
+          label={t("profile.paymentMethods")}
           onPress={() =>
             Alert.alert(
-              "Payment methods",
-              "Bank account management is available from Settings.",
+              t("profile.paymentMethodsTitle"),
+              t("profile.paymentMethodsMessage"),
             )
           }
         />
 
-        <Text style={styles.sectionHeader}>Support</Text>
+        <Text style={styles.sectionHeader}>{t("profile.languageTitle")}</Text>
+        <View style={styles.languageCard}>
+          <Text style={styles.languageDescription}>
+            {t("profile.languageDescription")}
+          </Text>
+          <View style={styles.languageRow}>
+            {([
+              { key: "en", label: t("common.english") },
+              { key: "si", label: t("common.sinhala") },
+              { key: "ta", label: t("common.tamil") },
+            ] as Array<{ key: AppLanguage; label: string }>).map((item) => (
+              <TouchableOpacity
+                key={item.key}
+                style={[
+                  styles.languageChip,
+                  language === item.key && styles.languageChipActive,
+                ]}
+                onPress={() => setLanguage(item.key)}
+              >
+                <Text
+                  style={[
+                    styles.languageChipText,
+                    language === item.key && styles.languageChipTextActive,
+                  ]}
+                >
+                  {item.label}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </View>
+
+        <Text style={styles.sectionHeader}>{t("profile.support")}</Text>
         <ProfileOption
           icon="help-circle"
-          label="Help & Support"
+          label={t("profile.helpSupport")}
           onPress={() =>
             Alert.alert(
-              "Help & Support",
-              "Contact support@agrolink.app for account or funding help.",
+              t("profile.helpSupportTitle"),
+              t("profile.helpSupportMessage"),
             )
           }
         />
         <ProfileOption
           icon="file-document"
-          label="Terms & Conditions"
+          label={t("profile.termsConditions")}
           onPress={() =>
             Alert.alert(
-              "Terms & Conditions",
-              "Legal and privacy details are available in the app documentation.",
+              t("profile.termsTitle"),
+              t("profile.termsMessage"),
             )
           }
         />
@@ -175,7 +215,7 @@ export default function ProfileScreen() {
         {/* ✅ FIXED: Logout goes back to Login Screen */}
         <ProfileOption
           icon="logout"
-          label="Log Out"
+          label={t("profile.logout")}
           onPress={handleLogout}
           isDestructive
         />
@@ -258,6 +298,41 @@ const styles = StyleSheet.create({
     marginBottom: 10,
     marginTop: 10,
     marginLeft: 10,
+  },
+  languageCard: {
+    backgroundColor: "#fff",
+    borderRadius: 15,
+    padding: 15,
+    marginBottom: 10,
+    elevation: 1,
+  },
+  languageDescription: {
+    fontSize: 12,
+    color: "gray",
+    lineHeight: 18,
+    marginBottom: 12,
+  },
+  languageRow: {
+    flexDirection: "row",
+    gap: 8,
+    flexWrap: "wrap",
+  },
+  languageChip: {
+    backgroundColor: "#E8F5E9",
+    borderRadius: 999,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+  },
+  languageChipActive: {
+    backgroundColor: Colors.primary,
+  },
+  languageChipText: {
+    color: Colors.primary,
+    fontSize: 12,
+    fontWeight: "700",
+  },
+  languageChipTextActive: {
+    color: "#fff",
   },
 
   optionRow: {

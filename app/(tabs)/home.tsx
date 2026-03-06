@@ -25,6 +25,7 @@ import {
   fetchInvestmentRequests,
   type FarmerOpportunity,
 } from "../../src/lib/dashboard";
+import { useLanguage } from "../../src/lib/language";
 
 // ─── Design Tokens ────────────────────────────────────────────────────────────
 const COLORS = {
@@ -161,6 +162,11 @@ const InvestmentCard = ({
   actionLabel,
   onPress,
   compact,
+  memberSinceLabel,
+  verifiedLabel,
+  fundingProgressLabel,
+  raisedLabel,
+  goalLabel,
 }: any) => {
   const progressPct = Math.min(Math.max(progress, 0), 1);
   const riskColor =
@@ -185,7 +191,7 @@ const InvestmentCard = ({
             color="#fff"
             style={{ marginRight: 4 }}
           />
-          <Text style={ic.riskText}>{riskLevel} Risk</Text>
+          <Text style={ic.riskText}>{riskLevel}</Text>
         </View>
 
         {/* Tags */}
@@ -210,7 +216,7 @@ const InvestmentCard = ({
           </View>
           <View style={{ flex: 1 }}>
             <Text style={ic.farmerName}>{farmer}</Text>
-            <Text style={ic.memberSince}>Member since {since}</Text>
+            <Text style={ic.memberSince}>{memberSinceLabel}</Text>
           </View>
           <View style={ic.verifiedBadge}>
             <MaterialCommunityIcons
@@ -218,7 +224,7 @@ const InvestmentCard = ({
               size={14}
               color={COLORS.primary}
             />
-            <Text style={ic.verifiedText}>Verified</Text>
+            <Text style={ic.verifiedText}>{verifiedLabel}</Text>
           </View>
         </View>
 
@@ -229,22 +235,15 @@ const InvestmentCard = ({
         {/* Progress Bar */}
         <View style={ic.progressBlock}>
           <View style={ic.progressLabels}>
-            <Text style={ic.progressTitle}>Funding Progress</Text>
+            <Text style={ic.progressTitle}>{fundingProgressLabel}</Text>
             <Text style={ic.progressPct}>{Math.round(progressPct * 100)}%</Text>
           </View>
           <View style={ic.track}>
             <View style={[ic.fill, { width: `${progressPct * 100}%` }]} />
           </View>
           <View style={[ic.amountRow, compact && ic.amountRowCompact]}>
-            <Text style={ic.raised}>
-              Raised:{" "}
-              <Text style={ic.raisedBold}>
-                ${raisedAmount.toLocaleString()}
-              </Text>
-            </Text>
-            <Text style={ic.target}>
-              Goal: ${targetAmount.toLocaleString()}
-            </Text>
+            <Text style={ic.raised}>{raisedLabel}</Text>
+            <Text style={ic.target}>{goalLabel}</Text>
           </View>
         </View>
 
@@ -267,15 +266,25 @@ export default function HomeScreen() {
   const { width } = useWindowDimensions();
   const router = useRouter();
   const isFocused = useIsFocused();
+  const { locale, t } = useLanguage();
   const [userName, setUserName] = useState("Fernando");
-  const [greeting, setGreeting] = useState("Good morning 🌱");
+  const [greeting, setGreeting] = useState(t("home.welcomeFarmer"));
   const [searchPlaceholder, setSearchPlaceholder] = useState(
-    "Search crops, farmers...",
+    t("home.searchFarmer"),
   );
   const [role, setRole] = useState<"farmer" | "investor">("farmer");
   const [requests, setRequests] = useState<FarmerOpportunity[]>([]);
   const [loadError, setLoadError] = useState("");
   const compactLayout = width < 390;
+
+  useEffect(() => {
+    setGreeting(
+      role === "farmer" ? t("home.welcomeFarmer") : t("home.welcomeInvestor"),
+    );
+    setSearchPlaceholder(
+      role === "farmer" ? t("home.searchFarmer") : t("home.searchInvestor"),
+    );
+  }, [role, t]);
 
   useEffect(() => {
     if (!isFocused) {
@@ -295,14 +304,14 @@ export default function HomeScreen() {
       setUserName(session.user.name);
       setGreeting(
         session.user.role === "farmer"
-          ? "Welcome back farmer 🌾"
-          : "Investor insights ready 📈",
+          ? t("home.welcomeFarmer")
+          : t("home.welcomeInvestor"),
       );
       setRole(session.user.role);
       setSearchPlaceholder(
         session.user.role === "farmer"
-          ? "Search crops, equipment..."
-          : "Search farmers, projects...",
+          ? t("home.searchFarmer")
+          : t("home.searchInvestor"),
       );
 
       try {
@@ -330,7 +339,7 @@ export default function HomeScreen() {
           error.message === SESSION_EXPIRED_MESSAGE
         ) {
           Alert.alert("Session expired", SESSION_EXPIRED_MESSAGE, [
-            { text: "Sign in", onPress: () => router.replace("/login") },
+            { text: t("dashboard.signIn"), onPress: () => router.replace("/login") },
           ]);
           return;
         }
@@ -373,17 +382,22 @@ export default function HomeScreen() {
       id: request.id,
       farmer: request.name,
       since: request.createdAt
-        ? new Date(request.createdAt).toLocaleDateString("en-GB", {
+        ? new Date(request.createdAt).toLocaleDateString(locale, {
             day: "2-digit",
             month: "short",
             year: "numeric",
           })
-        : "Recently",
+        : t("common.recently"),
       description: request.summary,
       progress,
       raisedAmount,
       targetAmount,
-      riskLevel: request.riskLevel,
+      riskLevel:
+        request.riskLevel === "Low"
+          ? t("common.low")
+          : request.riskLevel === "Medium"
+            ? t("common.medium")
+            : t("common.high"),
       tags: [request.crop, request.location],
       image,
     };
@@ -407,7 +421,14 @@ export default function HomeScreen() {
             <View>
               <Text style={s.greeting}>{greeting}</Text>
               <Text style={s.userName}>{userName}</Text>
-              <Text style={s.date}>Monday, 24 November 2025</Text>
+              <Text style={s.date}>
+                {new Date().toLocaleDateString(locale, {
+                  weekday: "long",
+                  day: "2-digit",
+                  month: "long",
+                  year: "numeric",
+                })}
+              </Text>
             </View>
             <TouchableOpacity
               onPress={() => router.push("/(tabs)/profile")}
@@ -440,10 +461,10 @@ export default function HomeScreen() {
               style={s.micBtn}
               onPress={() =>
                 Alert.alert(
-                  "Search hint",
+                  t("home.searchHintTitle"),
                   role === "farmer"
-                    ? "Use the dashboard to manage only your own investment requests."
-                    : "Use the dashboard to review and invest in active farmer requests.",
+                    ? t("home.searchHintFarmer")
+                    : t("home.searchHintInvestor"),
                 )
               }
             >
@@ -463,8 +484,8 @@ export default function HomeScreen() {
             />
             <Text style={s.roleBannerText}>
               {role === "farmer"
-                ? "Private farmer view: only your own requests appear on this home feed."
-                : "Investor marketplace: you are seeing active requests from multiple farmers."}
+                ? t("home.roleBannerFarmer")
+                : t("home.roleBannerInvestor")}
             </Text>
           </View>
         </View>
@@ -481,7 +502,7 @@ export default function HomeScreen() {
                 />
                 <Text style={s.cityText}>Anuradhapura</Text>
               </View>
-              <Text style={s.weatherDesc}>Light rain expected</Text>
+              <Text style={s.weatherDesc}>{t("home.lightRainExpected")}</Text>
             </View>
             <View style={s.tempBlock}>
               <MaterialCommunityIcons
@@ -498,14 +519,14 @@ export default function HomeScreen() {
           <View style={[s.statsRow, compactLayout && s.statsRowCompact]}>
             <StatBadge
               icon="water-percent"
-              label="Humidity"
+              label={t("home.humidity")}
               value="59%"
               color={COLORS.info}
             />
             {!compactLayout ? <View style={s.statDivider} /> : null}
             <StatBadge
               icon="thermometer"
-              label="Soil Temp"
+              label={t("home.soilTemp")}
               value="22°C"
               color={COLORS.accentWarm}
               iconFamily="mci"
@@ -513,7 +534,7 @@ export default function HomeScreen() {
             {!compactLayout ? <View style={s.statDivider} /> : null}
             <StatBadge
               icon="weather-windy"
-              label="Wind"
+              label={t("home.wind")}
               value="6 m/s"
               color={COLORS.accent}
             />
@@ -536,7 +557,15 @@ export default function HomeScreen() {
                 />
               </View>
               <Text style={s.kpiValue}>{k.value}</Text>
-              <Text style={s.kpiLabel}>{k.label}</Text>
+              <Text style={s.kpiLabel}>
+                {k.label === "Active Crops"
+                  ? t("home.activeCrops")
+                  : k.label === "Investors"
+                    ? t("home.investors")
+                    : k.label === "Funded Today"
+                      ? t("home.fundedToday")
+                      : t("home.avgReturn")}
+              </Text>
             </View>
           ))}
         </ScrollView>
@@ -545,10 +574,10 @@ export default function HomeScreen() {
         <SectionHeader
           title={
             role === "investor"
-              ? "Open Investment Requests"
-              : "Your Active Requests"
+              ? t("home.openInvestmentRequests")
+              : t("home.yourActiveRequests")
           }
-          actionLabel="See all"
+          actionLabel={t("home.seeAll")}
           onAction={() => router.push("/(tabs)/dashboard")}
         />
 
@@ -567,20 +596,22 @@ export default function HomeScreen() {
           <View style={s.emptyCard}>
             <Text style={s.emptyTitle}>
               {role === "farmer"
-                ? "No personal requests yet"
-                : "No farmer requests live yet"}
+                ? t("home.noPersonalRequests")
+                : t("home.noFarmerRequests")}
             </Text>
             <Text style={s.emptyText}>
               {role === "farmer"
-                ? "Farmers only see their own requests here. Create one from the dashboard."
-                : "Investors can review multiple farmer requests here once they are created."}
+                ? t("home.noPersonalRequestsText")
+                : t("home.noFarmerRequestsText")}
             </Text>
             <TouchableOpacity
               style={s.emptyButton}
               onPress={handlePrimaryAction}
             >
               <Text style={s.emptyButtonText}>
-                {role === "farmer" ? "Open Dashboard" : "View Dashboard"}
+                {role === "farmer"
+                  ? t("home.openDashboard")
+                  : t("home.viewDashboard")}
               </Text>
             </TouchableOpacity>
           </View>
@@ -595,8 +626,19 @@ export default function HomeScreen() {
                 {...card}
                 compact={compactLayout}
                 actionLabel={
-                  role === "investor" ? "Invest Now" : "Manage Request"
+                  role === "investor"
+                    ? t("home.investNow")
+                    : t("home.manageRequest")
                 }
+                memberSinceLabel={t("common.memberSince", { date: card.since })}
+                verifiedLabel={t("common.verified")}
+                fundingProgressLabel={t("common.fundingProgress")}
+                raisedLabel={t("common.raisedValue", {
+                  amount: `$${card.raisedAmount.toLocaleString()}`,
+                })}
+                goalLabel={t("common.goalValue", {
+                  amount: `$${card.targetAmount.toLocaleString()}`,
+                })}
                 onPress={handlePrimaryAction}
               />
             );
