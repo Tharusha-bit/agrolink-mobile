@@ -16,6 +16,7 @@ import {
   View,
 } from "react-native";
 import { demoAccounts, getSession, loginUser, UserRole } from "../src/lib/auth";
+import { useLanguage } from "../src/lib/language";
 
 // ─── Design Tokens ─────────────────────────────────────────────────────────────
 const COLORS = {
@@ -105,6 +106,7 @@ const LoginInput = ({
 // ─── Main Screen ──────────────────────────────────────────────────────────────
 export default function LoginScreen() {
   const router = useRouter();
+  const { t } = useLanguage();
 
   const [role, setRole] = useState<UserRole>("farmer");
   const [email, setEmail] = useState("");
@@ -150,7 +152,7 @@ export default function LoginScreen() {
 
   const handleLogin = async () => {
     if (!email.trim() || !password.trim()) {
-      setErrorMessage("Enter your email and password to continue.");
+      setErrorMessage(t("login.enterCredentials"));
       return;
     }
 
@@ -163,15 +165,18 @@ export default function LoginScreen() {
       setLoading(false);
       if (!stayLoggedIn) {
         Alert.alert(
-          "Signed in",
-          `Logged in with ${result.source === "api" ? "backend" : "demo"} account.`,
+          t("login.signedIn"),
+          t("login.loggedInWith", {
+            source:
+              result.source === "api" ? t("login.backend") : t("login.demo"),
+          }),
         );
       }
       router.replace("/(tabs)/dashboard");
     } catch (error) {
       setLoading(false);
       setErrorMessage(
-        error instanceof Error ? error.message : "Unable to sign in right now.",
+        error instanceof Error ? error.message : t("login.unableToSignIn"),
       );
     }
   };
@@ -203,14 +208,14 @@ export default function LoginScreen() {
               </View>
 
               <Text style={s.appName}>AgroLink</Text>
-              <Text style={s.tagline}>Future of Agri-Finance</Text>
+              <Text style={s.tagline}>{t("common.tagline")}</Text>
             </View>
           </View>
 
           {/* ── LOGIN CARD ── */}
           <View style={[s.card, SHADOWS.md]}>
-            <Text style={s.cardTitle}>Welcome Back</Text>
-            <Text style={s.cardSub}>Sign in to manage your investments</Text>
+            <Text style={s.cardTitle}>{t("login.welcomeBack")}</Text>
+            <Text style={s.cardSub}>{t("login.signInToManage")}</Text>
 
             <View style={s.roleToggleContainer}>
               <TouchableOpacity
@@ -231,7 +236,7 @@ export default function LoginScreen() {
                     role === "farmer" && s.roleToggleTextActive,
                   ]}
                 >
-                  Farmer
+                  {t("common.farmer")}
                 </Text>
               </TouchableOpacity>
               <TouchableOpacity
@@ -252,17 +257,17 @@ export default function LoginScreen() {
                     role === "investor" && s.roleToggleTextActive,
                   ]}
                 >
-                  Investor
+                  {t("common.investor")}
                 </Text>
               </TouchableOpacity>
             </View>
 
             <View style={s.demoSection}>
-              <Text style={s.demoTitle}>Quick Demo Access</Text>
+              <Text style={s.demoTitle}>{t("login.quickDemoAccess")}</Text>
               <Text style={s.demoSubtitle}>
                 {role === "farmer"
-                  ? "Three farmer demo accounts"
-                  : "Three investor demo accounts"}
+                  ? t("login.threeFarmerDemoAccounts")
+                  : t("login.threeInvestorDemoAccounts")}
               </Text>
               <View style={s.demoList}>
                 {visibleDemoAccounts.map((account, index) => (
@@ -272,7 +277,9 @@ export default function LoginScreen() {
                     onPress={() => applyDemoAccount(account.user.email)}
                   >
                     <Text style={s.demoCardTitle}>
-                      {DEMO_LABELS[role]} {index + 1}
+                      {(role === "farmer"
+                        ? t("login.demoFarmer")
+                        : t("login.demoInvestor")) + ` ${index + 1}`}
                     </Text>
                     <Text style={s.demoCardText}>{account.user.name}</Text>
                     <Text style={s.demoCardText}>{account.user.email}</Text>
@@ -284,8 +291,8 @@ export default function LoginScreen() {
 
             {/* Email Input */}
             <LoginInput
-              label="Email Address"
-              placeholder="sample@email.com"
+              label={t("login.emailAddress")}
+              placeholder={t("login.emailPlaceholder")}
               icon="email-outline"
               value={email}
               onChangeText={setEmail}
@@ -293,7 +300,7 @@ export default function LoginScreen() {
 
             {/* Password Input */}
             <LoginInput
-              label="Password"
+              label={t("login.password")}
               placeholder="••••••••"
               icon="lock-outline"
               value={password}
@@ -322,11 +329,11 @@ export default function LoginScreen() {
                   size={22}
                   color={COLORS.primary}
                 />
-                <Text style={s.checkboxText}>Stay logged in</Text>
+                <Text style={s.checkboxText}>{t("login.stayLoggedIn")}</Text>
               </TouchableOpacity>
 
               <TouchableOpacity>
-                <Text style={s.forgotText}>Forgot Password?</Text>
+                <Text style={s.forgotText}>{t("login.forgotPassword")}</Text>
               </TouchableOpacity>
             </View>
 
@@ -341,7 +348,7 @@ export default function LoginScreen() {
                 <ActivityIndicator color={COLORS.white} />
               ) : (
                 <>
-                  <Text style={s.loginBtnText}>Login</Text>
+                  <Text style={s.loginBtnText}>{t("login.login")}</Text>
                   <MaterialCommunityIcons
                     name="login"
                     size={20}
@@ -353,9 +360,9 @@ export default function LoginScreen() {
 
             {/* Footer */}
             <View style={s.footer}>
-              <Text style={s.footerText}>Don't have an account? </Text>
+              <Text style={s.footerText}>{t("login.noAccount")} </Text>
               <TouchableOpacity onPress={() => router.push("/signup")}>
-                <Text style={s.signupLink}>Sign Up</Text>
+                <Text style={s.signupLink}>{t("login.signUp")}</Text>
               </TouchableOpacity>
             </View>
           </View>

@@ -9,6 +9,7 @@ import {
   View,
 } from "react-native";
 import { getSession } from "../src/lib/auth";
+import { useLanguage } from "../src/lib/language";
 
 // ─── Design Tokens (Matching your new theme) ──────────────────────────────────
 const COLORS = {
@@ -21,6 +22,7 @@ const COLORS = {
 
 export default function SplashScreen() {
   const router = useRouter();
+  const { t } = useLanguage();
 
   useEffect(() => {
     let active = true;
@@ -70,13 +72,13 @@ export default function SplashScreen() {
         </View>
 
         <Text style={s.appName}>AgroLink</Text>
-        <Text style={s.tagline}>Future of Agri-Finance</Text>
+        <Text style={s.tagline}>{t("common.tagline")}</Text>
       </View>
 
       {/* ── LOADER ── */}
       <View style={s.loaderContainer}>
         <ActivityIndicator size="large" color={COLORS.white} />
-        <Text style={s.loadingText}>Initializing...</Text>
+        <Text style={s.loadingText}>{t("splash.initializing")}</Text>
       </View>
     </View>
   );

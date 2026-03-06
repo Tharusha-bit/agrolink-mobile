@@ -17,6 +17,7 @@ import {
   View,
 } from "react-native";
 import { registerUser } from "../src/lib/auth";
+import { useLanguage } from "../src/lib/language";
 
 // ─── Design Tokens ─────────────────────────────────────────────────────────────
 const COLORS = {
@@ -89,6 +90,7 @@ const SignupInput = ({
 // ─── Main Screen ──────────────────────────────────────────────────────────────
 export default function SignupScreen() {
   const router = useRouter();
+  const { t } = useLanguage();
   const [isFarmer, setIsFarmer] = useState(true);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -109,24 +111,24 @@ export default function SignupScreen() {
       !nic.trim()
     ) {
       Alert.alert(
-        "Missing details",
-        "Please complete the required fields first.",
+        t("signup.missingDetailsTitle"),
+        t("signup.missingDetailsMessage"),
       );
       return;
     }
 
     if (password !== confirmPassword) {
       Alert.alert(
-        "Password mismatch",
-        "Password and confirm password must match.",
+        t("signup.passwordMismatchTitle"),
+        t("signup.passwordMismatchMessage"),
       );
       return;
     }
 
     if (isFarmer && (!farmerId.trim() || !gramaSevakaLetter)) {
       Alert.alert(
-        "Verification required",
-        "Farmers must enter a farmer ID and upload the required document.",
+        t("signup.verificationRequiredTitle"),
+        t("signup.verificationRequiredMessage"),
       );
       return;
     }
@@ -144,10 +146,10 @@ export default function SignupScreen() {
       router.replace("/(tabs)/dashboard");
     } catch (error) {
       Alert.alert(
-        "Signup failed",
+        t("signup.signupFailed"),
         error instanceof Error
           ? error.message
-          : "Unable to create account right now.",
+          : t("signup.unableToCreateAccount"),
       );
     } finally {
       setSubmitting(false);
@@ -173,8 +175,8 @@ export default function SignupScreen() {
       });
     } catch {
       Alert.alert(
-        "Upload failed",
-        "Unable to pick the Grama Sevaka letter right now. Please try again.",
+        t("signup.uploadFailed"),
+        t("signup.uploadFailedMessage"),
       );
     }
   };
@@ -211,13 +213,13 @@ export default function SignupScreen() {
               </View>
 
               <Text style={s.appName}>AgroLink</Text>
-              <Text style={s.tagline}>Future of Agri-Finance</Text>
+              <Text style={s.tagline}>{t("common.tagline")}</Text>
             </View>
           </View>
 
           {/* ── CARD ── */}
           <View style={[s.card, SHADOWS.md]}>
-            <Text style={s.cardTitle}>Create Account</Text>
+            <Text style={s.cardTitle}>{t("signup.createAccount")}</Text>
 
             {/* User Type Toggle */}
             <View style={s.toggleContainer}>
@@ -231,7 +233,7 @@ export default function SignupScreen() {
                   color={isFarmer ? COLORS.white : COLORS.textMuted}
                 />
                 <Text style={[s.toggleText, isFarmer && s.toggleTextActive]}>
-                  Farmer
+                  {t("common.farmer")}
                 </Text>
               </TouchableOpacity>
 
@@ -245,28 +247,28 @@ export default function SignupScreen() {
                   color={!isFarmer ? COLORS.white : COLORS.textMuted}
                 />
                 <Text style={[s.toggleText, !isFarmer && s.toggleTextActive]}>
-                  Investor
+                  {t("common.investor")}
                 </Text>
               </TouchableOpacity>
             </View>
 
             {/* Inputs */}
             <SignupInput
-              label="Full Name"
-              placeholder="Your full name"
+              label={t("signup.fullName")}
+              placeholder={t("signup.fullNamePlaceholder")}
               icon="account-outline"
               value={name}
               onChangeText={setName}
             />
             <SignupInput
-              label="Email"
-              placeholder="sample@email.com"
+              label={t("signup.email")}
+              placeholder={t("login.emailPlaceholder")}
               icon="email-outline"
               value={email}
               onChangeText={setEmail}
             />
             <SignupInput
-              label="Password"
+              label={t("signup.password")}
               placeholder="••••••••"
               icon="lock-outline"
               value={password}
@@ -274,7 +276,7 @@ export default function SignupScreen() {
               secureTextEntry
             />
             <SignupInput
-              label="Confirm Password"
+              label={t("signup.confirmPassword")}
               placeholder="••••••••"
               icon="lock-check-outline"
               value={confirmPassword}
@@ -285,14 +287,14 @@ export default function SignupScreen() {
             {isFarmer ? (
               <>
                 <SignupInput
-                  label="Farmer ID"
+                  label={t("signup.farmerId")}
                   placeholder="FM-2024-XXX"
                   icon="identifier"
                   value={farmerId}
                   onChangeText={setFarmerId}
                 />
                 <SignupInput
-                  label="NIC Number"
+                  label={t("signup.nic")}
                   placeholder="99xxxxxxxV"
                   icon="card-account-details-outline"
                   value={nic}
@@ -300,9 +302,9 @@ export default function SignupScreen() {
                 />
 
                 <View style={s.uploadSection}>
-                  <Text style={s.uploadTitle}>Verification Uploads</Text>
+                  <Text style={s.uploadTitle}>{t("signup.verificationUploads")}</Text>
                   <Text style={s.uploadHint}>
-                    Upload the Grama Sevaka letter before creating the account.
+                    {t("signup.uploadHint")}
                   </Text>
 
                   <TouchableOpacity
@@ -317,11 +319,11 @@ export default function SignupScreen() {
                       />
                     </View>
                     <View style={s.uploadContent}>
-                      <Text style={s.uploadLabel}>Grama Sevaka Letter</Text>
+                      <Text style={s.uploadLabel}>{t("signup.gramaSevakaLetter")}</Text>
                       <Text style={s.uploadValue}>
                         {gramaSevakaLetter
                           ? gramaSevakaLetter.name
-                          : "Upload PDF or image"}
+                          : t("signup.uploadPdfOrImage")}
                       </Text>
                     </View>
                     {gramaSevakaLetter ? (
@@ -334,7 +336,7 @@ export default function SignupScreen() {
                           size={18}
                           color={COLORS.primary}
                         />
-                        <Text style={s.removeUploadText}>Remove</Text>
+                        <Text style={s.removeUploadText}>{t("signup.remove")}</Text>
                       </TouchableOpacity>
                     ) : (
                       <MaterialCommunityIcons
@@ -348,7 +350,7 @@ export default function SignupScreen() {
               </>
             ) : (
               <SignupInput
-                label="NIC Number"
+                label={t("signup.nic")}
                 placeholder="99xxxxxxxV"
                 icon="card-account-details-outline"
                 value={nic}
@@ -366,7 +368,7 @@ export default function SignupScreen() {
                 <ActivityIndicator color={COLORS.white} />
               ) : (
                 <>
-                  <Text style={s.signupBtnText}>Sign Up</Text>
+                  <Text style={s.signupBtnText}>{t("signup.signUp")}</Text>
                   <MaterialCommunityIcons
                     name="arrow-right"
                     size={20}
@@ -377,9 +379,9 @@ export default function SignupScreen() {
             </TouchableOpacity>
 
             <View style={s.footer}>
-              <Text style={s.footerText}>Already have an account? </Text>
+              <Text style={s.footerText}>{t("signup.alreadyHaveAccount")} </Text>
               <TouchableOpacity onPress={() => router.replace("/login")}>
-                <Text style={s.loginLink}>Login</Text>
+                <Text style={s.loginLink}>{t("signup.login")}</Text>
               </TouchableOpacity>
             </View>
           </View>
