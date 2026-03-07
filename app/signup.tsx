@@ -1,11 +1,9 @@
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import * as DocumentPicker from "expo-document-picker";
 import * as ImagePicker from "expo-image-picker";
-import axios from "axios";
 import { useRouter } from "expo-router";
 import React, { useState } from "react";
 import {
-  ActivityIndicator,
   Alert,
   Image,
   KeyboardAvoidingView,
@@ -21,13 +19,12 @@ import {
 
 // ─── Design Tokens ─────────────────────────────────────────────────────────────
 const COLORS = {
-  primary: "#216000",
+  primary: "#216000", // Deep Forest Green
   primaryLight: "#2E8B00",
   primaryPale: "#E8F5E1",
   white: "#FFFFFF",
   surface: "#F7F9F4",
   text: "#1A2E0D",
-  textSecondary: "#5C7A4A",
   textMuted: "#9BB08A",
   border: "#DDE8D4",
   accent: "#76C442",
@@ -51,9 +48,6 @@ interface SignupInputProps {
   placeholder: string;
   icon: any;
   secureTextEntry?: boolean;
-  keyboardType?: "default" | "phone-pad" | "numeric";
-  value: string;
-  onChangeText: (text: string) => void;
 }
 
 interface SelectedUpload {
@@ -66,9 +60,6 @@ const SignupInput = ({
   placeholder,
   icon,
   secureTextEntry = false,
-  keyboardType = "default",
-  value,
-  onChangeText,
 }: SignupInputProps) => (
   <View style={s.inputContainer}>
     <Text style={s.inputLabel}>{label}</Text>
@@ -84,10 +75,6 @@ const SignupInput = ({
         placeholder={placeholder}
         placeholderTextColor={COLORS.textMuted}
         secureTextEntry={secureTextEntry}
-        keyboardType={keyboardType}
-        autoCapitalize={secureTextEntry ? "none" : "words"}
-        value={value}
-        onChangeText={onChangeText}
       />
     </View>
   </View>
@@ -97,87 +84,18 @@ const SignupInput = ({
 export default function SignupScreen() {
   const router = useRouter();
   const [isFarmer, setIsFarmer] = useState(true);
-  const [firstName, setFirstName] = useState("");
-  const [lastName, setLastName] = useState("");
-  const [phoneNumber, setPhoneNumber] = useState("");
-  const [nic, setNic] = useState("");
-  const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
   const [farmerPhoto, setFarmerPhoto] = useState<SelectedUpload | null>(null);
   const [gramaSevakaLetter, setGramaSevakaLetter] =
     useState<SelectedUpload | null>(null);
-  const [loading, setLoading] = useState(false);
 
   // ─── Logic: Handle Routing based on Role ───
-  const handleSignup = async () => {
-    // 1. Basic validation
-    if (
-      !firstName ||
-      !lastName ||
-      !phoneNumber ||
-      !nic ||
-      !password ||
-      !confirmPassword
-    ) {
-      Alert.alert("Error", "Please fill in all fields.");
-      return;
-    }
-    if (password !== confirmPassword) {
-      Alert.alert("Error", "Passwords do not match.");
-      return;
-    }
-    if (isFarmer && (!farmerPhoto || !gramaSevakaLetter)) {
-      Alert.alert("Error", "Please upload required documents for farmer registration.");
-      return;
-    }
-
-    setLoading(true);
-
-    try {
-      // ⚠️ UPDATE THIS IP TO YOUR CURRENT LAPTOP IP
-      const API_URL = "http://172.20.10.6:8080/api/auth/register";
-
-      const userData = {
-        firstName: firstName,
-        lastName: lastName,
-        phoneNumber: phoneNumber,
-        nic: nic,
-        password: password,
-        role: isFarmer ? "FARMER" : "INVESTOR",
-      };
-
-      const response = await axios.post(API_URL, userData);
-
-      if (response.status === 200) {
-        Alert.alert("Success", "Account created successfully!", [
-          { 
-            text: "Continue", 
-            onPress: () => {
-              if (isFarmer) {
-                // Go to the Farmer's separate world
-                router.replace('/(farmer)/home'); 
-              } else {
-                // Go to the Investor's separate world
-                router.replace('/(investor)/home'); 
-              }
-            }
-          },
-        ]);
-      }
-    } catch (error: any) {
-      if (error.response) {
-        Alert.alert(
-          "Registration Failed",
-          error.response.data || "User might already exist.",
-        );
-      } else {
-        Alert.alert(
-          "Network Error",
-          "Check your IP address and ensure the backend is running.",
-        );
-      }
-    } finally {
-      setLoading(false);
+  const handleSignup = () => {
+    if (isFarmer) {
+      // ✅ Route to the Farmer Folder
+      router.replace("/farmer/farmerhome");
+    } else {
+      // ✅ Route to the Investor/Main Tabs
+      router.replace("/investor/home");
     }
   };
 
@@ -243,11 +161,14 @@ export default function SignupScreen() {
           contentContainerStyle={s.scrollContent}
           showsVerticalScrollIndicator={false}
         >
+          {/* ── HEADER ── */}
           <View style={s.header}>
             <View style={s.decCircle} />
+
             <TouchableOpacity style={s.backBtn} onPress={() => router.back()}>
               <Ionicons name="arrow-back" size={24} color={COLORS.white} />
             </TouchableOpacity>
+
             <View style={s.logoSection}>
               <View style={s.logoBadge}>
                 <Image
@@ -256,14 +177,17 @@ export default function SignupScreen() {
                   resizeMode="contain"
                 />
               </View>
+
               <Text style={s.appName}>AgroLink</Text>
               <Text style={s.tagline}>Future of Agri-Finance</Text>
             </View>
           </View>
 
+          {/* ── CARD ── */}
           <View style={[s.card, SHADOWS.md]}>
             <Text style={s.cardTitle}>Create Account</Text>
 
+            {/* User Type Toggle */}
             <View style={s.toggleContainer}>
               <TouchableOpacity
                 style={[s.toggleBtn, isFarmer && s.toggleBtnActive]}
@@ -278,6 +202,7 @@ export default function SignupScreen() {
                   Farmer
                 </Text>
               </TouchableOpacity>
+
               <TouchableOpacity
                 style={[s.toggleBtn, !isFarmer && s.toggleBtnActive]}
                 onPress={() => setIsFarmer(false)}
@@ -293,61 +218,38 @@ export default function SignupScreen() {
               </TouchableOpacity>
             </View>
 
-            <View style={s.rowInputs}>
-              <View style={{ flex: 1, marginRight: 10 }}>
-                <SignupInput
-                  label="First Name"
-                  placeholder="John"
-                  icon="account-outline"
-                  value={firstName}
-                  onChangeText={setFirstName}
-                />
-              </View>
-              <View style={{ flex: 1 }}>
-                <SignupInput
-                  label="Last Name"
-                  placeholder="Doe"
-                  icon="account-outline"
-                  value={lastName}
-                  onChangeText={setLastName}
-                />
-              </View>
-            </View>
-
+            {/* Inputs */}
             <SignupInput
-              label="Phone Number"
-              placeholder="077 123 4567"
-              icon="phone-outline"
-              keyboardType="phone-pad"
-              value={phoneNumber}
-              onChangeText={setPhoneNumber}
-            />
-            <SignupInput
-              label="NIC Number"
-              placeholder="99xxxxxxxV"
-              icon="card-account-details-outline"
-              value={nic}
-              onChangeText={setNic}
+              label="Username"
+              placeholder="sample@email.com"
+              icon="email-outline"
             />
             <SignupInput
               label="Password"
               placeholder="••••••••"
               icon="lock-outline"
               secureTextEntry
-              value={password}
-              onChangeText={setPassword}
             />
             <SignupInput
               label="Confirm Password"
               placeholder="••••••••"
               icon="lock-check-outline"
               secureTextEntry
-              value={confirmPassword}
-              onChangeText={setConfirmPassword}
             />
 
             {isFarmer ? (
               <>
+                <SignupInput
+                  label="Farmer ID"
+                  placeholder="FM-2024-XXX"
+                  icon="identifier"
+                />
+                <SignupInput
+                  label="NIC Number"
+                  placeholder="99xxxxxxxV"
+                  icon="card-account-details-outline"
+                />
+
                 <View style={s.uploadSection}>
                   <Text style={s.uploadTitle}>Verification Uploads</Text>
                   <Text style={s.uploadHint}>
@@ -444,25 +346,22 @@ export default function SignupScreen() {
                   </TouchableOpacity>
                 </View>
               </>
-            ) : null}
+            ) : (
+              <SignupInput
+                label="NIC Number"
+                placeholder="99xxxxxxxV"
+                icon="card-account-details-outline"
+              />
+            )}
 
-            <TouchableOpacity 
-              style={s.signupBtn} 
-              onPress={handleSignup}
-              disabled={loading}
-            >
-              {loading ? (
-                <ActivityIndicator color="#fff" />
-              ) : (
-                <>
-                  <Text style={s.signupBtnText}>Sign Up</Text>
-                  <MaterialCommunityIcons
-                    name="arrow-right"
-                    size={20}
-                    color={COLORS.white}
-                  />
-                </>
-              )}
+            {/* Signup Button (Now Calls Logic) */}
+            <TouchableOpacity style={s.signupBtn} onPress={handleSignup}>
+              <Text style={s.signupBtnText}>Sign Up</Text>
+              <MaterialCommunityIcons
+                name="arrow-right"
+                size={20}
+                color={COLORS.white}
+              />
             </TouchableOpacity>
 
             <View style={s.footer}>
@@ -481,6 +380,8 @@ export default function SignupScreen() {
 const s = StyleSheet.create({
   root: { flex: 1, backgroundColor: COLORS.surface },
   scrollContent: { flexGrow: 1, paddingBottom: 40 },
+
+  /* HEADER STYLES */
   header: {
     backgroundColor: COLORS.primary,
     height: 280,
@@ -502,7 +403,10 @@ const s = StyleSheet.create({
     opacity: 0.4,
   },
   backBtn: { position: "absolute", top: 50, left: 20, padding: 8, zIndex: 10 },
+
   logoSection: { alignItems: "center", marginTop: 10 },
+
+  /* LOGO BADGE STYLE */
   logoBadge: {
     width: 80,
     height: 80,
@@ -517,7 +421,11 @@ const s = StyleSheet.create({
     shadowRadius: 5,
     elevation: 8,
   },
-  logo: { width: 55, height: 55 },
+  logo: {
+    width: 55,
+    height: 55,
+  },
+
   appName: {
     fontSize: 30,
     fontWeight: "900",
@@ -530,6 +438,8 @@ const s = StyleSheet.create({
     fontWeight: "500",
     letterSpacing: 1,
   },
+
+  /* CARD STYLES */
   card: {
     backgroundColor: COLORS.white,
     marginHorizontal: 24,
@@ -545,6 +455,8 @@ const s = StyleSheet.create({
     textAlign: "center",
     marginBottom: 20,
   },
+
+  /* TOGGLE */
   toggleContainer: {
     flexDirection: "row",
     backgroundColor: COLORS.surface,
@@ -564,7 +476,8 @@ const s = StyleSheet.create({
   toggleBtnActive: { backgroundColor: COLORS.primary },
   toggleText: { fontSize: 14, fontWeight: "600", color: COLORS.textMuted },
   toggleTextActive: { color: COLORS.white },
-  rowInputs: { flexDirection: "row", justifyContent: "space-between" },
+
+  /* INPUTS */
   inputContainer: { marginBottom: 16 },
   inputLabel: {
     fontSize: 12,
@@ -659,6 +572,8 @@ const s = StyleSheet.create({
     fontWeight: "800",
     letterSpacing: 0.5,
   },
+
+  /* FOOTER */
   footer: { flexDirection: "row", justifyContent: "center", marginTop: 20 },
   footerText: { color: COLORS.textMuted, fontSize: 14 },
   loginLink: { color: COLORS.primary, fontWeight: "700", fontSize: 14 },
