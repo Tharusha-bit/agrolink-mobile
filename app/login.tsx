@@ -17,7 +17,7 @@ import {
 
 // ─── Design Tokens ─────────────────────────────────────────────────────────────
 const COLORS = {
-  primary: '#216000',       // Deep Forest Green
+  primary: '#216000',       
   primaryLight: '#2E8B00',
   primaryPale: '#E8F5E1',
   white: '#FFFFFF',
@@ -34,7 +34,7 @@ const SHADOWS = {
   }),
 };
 
-// ─── Reusable Input Component (Local to ensure styling match) ──────────────────
+// ─── Input Component ───────────────────────────────────────────────────────────
 const LoginInput = ({ 
   label, 
   placeholder, 
@@ -55,7 +55,6 @@ const LoginInput = ({
         secureTextEntry={secureTextEntry}
         autoCapitalize="none"
       />
-      {/* Password Eye Toggle */}
       {isPassword && (
         <TouchableOpacity onPress={onTogglePassword}>
           <Ionicons name={visible ? 'eye-off' : 'eye'} size={20} color={COLORS.textMuted} />
@@ -68,19 +67,28 @@ const LoginInput = ({
 // ─── Main Screen ──────────────────────────────────────────────────────────────
 export default function LoginScreen() {
   const router = useRouter();
-
-  const [stayLoggedIn, setStayLoggedIn] = useState(false);
+  
+  // 🔘 VIVA TOOL: Default to Farmer, but allow switching
+  const [userRole, setUserRole] = useState<'FARMER' | 'INVESTOR'>('FARMER');
+  
   const [passwordVisible, setPasswordVisible] = useState(false);
+  const [stayLoggedIn, setStayLoggedIn] = useState(false);
   const [loading, setLoading] = useState(false);
 
   const handleLogin = async () => {
     setLoading(true);
-
-    // Simulate API call
     setTimeout(() => {
       setLoading(false);
-      // Navigate to the Tabs (Dashboard)
-      router.replace('/(tabs)/home');
+
+      // ✅ FIXED ROUTING LOGIC
+      if (userRole === 'FARMER') {
+        // Go to the Farmer's separate world
+        router.replace('/farmer/farmerhome'); 
+      } else {
+        // Go to the Investor's separate world
+        router.replace('/investor/home'); 
+      }
+
     }, 1500);
   };
 
@@ -94,9 +102,7 @@ export default function LoginScreen() {
           {/* ── HEADER ── */}
           <View style={s.header}>
             <View style={s.decCircle} />
-            
             <View style={s.logoSection}>
-              {/* Logo Badge (White Circle to fix square image look) */}
               <View style={s.logoBadge}>
                 <Image
                   source={require('../src/assets/logo.png')}
@@ -104,7 +110,6 @@ export default function LoginScreen() {
                   resizeMode="contain"
                 />
               </View>
-              
               <Text style={s.appName}>AgroLink</Text>
               <Text style={s.tagline}>Future of Agri-Finance</Text>
             </View>
@@ -113,16 +118,24 @@ export default function LoginScreen() {
           {/* ── LOGIN CARD ── */}
           <View style={[s.card, SHADOWS.md]}>
             <Text style={s.cardTitle}>Welcome Back</Text>
-            <Text style={s.cardSub}>Sign in to manage your investments</Text>
+            
+            {/* 🔘 VIVA TOGGLE: Switch Roles for Demo */}
+            <View style={s.roleSwitcher}>
+              <TouchableOpacity onPress={() => setUserRole('FARMER')}>
+                <Text style={[s.roleText, userRole === 'FARMER' && s.roleActive]}>Farmer</Text>
+              </TouchableOpacity>
+              <View style={s.roleDivider} />
+              <TouchableOpacity onPress={() => setUserRole('INVESTOR')}>
+                <Text style={[s.roleText, userRole === 'INVESTOR' && s.roleActive]}>Investor</Text>
+              </TouchableOpacity>
+            </View>
 
-            {/* Email Input */}
             <LoginInput 
               label="Email Address" 
               placeholder="sample@email.com" 
               icon="email-outline" 
             />
 
-            {/* Password Input */}
             <LoginInput 
               label="Password" 
               placeholder="••••••••" 
@@ -133,7 +146,6 @@ export default function LoginScreen() {
               onTogglePassword={() => setPasswordVisible(!passwordVisible)}
             />
 
-            {/* Checkbox Row */}
             <View style={s.optionsRow}>
               <TouchableOpacity 
                 style={s.checkboxContainer} 
@@ -153,7 +165,6 @@ export default function LoginScreen() {
               </TouchableOpacity>
             </View>
 
-            {/* Login Button */}
             <TouchableOpacity 
               style={s.loginBtn} 
               onPress={handleLogin}
@@ -164,13 +175,12 @@ export default function LoginScreen() {
                 <ActivityIndicator color={COLORS.white} />
               ) : (
                 <>
-                  <Text style={s.loginBtnText}>Login</Text>
+                  <Text style={s.loginBtnText}>Login as {userRole}</Text>
                   <MaterialCommunityIcons name="login" size={20} color={COLORS.white} />
                 </>
               )}
             </TouchableOpacity>
 
-            {/* Footer */}
             <View style={s.footer}>
               <Text style={s.footerText}>Don't have an account? </Text>
               <TouchableOpacity onPress={() => router.push('/signup')}>
@@ -192,7 +202,7 @@ const s = StyleSheet.create({
   /* HEADER */
   header: {
     backgroundColor: COLORS.primary,
-    height: 300, // Tall header for visual impact
+    height: 300,
     borderBottomLeftRadius: 40,
     borderBottomRightRadius: 40,
     alignItems: 'center',
@@ -205,18 +215,14 @@ const s = StyleSheet.create({
     backgroundColor: COLORS.primaryLight, top: -120, left: -60, opacity: 0.4,
   },
   logoSection: { alignItems: 'center', marginTop: 10 },
-  
-  /* LOGO BADGE */
   logoBadge: {
     width: 90, height: 90, borderRadius: 45,
     backgroundColor: COLORS.white,
     justifyContent: 'center', alignItems: 'center',
     marginBottom: 16,
-    // Shadow
     shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.2, shadowRadius: 5, elevation: 8,
   },
   logo: { width: 60, height: 60 },
-  
   appName: { fontSize: 32, fontWeight: '900', color: COLORS.white, letterSpacing: -0.5 },
   tagline: { fontSize: 13, color: 'rgba(255,255,255,0.85)', fontWeight: '500', letterSpacing: 1 },
 
@@ -224,13 +230,21 @@ const s = StyleSheet.create({
   card: {
     backgroundColor: COLORS.white,
     marginHorizontal: 24,
-    marginTop: -50, // Floating effect
+    marginTop: -50,
     borderRadius: 24,
     padding: 24,
     marginBottom: 20,
   },
-  cardTitle: { fontSize: 22, fontWeight: '800', color: COLORS.text, textAlign: 'center', marginBottom: 6 },
-  cardSub: { fontSize: 13, color: COLORS.textMuted, textAlign: 'center', marginBottom: 24 },
+  cardTitle: { fontSize: 22, fontWeight: '800', color: COLORS.text, textAlign: 'center', marginBottom: 15 },
+
+  /* ROLE SWITCHER (NEW) */
+  roleSwitcher: {
+    flexDirection: 'row', justifyContent: 'center', alignItems: 'center', marginBottom: 20,
+    backgroundColor: COLORS.surface, padding: 8, borderRadius: 20, alignSelf: 'center'
+  },
+  roleText: { fontSize: 13, color: COLORS.textMuted, fontWeight: '600', paddingHorizontal: 10 },
+  roleActive: { color: COLORS.primary, fontWeight: '800' },
+  roleDivider: { width: 1, height: 12, backgroundColor: COLORS.border },
 
   /* INPUTS */
   inputContainer: { marginBottom: 18 },
@@ -244,13 +258,11 @@ const s = StyleSheet.create({
   inputIcon: { marginRight: 10 },
   input: { flex: 1, fontSize: 14, color: COLORS.text },
 
-  /* OPTIONS ROW */
   optionsRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 },
   checkboxContainer: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   checkboxText: { fontSize: 13, color: COLORS.text, fontWeight: '500' },
   forgotText: { fontSize: 13, color: COLORS.primary, fontWeight: '600' },
 
-  /* BUTTON */
   loginBtn: {
     flexDirection: 'row', backgroundColor: COLORS.primary,
     borderRadius: 16, height: 56,
@@ -260,7 +272,6 @@ const s = StyleSheet.create({
   },
   loginBtnText: { color: COLORS.white, fontSize: 16, fontWeight: '800', letterSpacing: 0.5 },
 
-  /* FOOTER */
   footer: { flexDirection: 'row', justifyContent: 'center', marginTop: 24 },
   footerText: { color: COLORS.textMuted, fontSize: 14 },
   signupLink: { color: COLORS.primary, fontWeight: '700', fontSize: 14 },
