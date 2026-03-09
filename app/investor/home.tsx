@@ -4,8 +4,9 @@ import {
   MaterialCommunityIcons,
 } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import React from "react";
+import React, { useEffect, useState } from "react";
 import {
+  ActivityIndicator,
   Image,
   Platform,
   ScrollView,
@@ -17,7 +18,10 @@ import {
   View,
 } from "react-native";
 
-// ✅ Import your global state to fetch real projects
+// ✅ Imports for real-time weather
+import axios from "axios";
+import * as Location from "expo-location";
+
 import { useProjects } from "../../src/context/ProjectContext";
 
 // ─── Design Tokens ────────────────────────────────────────────────────────────
@@ -120,7 +124,6 @@ const KPI_DATA = [
 ];
 
 // ─── Reusable Components ──────────────────────────────────────────────────────
-
 const StatBadge = ({
   icon,
   iconFamily = "mci",
@@ -176,7 +179,6 @@ const InvestmentCard = ({
 }: any) => {
   const router = useRouter();
 
-  // Safely extract values regardless of if it came from Context or Fallback Data
   const actualGoal = goal || targetAmount || 1;
   const actualRaised = raised || raisedAmount || 0;
   const actualProgress = progress > 0 ? progress : actualRaised / actualGoal;
@@ -188,7 +190,6 @@ const InvestmentCard = ({
         ? COLORS.accentWarm
         : COLORS.danger;
 
-  // ✅ THE CRASH FIX: Checks if farmer is an object (from context) or a string (from static data)
   const displayFarmer =
     typeof farmer === "object" && farmer !== null ? farmer.name : farmer;
   const imageUri = image?.uri || image || "https://via.placeholder.com/150";
@@ -288,11 +289,9 @@ const InvestmentCard = ({
 export default function HomeScreen() {
   const router = useRouter();
 
-  // ✅ 1. Dynamic User Data from Login
   const { firstName } = useLocalSearchParams();
   const displayName = firstName || "Investor";
 
-  // ✅ 2. Dynamic Greeting & Date
   const today = new Date();
   const dateString = today.toLocaleDateString("en-US", {
     weekday: "long",
@@ -305,12 +304,101 @@ export default function HomeScreen() {
   if (currentHour < 12) greetingText = "Good morning 🌱";
   else if (currentHour < 18) greetingText = "Good afternoon ☀️";
 
-  // ✅ 3. Safely pull global projects
   const { projects } = useProjects();
-
-  // If there are no real projects yet, show the fallback data so the screen isn't empty!
   const displayProjects =
     projects && projects.length > 0 ? projects : FALLBACK_INVESTMENTS;
+
+  // ✅ Real-time Weather States
+  const [city, setCity] = useState("Locating...");
+  const [loadingWeather, setLoadingWeather] = useState(true);
+  const [weather, setWeather] = useState({
+    temp: "--",
+    humidity: "--",
+    wind: "--",
+    soilTemp: "--",
+    description: "Fetching weather...",
+    icon: "weather-cloudy",
+  });
+
+  // ✅ Weather API Call
+  useEffect(() => {
+    (async () => {
+      try {
+        let { status } = await Location.requestForegroundPermissionsAsync();
+        if (status !== "granted") {
+          setCity("Location Denied");
+          setWeather((prev) => ({ ...prev, description: "Permission denied" }));
+          setLoadingWeather(false);
+          return;
+        }
+
+        let location = await Location.getCurrentPositionAsync({});
+        const lat = location.coords.latitude;
+        const lon = location.coords.longitude;
+
+        let address = await Location.reverseGeocodeAsync({
+          latitude: lat,
+          longitude: lon,
+        });
+        if (address.length > 0) {
+          setCity(
+            address[0].city ||
+              address[0].district ||
+              address[0].subregion ||
+              "Unknown Location",
+          );
+        }
+
+        const weatherUrl = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,wind_speed_10m,weather_code,is_day&hourly=soil_temperature_0cm&timezone=auto`;
+
+        const response = await axios.get(weatherUrl);
+        const current = response.data.current;
+        const wCode = current.weather_code;
+        const isDay = current.is_day;
+
+        let wDesc = "Clear skies";
+        let wIcon = isDay ? "weather-sunny" : "weather-night";
+
+        if (wCode >= 1 && wCode <= 3) {
+          wDesc = "Partly cloudy";
+          wIcon = "weather-partly-cloudy";
+        }
+        if (wCode >= 45 && wCode <= 48) {
+          wDesc = "Foggy conditions";
+          wIcon = "weather-fog";
+        }
+        if (wCode >= 51 && wCode <= 67) {
+          wDesc = "Rain expected";
+          wIcon = "weather-rainy";
+        }
+        if (wCode >= 71 && wCode <= 77) {
+          wDesc = "Snow expected";
+          wIcon = "weather-snowy";
+        }
+        if (wCode >= 95) {
+          wDesc = "Thunderstorms";
+          wIcon = "weather-lightning";
+        }
+
+        setWeather({
+          temp: Math.round(current.temperature_2m).toString(),
+          humidity: current.relative_humidity_2m.toString(),
+          wind: Math.round(current.wind_speed_10m).toString(),
+          soilTemp: Math.round(
+            response.data.hourly.soil_temperature_0cm[0],
+          ).toString(),
+          description: wDesc,
+          icon: wIcon,
+        });
+      } catch (error) {
+        console.error("Weather error:", error);
+        setCity("Location Error");
+        setWeather((prev) => ({ ...prev, description: "Failed to load" }));
+      } finally {
+        setLoadingWeather(false);
+      }
+    })();
+  }, []);
 
   return (
     <View style={s.container}>
@@ -320,7 +408,6 @@ export default function HomeScreen() {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: 120 }}
       >
-        {/* HEADER SECTION */}
         <View style={s.header}>
           <View style={s.decCircleLg} />
           <View style={s.decCircleSm} />
@@ -369,7 +456,7 @@ export default function HomeScreen() {
           </View>
         </View>
 
-        {/* WEATHER WIDGET */}
+        {/* ✅ DYNAMIC WEATHER WIDGET */}
         <View style={[s.weatherCard, SHADOWS.lg]}>
           <View style={s.weatherTopRow}>
             <View>
@@ -379,17 +466,27 @@ export default function HomeScreen() {
                   size={18}
                   color={COLORS.primary}
                 />
-                <Text style={s.cityText}>Anuradhapura</Text>
+                <Text style={s.cityText}>{city}</Text>
               </View>
-              <Text style={s.weatherDesc}>Light rain expected</Text>
+              <Text style={s.weatherDesc}>{weather.description}</Text>
             </View>
             <View style={s.tempBlock}>
-              <MaterialCommunityIcons
-                name="weather-rainy"
-                size={32}
-                color={COLORS.info}
-              />
-              <Text style={s.tempText}>17°C</Text>
+              {loadingWeather ? (
+                <ActivityIndicator
+                  size="small"
+                  color={COLORS.info}
+                  style={{ marginTop: 10 }}
+                />
+              ) : (
+                <>
+                  <MaterialCommunityIcons
+                    name={weather.icon as any}
+                    size={32}
+                    color={COLORS.info}
+                  />
+                  <Text style={s.tempText}>{weather.temp}°C</Text>
+                </>
+              )}
             </View>
           </View>
 
@@ -399,14 +496,14 @@ export default function HomeScreen() {
             <StatBadge
               icon="water-percent"
               label="Humidity"
-              value="59%"
+              value={loadingWeather ? "--" : `${weather.humidity}%`}
               color={COLORS.info}
             />
             <View style={s.statDivider} />
             <StatBadge
               icon="thermometer"
               label="Soil Temp"
-              value="22°C"
+              value={loadingWeather ? "--" : `${weather.soilTemp}°C`}
               color={COLORS.accentWarm}
               iconFamily="mci"
             />
@@ -414,13 +511,12 @@ export default function HomeScreen() {
             <StatBadge
               icon="weather-windy"
               label="Wind"
-              value="6 m/s"
+              value={loadingWeather ? "--" : `${weather.wind} m/s`}
               color={COLORS.accent}
             />
           </View>
         </View>
 
-        {/* QUICK STATS STRIP */}
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
@@ -441,7 +537,6 @@ export default function HomeScreen() {
           ))}
         </ScrollView>
 
-        {/* INVESTMENTS LIST */}
         <SectionHeader
           title="Top Investments"
           actionLabel="See all"
