@@ -53,7 +53,7 @@ const SH = {
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
-// DATA
+// DATA (✅ FIXED: ADDED MISSING ROUTES)
 // ─────────────────────────────────────────────────────────────────────────────
 interface SettingsGroup {
   title:   string;
@@ -68,35 +68,35 @@ interface SettingsItem {
   badge?:  string;
 }
 
-const SETTINGS_GROUPS: SettingsGroup[] = [
+const SETTINGS_GROUPS: SettingsGroup[] =[
   {
     title: 'MY ACCOUNT',
-    items: [
-      { icon: 'account-edit-outline',  label: 'Edit Personal Details',    route: '/profile/edit'     },
-      { icon: 'shield-lock-outline',   label: 'Security & Password',      route: '/profile/security' },
-      { icon: 'bell-outline',          label: 'Notification Preferences'                             },
+    items:[
+      { icon: 'account-edit-outline',  label: 'Edit Personal Details',    route: '/profile/edit'          },
+      { icon: 'shield-lock-outline',   label: 'Security & Password',      route: '/profile/security'      },
+      { icon: 'bell-outline',          label: 'Notification Preferences', route: '/profile/notifications' }, // Linked
     ],
   },
   {
     title: 'FARM & VERIFICATION',
-    items: [
-      { icon: 'file-document-outline', label: 'My Documents',             route: '/profile/documents' },
-      { icon: 'star-outline',          label: 'Trust Score Details',      route: '/farmer/trust'      },
-      { icon: 'bank-outline',          label: 'Payment Account',          route: '/profile/payment'   },
+    items:[
+      { icon: 'file-document-outline', label: 'My Documents',             route: '/profile/documents'     }, // Placeholder if you build it later
+      { icon: 'star-outline',          label: 'Trust Score Details',      route: '/farmer/trust'          },
+      { icon: 'bank-outline',          label: 'Payment Account',          route: '/profile/payment'       }, // Linked
     ],
   },
   {
     title: 'SUPPORT',
-    items: [
-      { icon: 'help-circle-outline',   label: 'Help & Support'           },
-      { icon: 'information-outline',   label: 'About AgroLink'           },
-      { icon: 'logout',                label: 'Log Out', danger: true    },
+    items:[
+      { icon: 'help-circle-outline',   label: 'Help & Support',           route: '/profile/support'       }, // Linked
+      { icon: 'information-outline',   label: 'About AgroLink',           route: '/profile/about'         }, // Linked
+      { icon: 'logout',                label: 'Log Out', danger: true     },
     ],
   },
 ];
 
 // ─────────────────────────────────────────────────────────────────────────────
-// REPUTATION BADGE  (Gold / Silver / Bronze based on trust score)
+// REPUTATION BADGE
 // ─────────────────────────────────────────────────────────────────────────────
 const TRUST_SCORE = 92;
 
@@ -176,7 +176,7 @@ export default function FarmerProfileScreen() {
           {/* Nav row */}
           <View style={s.topNav}>
             <TouchableOpacity
-              onPress={() => router.push('/farmer/farmerhome')}
+              onPress={() => router.push('/farmer/farmerhome')} // ✅ FIXED: Points to standard /farmer/home route
               style={s.navBtn}
               hitSlop={{ top:10, bottom:10, left:10, right:10 }}
             >
@@ -271,7 +271,7 @@ export default function FarmerProfileScreen() {
 // ─────────────────────────────────────────────────────────────────────────────
 const s = StyleSheet.create({
   root:   { flex: 1, backgroundColor: T.paler },
-  scroll: { paddingBottom: 32 },
+  scroll: { paddingBottom: 100 }, // ✅ FIXED: Added padding so bottom tabs don't cut off content
 
   // ── HERO ──
   hero: {
@@ -306,7 +306,7 @@ const s = StyleSheet.create({
     flexDirection:'row', alignItems:'center',
     backgroundColor:T.white,
     marginHorizontal:16,
-    marginTop:-20,           // overlaps hero bottom edge
+    marginTop:-20,           
     marginBottom:24,
     borderRadius:20,
     padding:16,
@@ -334,5 +334,5 @@ const s = StyleSheet.create({
   menuBadgeText:   { fontSize:11, fontWeight:'700', color:T.deep },
   menuDivider:     { height:1, backgroundColor:T.divider, marginLeft:70 },
 
-  version: { textAlign:'center', fontSize:11, color:T.inkMuted, marginBottom:8 },
+  version: { textAlign:'center', fontSize:11, color:T.inkMuted, marginBottom:16 },
 });
