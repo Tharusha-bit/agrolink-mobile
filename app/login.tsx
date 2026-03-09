@@ -1,4 +1,5 @@
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import axios from "axios";
 import { useRouter } from "expo-router";
 import React, { useRef, useState } from "react";
@@ -196,19 +197,18 @@ export default function LoginScreen() {
       if (response.status === 200) {
         const userRole = response.data.role;
         const firstName = response.data.firstName;
+        const userId = response.data.userId; // ✅ Get ID from database
+
+        // ✅ SAVE TO PHONE MEMORY
+        await AsyncStorage.setItem("userId", userId);
+        await AsyncStorage.setItem("firstName", firstName || "Farmer");
+        await AsyncStorage.setItem("userRole", userRole);
 
         showToast(t.success, "success", () => {
-          // ✅ SMART ROUTING LOGIC: Directs user based on backend role
           if (userRole === "FARMER") {
-            router.replace({
-              pathname: "/farmer/farmerhome" as any,
-              params: { firstName, userId: response.data.userId },
-            });
+            router.replace("/farmer/farmerhome" as any);
           } else {
-            router.replace({
-              pathname: "/investor/home" as any,
-              params: { firstName }, // Passing data in case you want to make "Fernando" dynamic later
-            });
+            router.replace("/investor/home" as any);
           }
         });
       }

@@ -1,7 +1,8 @@
 import { MaterialCommunityIcons } from "@expo/vector-icons";
+import AsyncStorage from "@react-native-async-storage/async-storage"; // ✅ Added AsyncStorage
 import axios from "axios";
-import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router"; // ✅ Added useFocusEffect
-import React, { ComponentProps, useCallback, useRef, useState } from "react"; // ✅ Added useCallback
+import { useFocusEffect, useRouter } from "expo-router"; // ✅ Removed useLocalSearchParams
+import React, { ComponentProps, useCallback, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -187,7 +188,6 @@ function ProjectCard({ project, onPress }: any) {
   const goal = project.fundingGoal || 1;
   const raised = project.currentFundingAmount || 0;
   const pct = Math.min(Math.round((raised / goal) * 100), 100);
-
   const title = project.projectTitle || "Farm Project";
   const imageUri =
     project.photos && project.photos.length > 0
@@ -205,14 +205,12 @@ function ProjectCard({ project, onPress }: any) {
         <Text style={pc.title} numberOfLines={1}>
           {title}
         </Text>
-
         <View style={pc.barRow}>
           <View style={pc.track}>
             <View style={[pc.fill, { width: `${pct}%` }]} />
           </View>
           <Text style={pc.pct}>{pct}%</Text>
         </View>
-
         <View style={pc.metaRow}>
           <Text style={pc.raised}>LKR {raised.toLocaleString()}</Text>
           <Text style={pc.goal}> / {goal.toLocaleString()}</Text>
@@ -271,25 +269,36 @@ const pc = StyleSheet.create({
 export default function FarmerDashboard() {
   const router = useRouter();
 
-  const { firstName, userId } = useLocalSearchParams();
-  const displayName = firstName || "Farmer";
-  const farmerId = userId || "69aec459e99505da9e2d156b";
-
-  // States
+  // ✅ 1. State for Dynamic Name & Data
+  const [displayName, setDisplayName] = useState("Farmer");
   const [dbProjects, setDbProjects] = useState<any[]>([]);
   const [stats, setStats] = useState({ raised: 0, count: 0, investors: 0 });
   const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false); // ✅ Pull-to-refresh state
+  const [refreshing, setRefreshing] = useState(false);
 
   const fabScale = useRef(new Animated.Value(1)).current;
 
-  // ✅ Centralized Fetch Function
+  // ✅ 2. Centralized Fetch Function using AsyncStorage
   const fetchDashboardData = async () => {
     try {
+      // Pull secure data from memory
+      const storedUserId = await AsyncStorage.getItem("userId");
+      const storedName = await AsyncStorage.getItem("firstName");
+
+      if (storedName) {
+        setDisplayName(storedName);
+      }
+
+      if (!storedUserId) {
+        setLoading(false);
+        return; // Don't fetch if not logged in
+      }
+
+      // ⚠️ UPDATE TO YOUR BACKEND IP
       const API_URL = "http://172.20.10.6:8080";
 
       const projRes = await axios.get(
-        `${API_URL}/api/farmer-project/list/${farmerId}`,
+        `${API_URL}/api/farmer-project/list/${storedUserId}`,
       );
       const projects = projRes.data || [];
       setDbProjects(projects);
@@ -319,24 +328,24 @@ export default function FarmerDashboard() {
       });
     } catch (error) {
       console.error("Failed to fetch farmer dashboard data", error);
+      Alert.alert("Network Error", "Could not connect to the server.");
     } finally {
       setLoading(false);
     }
   };
 
-  // ✅ 1. Auto-refresh when navigating back to this tab
+  // ✅ 3. Auto-refresh when navigating back to this tab
   useFocusEffect(
     useCallback(() => {
       fetchDashboardData();
-    }, [farmerId]),
+    }, []),
   );
 
-  // ✅ 2. Manual Pull-to-Refresh handler
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
     await fetchDashboardData();
     setRefreshing(false);
-  }, [farmerId]);
+  }, []);
 
   const activeProjects = dbProjects.filter(
     (p) =>
@@ -370,7 +379,6 @@ export default function FarmerDashboard() {
     <View style={s.root}>
       <StatusBar barStyle="light-content" backgroundColor={C.primaryMid} />
 
-      {/* ✅ Added RefreshControl to ScrollView */}
       <ScrollView
         contentContainerStyle={s.scroll}
         showsVerticalScrollIndicator={false}
@@ -390,6 +398,7 @@ export default function FarmerDashboard() {
 
           <View style={s.topRow}>
             <View>
+              {/* ✅ Dynamic Name Rendering */}
               <Text style={s.greeting}>Welcome, {displayName} 🙏</Text>
               <Text style={s.subLine}>Your farm control center</Text>
             </View>
