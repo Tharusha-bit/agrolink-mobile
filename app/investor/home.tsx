@@ -69,7 +69,7 @@ const InvestmentCard = ({ id, title, farmer, since, description, progress, image
     <TouchableOpacity 
       style={[ic.card, SHADOWS.md]} 
       activeOpacity={0.9}
-      onPress={() => router.push(`/investment/${id}`)} // <--- Links to Detail Page
+      onPress={() => router.push(`/farmer/project-manage/${id}`)} // <--- Links to Detail Page
     >
       {/* Hero Image */}
       <View style={ic.imageWrap}>
