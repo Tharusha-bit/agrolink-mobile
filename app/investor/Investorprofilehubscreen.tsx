@@ -360,7 +360,7 @@ export default function InvestorDashboardScreen() {
 
           {/* Nav bar */}
           <View style={s.nav}>
-            <TouchableOpacity style={s.navBtn} onPress={() => router.replace('/(tabs)/home')}>
+            <TouchableOpacity style={s.navBtn} onPress={() => router.replace('/investor/home')}>
               <Ionicons name="arrow-back" size={18} color={C.forest} />
             </TouchableOpacity>
             <Text style={s.navTitle}>INVESTOR HUB</Text>
@@ -376,7 +376,7 @@ export default function InvestorDashboardScreen() {
             <TouchableOpacity
               style={s.avatarWrap}
               activeOpacity={0.85}
-              onPress={() => router.push('/profile/edit')}
+              onPress={() => router.push('/investor/profile')}
             >
               <View style={s.avatarRing}>
                 <View style={s.avatarCircle}>

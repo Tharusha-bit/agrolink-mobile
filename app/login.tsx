@@ -4,7 +4,6 @@ import { useRouter } from "expo-router";
 import React, { useRef, useState } from "react";
 import {
   ActivityIndicator,
-  Alert,
   Animated,
   Image,
   KeyboardAvoidingView,
@@ -28,7 +27,8 @@ const COLORS = {
   text: "#1A2E0D",
   textMuted: "#9BB08A",
   border: "#DDE8D4",
-  success: "#2E7D32", // ✅ Added success color for the toast
+  success: "#2E7D32",
+  danger: "#D32F2F",
 };
 
 const SHADOWS = {
@@ -43,7 +43,56 @@ const SHADOWS = {
   }),
 };
 
-// ─── Reusable Input Component ──────────────────────────────────────────────────
+// ─── Translations Dictionary ───────────────────────────────────────────────────
+const TRANSLATIONS = {
+  en: {
+    welcome: "Welcome Back",
+    sub: "Sign in to manage your investments",
+    phone: "Phone Number",
+    pass: "Password",
+    stay: "Stay logged in",
+    forgot: "Forgot Password?",
+    loginBtn: "Login",
+    noAccount: "Don't have an account? ",
+    signUp: "Sign Up",
+    tagline: "Future of Agri-Finance",
+    errEmpty: "Please enter phone number and password",
+    errFail: "Invalid credentials",
+    success: "Login Successful",
+  },
+  si: {
+    welcome: "ආපසු සාදරයෙන් පිළිගනිමු",
+    sub: "ඔබගේ ගිණුමට පුරනය වන්න",
+    phone: "දුරකථන අංකය",
+    pass: "මුරපදය",
+    stay: "පුරනය වී සිටින්න",
+    forgot: "මුරපදය අමතකද?",
+    loginBtn: "පුරනය වන්න",
+    noAccount: "ගිණුමක් නැද්ද? ",
+    signUp: "ලියාපදිංචි වන්න",
+    tagline: "කෘෂි-මූල්‍යයේ අනාගතය",
+    errEmpty: "කරුණාකර අංකය සහ මුරපදය ඇතුළත් කරන්න",
+    errFail: "මුරපදය වැරදියි",
+    success: "සාර්ථකව පුරනය විය",
+  },
+  ta: {
+    welcome: "மீண்டும் வருக",
+    sub: "உள்நுழையவும்",
+    phone: "தொலைபேசி எண்",
+    pass: "கடவுச்சொல்",
+    stay: "உள்நுழைந்திருக்கவும்",
+    forgot: "கடவுச்சொல் மறந்துவிட்டதா?",
+    loginBtn: "உள்நுழைக",
+    noAccount: "கணக்கு இல்லையா? ",
+    signUp: "பதிவு செய்க",
+    tagline: "விவசாய நிதியின் எதிர்காலம்",
+    errEmpty: "எண் மற்றும் கடவுச்சொல்லை உள்ளிடவும்",
+    errFail: "தவறான கடவுச்சொல்",
+    success: "உள்நுழைவு வெற்றி",
+  },
+};
+
+// ─── Input Component ───────────────────────────────────────────────────────────
 const LoginInput = ({
   label,
   placeholder,
@@ -92,70 +141,84 @@ const LoginInput = ({
 export default function LoginScreen() {
   const router = useRouter();
 
+  // Language State
+  const [lang, setLang] = useState<"en" | "si" | "ta">("en");
+  const t = TRANSLATIONS[lang];
+
   const [phoneNumber, setPhoneNumber] = useState("");
   const [password, setPassword] = useState("");
-  const [stayLoggedIn, setStayLoggedIn] = useState(false);
   const [passwordVisible, setPasswordVisible] = useState(false);
+  const [stayLoggedIn, setStayLoggedIn] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  // ✅ Toast Animation Setup
-  const toastAnim = useRef(new Animated.Value(-100)).current; // Starts hidden above the screen
+  const toastAnim = useRef(new Animated.Value(-100)).current;
+  const [toastConfig, setToastConfig] = useState({
+    message: "",
+    type: "success",
+  });
 
-  const showSuccessToast = (callback: () => void) => {
+  const showToast = (
+    message: string,
+    type: "success" | "error",
+    callback?: () => void,
+  ) => {
+    setToastConfig({ message, type });
     Animated.sequence([
       Animated.timing(toastAnim, {
-        toValue: 50,
+        toValue: Platform.OS === "ios" ? 55 : 30,
         duration: 400,
         useNativeDriver: true,
-      }), // Slide down
-      Animated.delay(1200), // Hold for 1.2 seconds
+      }),
+      Animated.delay(2000),
       Animated.timing(toastAnim, {
         toValue: -100,
         duration: 300,
         useNativeDriver: true,
-      }), // Slide back up
+      }),
     ]).start(() => {
-      callback(); // Navigate after animation completes
+      if (callback) callback();
     });
   };
 
   const handleLogin = async () => {
     if (!phoneNumber || !password) {
-      Alert.alert("Error", "Please enter phone number and password");
+      showToast(t.errEmpty, "error");
       return;
     }
 
     setLoading(true);
 
     try {
-      // ⚠️ UPDATE THIS IP TO YOUR CURRENT LAPTOP IP
       const API_URL = "http://172.20.10.6:8080/api/auth/login";
 
-      const response = await axios.post(API_URL, {
-        phoneNumber: phoneNumber,
-        password: password,
-      });
+      const response = await axios.post(API_URL, { phoneNumber, password });
 
       if (response.status === 200) {
-        router.replace({
-          pathname: "/(tabs)/home" as any,
-          params: {
-            firstName: response.data.firstName,
-            lastName: response.data.lastName,
-          },
+        const userRole = response.data.role;
+        const firstName = response.data.firstName;
+
+        showToast(t.success, "success", () => {
+          // ✅ SMART ROUTING LOGIC: Directs user based on backend role
+          if (userRole === "FARMER") {
+            router.replace({
+              pathname: "/farmer/farmerhome" as any,
+              params: { firstName }, // Passing data in case you want to make "Suriyakumar" dynamic later
+            });
+          } else {
+            router.replace({
+              pathname: "/investor/home" as any,
+              params: { firstName }, // Passing data in case you want to make "Fernando" dynamic later
+            });
+          }
         });
       }
     } catch (error: any) {
-      if (error.response) {
-        Alert.alert(
-          "Login Failed",
-          error.response.data || "Invalid credentials",
-        );
+      if (error.response && error.response.status === 401) {
+        showToast(t.errFail, "error");
+      } else if (error.response && error.response.status === 404) {
+        showToast(t.noAccount, "error");
       } else {
-        Alert.alert(
-          "Network Error",
-          "Check your IP address and ensure the backend is running.",
-        );
+        showToast("Server connection error.", "error");
       }
     } finally {
       setLoading(false);
@@ -166,16 +229,22 @@ export default function LoginScreen() {
     <View style={s.root}>
       <StatusBar barStyle="light-content" backgroundColor={COLORS.primary} />
 
-      {/* ── CUSTOM TOAST NOTIFICATION ── */}
       <Animated.View
-        style={[s.toastContainer, { transform: [{ translateY: toastAnim }] }]}
+        style={[
+          s.toastContainer,
+          {
+            transform: [{ translateY: toastAnim }],
+            backgroundColor:
+              toastConfig.type === "error" ? COLORS.danger : COLORS.success,
+          },
+        ]}
       >
         <MaterialCommunityIcons
-          name="check-circle"
-          size={24}
+          name={toastConfig.type === "error" ? "alert-circle" : "check-circle"}
+          size={22}
           color={COLORS.white}
         />
-        <Text style={s.toastText}>Login Successful</Text>
+        <Text style={s.toastText}>{toastConfig.message}</Text>
       </Animated.View>
 
       <KeyboardAvoidingView
@@ -188,6 +257,34 @@ export default function LoginScreen() {
         >
           <View style={s.header}>
             <View style={s.decCircle} />
+
+            <View style={s.langSwitcher}>
+              <TouchableOpacity
+                onPress={() => setLang("en")}
+                style={[s.langBtn, lang === "en" && s.langBtnActive]}
+              >
+                <Text style={[s.langText, lang === "en" && s.langTextActive]}>
+                  EN
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={() => setLang("si")}
+                style={[s.langBtn, lang === "si" && s.langBtnActive]}
+              >
+                <Text style={[s.langText, lang === "si" && s.langTextActive]}>
+                  සිං
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={() => setLang("ta")}
+                style={[s.langBtn, lang === "ta" && s.langBtnActive]}
+              >
+                <Text style={[s.langText, lang === "ta" && s.langTextActive]}>
+                  தமிழ்
+                </Text>
+              </TouchableOpacity>
+            </View>
+
             <View style={s.logoSection}>
               <View style={s.logoBadge}>
                 <Image
@@ -197,25 +294,24 @@ export default function LoginScreen() {
                 />
               </View>
               <Text style={s.appName}>AgroLink</Text>
-              <Text style={s.tagline}>Future of Agri-Finance</Text>
+              <Text style={s.tagline}>{t.tagline}</Text>
             </View>
           </View>
 
           <View style={[s.card, SHADOWS.md]}>
-            <Text style={s.cardTitle}>Welcome Back</Text>
-            <Text style={s.cardSub}>Sign in to manage your investments</Text>
+            <Text style={s.cardTitle}>{t.welcome}</Text>
+            <Text style={s.cardSub}>{t.sub}</Text>
 
             <LoginInput
-              label="Phone Number"
+              label={t.phone}
               placeholder="077 123 4567"
               icon="phone-outline"
               keyboardType="phone-pad"
               value={phoneNumber}
               onChangeText={setPhoneNumber}
             />
-
             <LoginInput
-              label="Password"
+              label={t.pass}
               placeholder="••••••••"
               icon="lock-outline"
               secureTextEntry={!passwordVisible}
@@ -239,10 +335,10 @@ export default function LoginScreen() {
                   size={22}
                   color={COLORS.primary}
                 />
-                <Text style={s.checkboxText}>Stay logged in</Text>
+                <Text style={s.checkboxText}>{t.stay}</Text>
               </TouchableOpacity>
               <TouchableOpacity>
-                <Text style={s.forgotText}>Forgot Password?</Text>
+                <Text style={s.forgotText}>{t.forgot}</Text>
               </TouchableOpacity>
             </View>
 
@@ -256,7 +352,7 @@ export default function LoginScreen() {
                 <ActivityIndicator color={COLORS.white} />
               ) : (
                 <>
-                  <Text style={s.loginBtnText}>Login</Text>
+                  <Text style={s.loginBtnText}>{t.loginBtn}</Text>
                   <MaterialCommunityIcons
                     name="login"
                     size={20}
@@ -267,9 +363,9 @@ export default function LoginScreen() {
             </TouchableOpacity>
 
             <View style={s.footer}>
-              <Text style={s.footerText}>Don't have an account? </Text>
-              <TouchableOpacity onPress={() => router.push("/signup")}>
-                <Text style={s.signupLink}>Sign Up</Text>
+              <Text style={s.footerText}>{t.noAccount}</Text>
+              <TouchableOpacity onPress={() => router.push("/signup" as any)}>
+                <Text style={s.signupLink}>{t.signUp}</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -281,35 +377,29 @@ export default function LoginScreen() {
 
 const s = StyleSheet.create({
   root: { flex: 1, backgroundColor: COLORS.surface },
+  scrollContent: { flexGrow: 1, paddingBottom: 40 },
 
-  /* ✅ TOAST NOTIFICATION STYLES */
   toastContainer: {
     position: "absolute",
-    top: 0,
     left: 20,
     right: 20,
-    backgroundColor: COLORS.success,
-    borderRadius: 16,
+    borderRadius: 12,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
     paddingVertical: 14,
     paddingHorizontal: 20,
-    zIndex: 100, // Make sure it sits above everything
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 5,
+    zIndex: 999,
     elevation: 10,
   },
   toastText: {
     color: COLORS.white,
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: "700",
-    marginLeft: 10,
+    marginLeft: 8,
+    textAlign: "center",
   },
 
-  scrollContent: { flexGrow: 1, paddingBottom: 40 },
   header: {
     backgroundColor: COLORS.primary,
     height: 300,
@@ -330,6 +420,22 @@ const s = StyleSheet.create({
     left: -60,
     opacity: 0.4,
   },
+
+  langSwitcher: {
+    position: "absolute",
+    top: 50,
+    right: 20,
+    flexDirection: "row",
+    backgroundColor: "rgba(255,255,255,0.2)",
+    borderRadius: 20,
+    padding: 4,
+    zIndex: 10,
+  },
+  langBtn: { paddingHorizontal: 10, paddingVertical: 6, borderRadius: 16 },
+  langBtnActive: { backgroundColor: COLORS.white },
+  langText: { fontSize: 12, fontWeight: "700", color: "rgba(255,255,255,0.7)" },
+  langTextActive: { color: COLORS.primary },
+
   logoSection: { alignItems: "center", marginTop: 10 },
   logoBadge: {
     width: 90,
@@ -339,10 +445,6 @@ const s = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     marginBottom: 16,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 5,
     elevation: 8,
   },
   logo: { width: 60, height: 60 },
@@ -358,6 +460,7 @@ const s = StyleSheet.create({
     fontWeight: "500",
     letterSpacing: 1,
   },
+
   card: {
     backgroundColor: COLORS.white,
     marginHorizontal: 24,
@@ -379,6 +482,7 @@ const s = StyleSheet.create({
     textAlign: "center",
     marginBottom: 24,
   },
+
   inputContainer: { marginBottom: 18 },
   inputLabel: {
     fontSize: 12,
@@ -399,6 +503,7 @@ const s = StyleSheet.create({
   },
   inputIcon: { marginRight: 10 },
   input: { flex: 1, fontSize: 14, color: COLORS.text },
+
   optionsRow: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -408,6 +513,7 @@ const s = StyleSheet.create({
   checkboxContainer: { flexDirection: "row", alignItems: "center", gap: 6 },
   checkboxText: { fontSize: 13, color: COLORS.text, fontWeight: "500" },
   forgotText: { fontSize: 13, color: COLORS.primary, fontWeight: "600" },
+
   loginBtn: {
     flexDirection: "row",
     backgroundColor: COLORS.primary,
@@ -417,10 +523,6 @@ const s = StyleSheet.create({
     alignItems: "center",
     gap: 8,
     elevation: 4,
-    shadowColor: COLORS.primary,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
   },
   loginBtnText: {
     color: COLORS.white,
@@ -428,6 +530,7 @@ const s = StyleSheet.create({
     fontWeight: "800",
     letterSpacing: 0.5,
   },
+
   footer: { flexDirection: "row", justifyContent: "center", marginTop: 24 },
   footerText: { color: COLORS.textMuted, fontSize: 14 },
   signupLink: { color: COLORS.primary, fontWeight: "700", fontSize: 14 },

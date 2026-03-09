@@ -3,8 +3,6 @@ import {
   Ionicons,
   MaterialCommunityIcons,
 } from "@expo/vector-icons";
-import axios from "axios";
-import * as Location from "expo-location";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useEffect, useState } from "react";
 import {
@@ -19,6 +17,12 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+
+// ✅ Imports for real-time weather
+import axios from "axios";
+import * as Location from "expo-location";
+
+import { useProjects } from "../../src/context/ProjectContext";
 
 // ─── Design Tokens ────────────────────────────────────────────────────────────
 const COLORS = {
@@ -68,17 +72,18 @@ const SHADOWS = {
   }),
 };
 
-// ─── Data ───────────────────────────────────────────────────────────
-const INVESTMENTS_DATA = [
+// ─── Static Fallback Data ───────────────────────────────────────────────────
+const FALLBACK_INVESTMENTS = [
   {
     id: "1",
+    title: "Fertile Paddy Field Expansion",
     farmer: "Suriyakumar",
     since: "19 Nov 2025",
     description:
       "Committed farmer seeking investment partners for 8 acres of fertile paddy field. Excellent soil quality and reliable water access.",
     progress: 0.8,
-    raisedAmount: 48000,
-    targetAmount: 60000,
+    raised: 48000,
+    goal: 60000,
     riskLevel: "Low",
     tags: ["Paddy", "Rice"],
     image:
@@ -86,13 +91,14 @@ const INVESTMENTS_DATA = [
   },
   {
     id: "2",
+    title: "Organic Vegetable Export",
     farmer: "Priya Devi",
     since: "2 Jan 2026",
     description:
       "Organic vegetable farm in Jaffna district seeking working capital. Specialises in export-grade green beans and okra.",
     progress: 0.47,
-    raisedAmount: 14100,
-    targetAmount: 30000,
+    raised: 14100,
+    goal: 30000,
     riskLevel: "Medium",
     tags: ["Organic", "Veg"],
     image:
@@ -118,7 +124,6 @@ const KPI_DATA = [
 ];
 
 // ─── Reusable Components ──────────────────────────────────────────────────────
-
 const StatBadge = ({
   icon,
   iconFamily = "mci",
@@ -158,17 +163,26 @@ const SectionHeader = ({ title, actionLabel, onAction }: any) => (
 );
 
 const InvestmentCard = ({
+  id,
+  title,
   farmer,
-  since,
+  since = "Recently",
   description,
-  progress,
+  progress = 0,
   image,
-  tags,
-  riskLevel,
+  tags = [],
+  riskLevel = "Medium",
   targetAmount,
   raisedAmount,
+  goal,
+  raised,
 }: any) => {
-  const progressPct = Math.min(Math.max(progress, 0), 1);
+  const router = useRouter();
+
+  const actualGoal = goal || targetAmount || 1;
+  const actualRaised = raised || raisedAmount || 0;
+  const actualProgress = progress > 0 ? progress : actualRaised / actualGoal;
+  const progressPct = Math.min(Math.max(actualProgress, 0), 1);
   const riskColor =
     riskLevel === "Low"
       ? COLORS.accent
@@ -176,11 +190,21 @@ const InvestmentCard = ({
         ? COLORS.accentWarm
         : COLORS.danger;
 
+  const displayFarmer =
+    typeof farmer === "object" && farmer !== null ? farmer.name : farmer;
+  const imageUri = image?.uri || image || "https://via.placeholder.com/150";
+  const displayTitle = title || "Farm Investment";
+
   return (
-    <View style={[ic.card, SHADOWS.md]}>
+    <TouchableOpacity
+      style={[ic.card, SHADOWS.md]}
+      activeOpacity={0.9}
+      onPress={() => router.push(`/investor/project-details/${id}` as any)}
+    >
       <View style={ic.imageWrap}>
-        <Image source={{ uri: image }} style={ic.image} />
+        <Image source={{ uri: imageUri }} style={ic.image} />
         <View style={ic.imageFade} />
+
         <View style={[ic.riskChip, { backgroundColor: riskColor }]}>
           <MaterialCommunityIcons
             name="shield-check"
@@ -190,26 +214,32 @@ const InvestmentCard = ({
           />
           <Text style={ic.riskText}>{riskLevel} Risk</Text>
         </View>
+
         <View style={ic.tagRow}>
-          {tags.map((t: string) => (
-            <View key={t} style={ic.tagPill}>
+          {tags.slice(0, 3).map((t: string, index: number) => (
+            <View key={index} style={ic.tagPill}>
               <Text style={ic.tagText}>{t}</Text>
             </View>
           ))}
         </View>
       </View>
+
       <View style={ic.body}>
         <View style={ic.farmerRow}>
           <View style={ic.avatarWrap}>
             <MaterialCommunityIcons
               name="account"
-              size={20}
+              size={18}
               color={COLORS.white}
             />
           </View>
           <View style={{ flex: 1 }}>
-            <Text style={ic.farmerName}>{farmer}</Text>
-            <Text style={ic.memberSince}>Member since {since}</Text>
+            <Text style={ic.title} numberOfLines={1}>
+              {displayTitle}
+            </Text>
+            <Text style={ic.farmerName}>
+              by {displayFarmer} • {since}
+            </Text>
           </View>
           <View style={ic.verifiedBadge}>
             <MaterialCommunityIcons
@@ -220,9 +250,11 @@ const InvestmentCard = ({
             <Text style={ic.verifiedText}>Verified</Text>
           </View>
         </View>
-        <Text style={ic.description} numberOfLines={3}>
+
+        <Text style={ic.description} numberOfLines={2}>
           {description}
         </Text>
+
         <View style={ic.progressBlock}>
           <View style={ic.progressLabels}>
             <Text style={ic.progressTitle}>Funding Progress</Text>
@@ -235,20 +267,21 @@ const InvestmentCard = ({
             <Text style={ic.raised}>
               Raised:{" "}
               <Text style={ic.raisedBold}>
-                ${raisedAmount.toLocaleString()}
+                LKR {actualRaised.toLocaleString()}
               </Text>
             </Text>
             <Text style={ic.target}>
-              Goal: ${targetAmount.toLocaleString()}
+              Goal: LKR {actualGoal.toLocaleString()}
             </Text>
           </View>
         </View>
-        <TouchableOpacity style={ic.investBtn} activeOpacity={0.85}>
-          <Text style={ic.investText}>Invest Now</Text>
+
+        <View style={ic.investBtn}>
+          <Text style={ic.investText}>View Details</Text>
           <MaterialCommunityIcons name="arrow-right" size={16} color="#fff" />
-        </TouchableOpacity>
+        </View>
       </View>
-    </View>
+    </TouchableOpacity>
   );
 };
 
@@ -256,11 +289,9 @@ const InvestmentCard = ({
 export default function HomeScreen() {
   const router = useRouter();
 
-  // ✅ 1. Get Params from Login
-  const { firstName, lastName } = useLocalSearchParams();
-  const displayName = firstName || lastName || "Farmer";
+  const { firstName } = useLocalSearchParams();
+  const displayName = firstName || "Investor";
 
-  // ✅ 2. Dynamic Time & Greeting
   const today = new Date();
   const dateString = today.toLocaleDateString("en-US", {
     weekday: "long",
@@ -269,12 +300,15 @@ export default function HomeScreen() {
     year: "numeric",
   });
   const currentHour = today.getHours();
-
   let greetingText = "Good evening 🌙";
   if (currentHour < 12) greetingText = "Good morning 🌱";
   else if (currentHour < 18) greetingText = "Good afternoon ☀️";
 
-  // ✅ 3. Weather & Location States
+  const { projects } = useProjects();
+  const displayProjects =
+    projects && projects.length > 0 ? projects : FALLBACK_INVESTMENTS;
+
+  // ✅ Real-time Weather States
   const [city, setCity] = useState("Locating...");
   const [loadingWeather, setLoadingWeather] = useState(true);
   const [weather, setWeather] = useState({
@@ -286,7 +320,7 @@ export default function HomeScreen() {
     icon: "weather-cloudy",
   });
 
-  // ✅ 4. Fetch Weather Data on Load
+  // ✅ Weather API Call
   useEffect(() => {
     (async () => {
       try {
@@ -307,7 +341,12 @@ export default function HomeScreen() {
           longitude: lon,
         });
         if (address.length > 0) {
-          setCity(address[0].city || address[0].district || "Unknown Location");
+          setCity(
+            address[0].city ||
+              address[0].district ||
+              address[0].subregion ||
+              "Unknown Location",
+          );
         }
 
         const weatherUrl = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,wind_speed_10m,weather_code,is_day&hourly=soil_temperature_0cm&timezone=auto`;
@@ -317,7 +356,6 @@ export default function HomeScreen() {
         const wCode = current.weather_code;
         const isDay = current.is_day;
 
-        // Map WMO Weather Codes to UI
         let wDesc = "Clear skies";
         let wIcon = isDay ? "weather-sunny" : "weather-night";
 
@@ -370,20 +408,20 @@ export default function HomeScreen() {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: 120 }}
       >
-        {/* HEADER SECTION */}
         <View style={s.header}>
           <View style={s.decCircleLg} />
           <View style={s.decCircleSm} />
 
           <View style={s.topBar}>
             <View>
-              {/* ✅ Dynamic Greeting, Name, and Date */}
               <Text style={s.greeting}>{greetingText}</Text>
               <Text style={s.userName}>{displayName}</Text>
               <Text style={s.date}>{dateString}</Text>
             </View>
             <TouchableOpacity
-              onPress={() => router.push("/(tabs)/profile" as any)}
+              onPress={() =>
+                router.push("/investor/Investorprofilehubscreen" as any)
+              }
               style={s.avatarBtn}
               activeOpacity={0.85}
             >
@@ -418,7 +456,7 @@ export default function HomeScreen() {
           </View>
         </View>
 
-        {/* WEATHER WIDGET */}
+        {/* ✅ DYNAMIC WEATHER WIDGET */}
         <View style={[s.weatherCard, SHADOWS.lg]}>
           <View style={s.weatherTopRow}>
             <View>
@@ -479,7 +517,6 @@ export default function HomeScreen() {
           </View>
         </View>
 
-        {/* QUICK STATS STRIP */}
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
@@ -500,14 +537,13 @@ export default function HomeScreen() {
           ))}
         </ScrollView>
 
-        {/* INVESTMENTS LIST */}
         <SectionHeader
           title="Top Investments"
           actionLabel="See all"
           onAction={() => {}}
         />
 
-        {INVESTMENTS_DATA.map((inv) => (
+        {displayProjects.map((inv: any) => (
           <InvestmentCard key={inv.id} {...inv} />
         ))}
       </ScrollView>
@@ -557,14 +593,9 @@ const ic = StyleSheet.create({
     borderRadius: 24,
     marginHorizontal: 24,
     marginBottom: 20,
-  },
-  imageWrap: {
-    height: 160,
-    position: "relative",
     overflow: "hidden",
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
   },
+  imageWrap: { height: 160, position: "relative" },
   image: { width: "100%", height: "100%" },
   imageFade: {
     ...StyleSheet.absoluteFillObject,
@@ -598,7 +629,7 @@ const ic = StyleSheet.create({
   },
   tagText: { fontSize: 10, fontWeight: "600", color: "#fff" },
   body: { padding: 18 },
-  farmerRow: { flexDirection: "row", alignItems: "center", marginBottom: 12 },
+  farmerRow: { flexDirection: "row", alignItems: "center", marginBottom: 8 },
   avatarWrap: {
     width: 32,
     height: 32,
@@ -608,8 +639,8 @@ const ic = StyleSheet.create({
     alignItems: "center",
     marginRight: 10,
   },
-  farmerName: { fontSize: 14, fontWeight: "700", color: COLORS.text },
-  memberSince: { fontSize: 10, color: COLORS.textMuted },
+  title: { fontSize: 16, fontWeight: "800", color: COLORS.text },
+  farmerName: { fontSize: 11, color: COLORS.textMuted },
   verifiedBadge: {
     flexDirection: "row",
     alignItems: "center",
@@ -626,6 +657,7 @@ const ic = StyleSheet.create({
     color: COLORS.textSecondary,
     lineHeight: 18,
     marginBottom: 16,
+    marginTop: 6,
   },
   progressBlock: { marginBottom: 16 },
   progressLabels: {
@@ -676,7 +708,6 @@ const s = StyleSheet.create({
     borderBottomLeftRadius: 36,
     borderBottomRightRadius: 36,
     position: "relative",
-    overflow: "hidden",
   },
   decCircleLg: {
     position: "absolute",
@@ -784,7 +815,11 @@ const s = StyleSheet.create({
     letterSpacing: -1,
   },
   divider: { height: 1, backgroundColor: COLORS.border, marginBottom: 16 },
-  statsRow: { flexDirection: "row", alignItems: "center" },
+  statsRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-around",
+  },
   statDivider: { width: 1, height: 40, backgroundColor: COLORS.border },
 
   kpiStrip: {

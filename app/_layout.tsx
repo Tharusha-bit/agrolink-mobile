@@ -1,66 +1,43 @@
-import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { Tabs } from 'expo-router';
+import { Outfit_400Regular, Outfit_700Bold, useFonts } from '@expo-google-fonts/outfit';
+import { Stack } from "expo-router";
+import * as SplashScreen from 'expo-splash-screen';
+import { useEffect } from 'react';
+import { PaperProvider } from 'react-native-paper';
+import { ProjectProvider } from '../src/context/ProjectContext'; // Global Data
 
-export default function TabLayout() {
+SplashScreen.preventAutoHideAsync();
+
+export default function RootLayout() {
+  const [fontsLoaded] = useFonts({
+    'Outfit-Regular': Outfit_400Regular,
+    'Outfit-Bold': Outfit_700Bold,
+  });
+
+  useEffect(() => {
+    if (fontsLoaded) SplashScreen.hideAsync();
+  }, [fontsLoaded]);
+
+  if (!fontsLoaded) return null;
+
   return (
-    <Tabs
-      screenOptions={{
-        headerShown: false,
-        tabBarShowLabel: false, // Hide text labels
-        tabBarActiveTintColor: '#fff', // White when active
-        tabBarInactiveTintColor: 'rgba(255,255,255,0.6)', // Faded white when inactive
-        tabBarStyle: {
-          backgroundColor: '#4CAF50', // Green primary color
-          height: 65,
-          position: 'absolute',
-          bottom: 20, // Float from bottom
-          left: 20,
-          right: 20,
-          borderRadius: 35, // Pill shape
-          elevation: 5, // Shadow for Android
-          shadowColor: '#000', // Shadow for iOS
-          shadowOffset: { width: 0, height: 5 },
-          shadowOpacity: 0.15,
-          shadowRadius: 6,
-          borderTopWidth: 0, // Remove default border
-        },
-      }}
-    >
-      <Tabs.Screen
-        name="home"
-        options={{
-          tabBarIcon: ({ color }) => (
-            <MaterialCommunityIcons name="home" size={28} color={color} />
-          ),
-        }}
-      />
+    <ProjectProvider>
+      <PaperProvider>
+        <Stack screenOptions={{ headerShown: false }}>
+          {/* 1. Public Screens */}
+          <Stack.Screen name="index" />
+          <Stack.Screen name="login" />
+          <Stack.Screen name="signup" />
 
-      <Tabs.Screen
-        name="invest"
-        options={{
-          tabBarIcon: ({ color }) => (
-            <MaterialCommunityIcons name="storefront" size={28} color={color} />
-          ),
-        }}
-      />
+          {/* 2. Protected Tabs (The two worlds) */}
+          <Stack.Screen name="(investor)" options={{ headerShown: false }} />
+          <Stack.Screen name="(farmer)" options={{ headerShown: false }} />
 
-      <Tabs.Screen
-        name="dashboard"
-        options={{
-          tabBarIcon: ({ color }) => (
-            <MaterialCommunityIcons name="chart-box-outline" size={28} color={color} />
-          ),
-        }}
-      />
-
-      <Tabs.Screen
-        name="profile"
-        options={{
-          tabBarIcon: ({ color }) => (
-            <MaterialCommunityIcons name="account-circle-outline" size={28} color={color} />
-          ),
-        }}
-      />
-    </Tabs>
+          {/* 3. Global Sub-Screens (Stack on top of tabs) */}
+          <Stack.Screen name="profile/edit" options={{ presentation: 'modal' }} />
+          <Stack.Screen name="profile/security" />
+          <Stack.Screen name="project/create" />
+        </Stack>
+      </PaperProvider>
+    </ProjectProvider>
   );
 }
