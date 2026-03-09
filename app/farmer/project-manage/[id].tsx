@@ -12,7 +12,9 @@ import {
   TouchableOpacity,
   View
 } from 'react-native';
-import { useProjects } from '../../../src/context/ProjectContext';
+
+// ✅ Import useProjects and the Project type to ensure data safety
+import { type Project, useProjects } from '../../../src/context/ProjectContext';
 
 // ─── DESIGN TOKENS ───────────────────────────────────────────────────────────
 const C = {
@@ -37,7 +39,8 @@ const SH = {
 // ─── SUB-COMPONENTS ──────────────────────────────────────────────────────────
 
 // 1. Project Overview Card
-const ProjectOverviewCard = ({ project }: { project: any }) => {
+const ProjectOverviewCard = ({ project }: { project: Project }) => {
+  // ✅ Calculate progress safely (Progress field was removed from interface)
   const progress = project.goal > 0 ? project.raised / project.goal : 0;
   const percent = Math.round(progress * 100);
   const isActive = progress < 1;
@@ -45,7 +48,7 @@ const ProjectOverviewCard = ({ project }: { project: any }) => {
   return (
     <View style={[s.card, SH.md]}>
       <View style={s.cardHeaderRow}>
-        <View>
+        <View style={{ flex: 1 }}>
           <View style={[s.badge, { backgroundColor: isActive ? C.primaryPale : '#FFF3E0' }]}>
             <Text style={[s.badgeText, { color: isActive ? C.primary : C.gold }]}>
               {isActive ? 'ACTIVE CAMPAIGN' : 'FUNDING COMPLETE'}
@@ -66,12 +69,12 @@ const ProjectOverviewCard = ({ project }: { project: any }) => {
       </View>
 
       <View style={s.statsRow}>
-        <View>
+        <View style={s.statBox}>
           <Text style={s.statLabel}>Total Raised</Text>
           <Text style={s.statValue}>LKR {project.raised.toLocaleString()}</Text>
         </View>
         <View style={s.statDivider} />
-        <View>
+        <View style={s.statBox}>
           <Text style={s.statLabel}>Target Goal</Text>
           <Text style={s.statValueMuted}>LKR {project.goal.toLocaleString()}</Text>
         </View>
@@ -81,10 +84,12 @@ const ProjectOverviewCard = ({ project }: { project: any }) => {
 };
 
 // 2. Action Button Grid
-const ActionGrid = ({ onUpdate, onChat }: { onUpdate: () => void, onChat: () => void }) => {
-  const ActionItem = ({ icon, label, onPress, color = C.primary }: any) => (
+const ActionGrid = ({ onUpdate, projectId }: { onUpdate: () => void, projectId: string }) => {
+  const router = useRouter();
+
+  const ActionItem = ({ icon, label, onPress, color = C.primary, bg }: any) => (
     <TouchableOpacity style={[s.actionItem, SH.sm]} onPress={onPress} activeOpacity={0.8}>
-      <View style={[s.actionIcon, { backgroundColor: color + '15' }]}>
+      <View style={[s.actionIcon, { backgroundColor: bg || color + '15' }]}>
         <MaterialCommunityIcons name={icon} size={22} color={color} />
       </View>
       <Text style={s.actionLabel}>{label}</Text>
@@ -93,10 +98,11 @@ const ActionGrid = ({ onUpdate, onChat }: { onUpdate: () => void, onChat: () => 
 
   return (
     <View style={s.actionGrid}>
-      <ActionItem icon="camera-plus" label="Post Update" onPress={onUpdate} color={C.accent} />
-      <ActionItem icon="chat-processing" label="Chat" onPress={onChat} color={C.primary} />
-      <ActionItem icon="chart-box" label="Analytics" onPress={() => Alert.alert("Coming Soon")} color="#1565C0" />
-      <ActionItem icon="file-document-edit" label="Edit Info" onPress={() => Alert.alert("Coming Soon")} color="#E65100" />
+      {/* ✅ RESTORED ACTIVE ROUTES */}
+      <ActionItem icon="camera-plus" label="Post Update" onPress={onUpdate} color={C.accent} bg="#F1F8E9" />
+      <ActionItem icon="chat-processing" label="Chat" onPress={() => router.push('/farmer/project-manage/chat')} color={C.primary} bg="#E8F5E1" />
+      <ActionItem icon="chart-box" label="Analytics" onPress={() => router.push('/farmer/project-manage/analytics')} color="#1565C0" bg="#E3F2FD" />
+      <ActionItem icon="file-document-edit" label="Edit Info" onPress={() => router.push('/farmer/project-manage/project-edit')} color="#E65100" bg="#FFF3E0" />
     </View>
   );
 };
@@ -105,7 +111,7 @@ const ActionGrid = ({ onUpdate, onChat }: { onUpdate: () => void, onChat: () => 
 const InvestorRow = ({ investor }: { investor: any }) => (
   <View style={s.investorRow}>
     <View style={s.invAvatar}>
-      <Text style={s.invInitials}>{investor.name.charAt(0)}</Text>
+      <Text style={s.invInitials}>{investor.name?.charAt(0) || 'U'}</Text>
     </View>
     <View style={{ flex: 1 }}>
       <Text style={s.invName}>{investor.name}</Text>
@@ -140,13 +146,13 @@ export default function ManageProjectScreen() {
   const router = useRouter();
   const { projects } = useProjects();
   
-  const [modalVisible, setModalVisible] = useState(false);
+  const[modalVisible, setModalVisible] = useState(false);
   const [updateTitle, setUpdateTitle] = useState('');
-  const [updateDesc, setUpdateDesc] = useState('');
+  const[updateDesc, setUpdateDesc] = useState('');
 
-  // Robust Data Fetching
-  const projectData = projects?.find((p: any) => String(p.id) === String(id));
-  const [localUpdates, setLocalUpdates] = useState(projectData?.updates || []);
+  // Robust Data Fetching (Compare safely)
+  const projectData = projects?.find((p) => String(p.id) === String(id));
+  const [localUpdates, setLocalUpdates] = useState(projectData?.updates ||[]);
 
   // Handle Loading State
   if (!projectData) {
@@ -165,12 +171,16 @@ export default function ManageProjectScreen() {
       Alert.alert("Missing Info", "Please add a title and description.");
       return;
     }
+
+    // ✅ FIXED: Added required 'id' and mapped to 'imageUrl' to match ProjectContext interface
     const newUpdate = {
+      id: Math.random().toString(), 
       date: "Just Now",
       title: updateTitle,
       description: updateDesc,
-      image: ""
+      imageUrl: "" 
     };
+
     setLocalUpdates([newUpdate, ...localUpdates]);
     setUpdateTitle('');
     setUpdateDesc('');
@@ -199,7 +209,7 @@ export default function ManageProjectScreen() {
         {/* 2. ACTIONS */}
         <ActionGrid 
           onUpdate={() => setModalVisible(true)} 
-          onChat={() => router.push('/farmer/chat')} 
+          projectId={String(projectData.id)} 
         />
 
         {/* 3. INVESTORS */}
@@ -217,7 +227,7 @@ export default function ManageProjectScreen() {
           </View>
         ) : (
           <View style={s.listContainer}>
-            {projectData.investors.map((inv: any, index: number) => (
+            {projectData.investors.map((inv, index) => (
               <InvestorRow key={index} investor={inv} />
             ))}
           </View>
@@ -233,7 +243,7 @@ export default function ManageProjectScreen() {
           </View>
         ) : (
           <View style={s.timelineContainer}>
-            {localUpdates.map((upd: any, index: number) => (
+            {localUpdates.map((upd, index) => (
               <TimelineItem key={index} update={upd} isLast={index === localUpdates.length - 1} />
             ))}
           </View>
@@ -287,6 +297,7 @@ export default function ManageProjectScreen() {
   );
 }
 
+// ─── STYLES ──────────────────────────────────────────────────────────────────
 const s = StyleSheet.create({
   container: { flex: 1, backgroundColor: C.surface },
   loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
@@ -328,6 +339,7 @@ const s = StyleSheet.create({
   fill: { height: '100%', backgroundColor: C.accent, borderRadius: 4 },
 
   statsRow: { flexDirection: 'row', backgroundColor: '#F9F9F9', borderRadius: 12, padding: 12 },
+  statBox: { flex: 1 },
   statDivider: { width: 1, backgroundColor: C.border, marginHorizontal: 20 },
   statLabel: { fontSize: 11, color: C.textMuted, textTransform: 'uppercase', marginBottom: 4 },
   statValue: { fontSize: 16, fontWeight: '800', color: C.primary },
@@ -341,7 +353,7 @@ const s = StyleSheet.create({
 
   /* SECTIONS */
   sectionHeader: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, marginTop: 10, marginBottom: 12 },
-  sectionTitle: { fontSize: 16, fontWeight: '800', color: C.text, marginRight: 10 },
+  sectionTitle: { fontSize: 16, fontWeight: '800', color: C.text, marginRight: 10, marginLeft: 20 },
   countBadge: { backgroundColor: C.primaryPale, paddingHorizontal: 8, paddingVertical: 2, borderRadius: 10 },
   countText: { fontSize: 11, fontWeight: '800', color: C.primary },
 
@@ -369,7 +381,7 @@ const s = StyleSheet.create({
 
   /* EMPTY STATES */
   emptyState: { alignItems: 'center', padding: 20, backgroundColor: '#F0F0F0', marginHorizontal: 20, borderRadius: 12, marginBottom: 20 },
-  emptyText: { color: C.textMuted, fontSize: 13, fontStyle: 'italic' },
+  emptyText: { color: C.textMuted, fontSize: 13, fontStyle: 'italic', marginTop: 10 },
 
   /* MODAL */
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'flex-end' },
