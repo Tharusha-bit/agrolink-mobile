@@ -141,7 +141,7 @@ const LoginInput = ({
 export default function LoginScreen() {
   const router = useRouter();
 
-  // ✅ Language State
+  // Language State
   const [lang, setLang] = useState<"en" | "si" | "ta">("en");
   const t = TRANSLATIONS[lang];
 
@@ -195,11 +195,20 @@ export default function LoginScreen() {
 
       if (response.status === 200) {
         const userRole = response.data.role;
+        const firstName = response.data.firstName;
+
         showToast(t.success, "success", () => {
+          // ✅ SMART ROUTING LOGIC: Directs user based on backend role
           if (userRole === "FARMER") {
-            router.replace("/farmer/farmerhome" as any);
+            router.replace({
+              pathname: "/farmer/farmerhome" as any,
+              params: { firstName }, // Passing data in case you want to make "Suriyakumar" dynamic later
+            });
           } else {
-            router.replace("/(tabs)/home" as any);
+            router.replace({
+              pathname: "/investor/home" as any,
+              params: { firstName }, // Passing data in case you want to make "Fernando" dynamic later
+            });
           }
         });
       }
@@ -249,7 +258,6 @@ export default function LoginScreen() {
           <View style={s.header}>
             <View style={s.decCircle} />
 
-            {/* ✅ Language Switcher UI */}
             <View style={s.langSwitcher}>
               <TouchableOpacity
                 onPress={() => setLang("en")}
@@ -413,7 +421,6 @@ const s = StyleSheet.create({
     opacity: 0.4,
   },
 
-  /* Language Switcher Styles */
   langSwitcher: {
     position: "absolute",
     top: 50,
