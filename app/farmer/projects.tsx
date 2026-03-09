@@ -1,6 +1,6 @@
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import React, { useState } from 'react';
+import React, { ComponentProps, useState } from 'react';
 import {
   Image,
   Platform,
@@ -10,267 +10,481 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
-  View
+  View,
 } from 'react-native';
-import { useProjects } from '../../src/context/ProjectContext';
 
-// ─── Design Tokens ─────────────────────────────────────────────────────────────
-const COLORS = {
-  primary: '#216000',
-  primaryLight: '#2E8B00',
-  primaryPale: '#E8F5E1',
-  white: '#FFFFFF',
-  surface: '#F7F9F4',
-  text: '#1A2E0D',
-  textMuted: '#9BB08A',
-  border: '#DDE8D4',
-  accent: '#76C442',
-  accentWarm: '#F5A623',
-  danger: '#D32F2F',
+// ✅ Import Project type directly
+import { type Project, useProjects } from '../../src/context/ProjectContext';
+
+// ─────────────────────────────────────────────────────────────────────────────
+// LOCAL HELPERS (To fix the Type Errors)
+// ─────────────────────────────────────────────────────────────────────────────
+
+// Fix 1: Check farmer name safely (Farmer is now an Object)
+function isMyProject(p: Project): boolean {
+  const name = p.farmer?.name || '';
+  return name.includes('Me') || name.includes('Suriyakumar');
+}
+
+// Fix 2: Calculate progress dynamically (field was removed)
+function getProgress(p: Project): number {
+  if (!p.goal || p.goal === 0) return 0;
+  return Math.min(p.raised / p.goal, 1);
+}
+
+// Fix 3: Handle image URL mapping
+function getImageUrl(p: Project): string {
+  return p.imageUrl || 'https://via.placeholder.com/150';
+}
+
+// Fix 4: ROI Format
+function getRoiLabel(p: Project): string {
+  return `${p.roiMin}% - ${p.roiMax}%`;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ICON TYPES
+// ─────────────────────────────────────────────────────────────────────────────
+type MCIcon  = ComponentProps<typeof MaterialCommunityIcons>['name'];
+type IonIcon = ComponentProps<typeof Ionicons>['name'];
+
+// ─────────────────────────────────────────────────────────────────────────────
+// THEME
+// ─────────────────────────────────────────────────────────────────────────────
+const T = {
+  primary:     '#216000',
+  primaryDark: '#174400',
+  primaryMid:  '#2E8B00',
+  accent:      '#76C442',
+  accentPale:  '#E8F5E1',
+  surface:     '#F7F9F4',
+  white:       '#FFFFFF',
+  ink:         '#1A2E0D',
+  inkSub:      '#3D5230',
+  inkMuted:    '#7A9668',
+  border:      '#D6E8C8',
+  divider:     '#EDF4E8',
+  amber:       '#F5A623',
+  amberPale:   '#FFF3DC',
+  blue:        '#1976D2',
+  bluePale:    '#E3F2FD',
+  red:         '#D32F2F',
 };
 
-const SHADOWS = {
-  md: Platform.select({
-    ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.1, shadowRadius: 8 },
-    android: { elevation: 5 },
-  }),
-  fab: {
-    shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 4, elevation: 8
-  }
+const FONT  = { xs: 11, sm: 13, md: 15, lg: 17, xl: 20, xxl: 24 };
+const SPACE = { xs: 6,  sm: 10, md: 16, lg: 22, xl: 28 };
+
+const SH = {
+  sm: Platform.select({ ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.07, shadowRadius: 6 }, android: { elevation: 3 } }),
+  md: Platform.select({ ios: { shadowColor: '#216000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.10, shadowRadius: 12 }, android: { elevation: 5 } }),
+  fab: Platform.select({ ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.28, shadowRadius: 10 }, android: { elevation: 10 } }),
 };
 
-// ─── Component: Detailed Project Card ──────────────────────────────────────────
-const ProjectCard = ({ project }: any) => {
-  const router = useRouter(); 
-  const percent = Math.round(project.progress * 100);
-  const isActive = project.progress > 0;
+// ─────────────────────────────────────────────────────────────────────────────
+// COMPONENTS
+// ─────────────────────────────────────────────────────────────────────────────
+
+function SearchBar({ value, onChangeText }: { value: string, onChangeText: (t: string) => void }) {
+  return (
+    <View style={sb.wrap}>
+      <Ionicons name={'search' as IonIcon} size={22} color={T.inkMuted} />
+      <TextInput
+        style={sb.input}
+        placeholder="Search by crop name…"
+        placeholderTextColor={T.inkMuted}
+        value={value}
+        onChangeText={onChangeText}
+        returnKeyType="search"
+      />
+      {value.length > 0 && (
+        <TouchableOpacity onPress={() => onChangeText('')}>
+          <Ionicons name={'close-circle' as IonIcon} size={18} color={T.inkMuted} />
+        </TouchableOpacity>
+      )}
+    </View>
+  );
+}
+const sb = StyleSheet.create({
+  wrap:  { flexDirection: 'row', alignItems: 'center', backgroundColor: T.white, borderRadius: 14, paddingHorizontal: 14, height: 52, gap: 10, ...SH.sm },
+  input: { flex: 1, fontSize: FONT.md, color: T.ink, height: '100%' },
+});
+
+function FilterTabs({ active, onChange }: { active: string, onChange: (k: string) => void }) {
+  const TABS = [
+    { key: 'All',     label: 'All Projects',     icon: 'view-grid-outline' },
+    { key: 'Active',  label: 'Active Funding',   icon: 'sprout'            },
+    { key: 'Pending', label: 'Pending Approval', icon: 'clock-outline'     },
+  ];
+  return (
+    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={ft.row}>
+      {TABS.map((t) => {
+        const isOn = active === t.key;
+        return (
+          <TouchableOpacity
+            key={t.key}
+            style={[ft.chip, isOn && ft.chipOn]}
+            onPress={() => onChange(t.key)}
+            activeOpacity={0.75}
+          >
+            <MaterialCommunityIcons name={t.icon as MCIcon} size={16} color={isOn ? T.white : T.inkMuted} />
+            <Text style={[ft.label, isOn && ft.labelOn]}>{t.label}</Text>
+          </TouchableOpacity>
+        );
+      })}
+    </ScrollView>
+  );
+}
+const ft = StyleSheet.create({
+  row:     { paddingHorizontal: SPACE.md, gap: SPACE.sm, paddingVertical: 4 },
+  chip:    { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 16, paddingVertical: 11, borderRadius: 24, backgroundColor: T.white, borderWidth: 1.5, borderColor: T.border },
+  chipOn:  { backgroundColor: T.primary, borderColor: T.primary },
+  label:   { fontSize: FONT.sm, fontWeight: '700', color: T.inkMuted },
+  labelOn: { color: T.white },
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// PROJECT CARD
+// ─────────────────────────────────────────────────────────────────────────────
+function ProjectCard({ project }: { project: Project }) {
+  const router   = useRouter();
+  
+  // ✅ FIX: Use helpers to safely access new data structure
+  const progress = getProgress(project);
+  const pct      = Math.round(progress * 100);
+  const isActive = progress > 0;
+  const imageUrl = getImageUrl(project);
+  const roiLabel = getRoiLabel(project);
+  const investorCount = project.investors?.length ?? 0;
+
+  const statusColor = isActive ? T.primary : T.amber;
+  const statusBg    = isActive ? T.accentPale : T.amberPale;
+  const statusLabel = isActive ? 'Active Funding' : 'Pending Approval';
+  const statusIcon: MCIcon = isActive ? 'check-circle-outline' : 'clock-outline';
+  const barColor    = pct >= 60 ? T.accent : pct >= 30 ? T.amber : T.red;
 
   return (
-    <TouchableOpacity 
-      activeOpacity={0.9} 
-      // This correctly routes to your [id].tsx file!
+    <TouchableOpacity
+      activeOpacity={0.88}
       onPress={() => router.push(`/farmer/project-manage/${project.id}`)}
+      style={[pc.card, SH.md]}
     >
-      <View style={[s.card, SHADOWS.md]}>
-        {/* Image & Status Overlay */}
-        <View style={s.imageContainer}>
-          <Image source={{ uri: project.image }} style={s.cardImage} />
-          <View style={s.statusOverlay}>
-            <View style={[s.statusBadge, { backgroundColor: isActive ? COLORS.primary : COLORS.accentWarm }]}>
-              <Text style={s.statusText}>{isActive ? 'Active Funding' : 'Pending Review'}</Text>
+      {/* ── CROP IMAGE ── */}
+      <View style={pc.imgWrap}>
+        <Image source={{ uri: imageUrl }} style={pc.img} resizeMode="cover" />
+        <View style={[pc.statusPill, { backgroundColor: statusBg }]}>
+          <MaterialCommunityIcons name={statusIcon} size={13} color={statusColor} />
+          <Text style={[pc.statusText, { color: statusColor }]}>{statusLabel}</Text>
+        </View>
+      </View>
+
+      {/* ── CARD BODY ── */}
+      <View style={pc.body}>
+        <Text style={pc.title}>{project.title}</Text>
+
+        <View style={pc.metaRow}>
+          <Ionicons name={'location-sharp' as IonIcon} size={13} color={T.accent} />
+          <Text style={pc.metaText}>{project.location}</Text>
+          {investorCount > 0 && (
+            <View style={pc.investorPill}>
+              <MaterialCommunityIcons name={'account-group' as MCIcon} size={11} color={T.blue} />
+              <Text style={pc.investorText}>{investorCount} investor{investorCount !== 1 ? 's' : ''}</Text>
             </View>
+          )}
+        </View>
+
+        <View style={pc.divider} />
+
+        <View style={pc.financialRow}>
+          <View style={pc.finBox}>
+            <View style={pc.finLabelRow}>
+              <MaterialCommunityIcons name={'flag-outline' as MCIcon} size={13} color={T.inkMuted} />
+              <Text style={pc.finLabel}>Goal</Text>
+            </View>
+            <Text style={pc.finValue}>LKR {project.goal.toLocaleString()}</Text>
+          </View>
+          <View style={pc.finSep} />
+          <View style={pc.finBox}>
+            <View style={pc.finLabelRow}>
+              <MaterialCommunityIcons name={'cash' as MCIcon} size={13} color={T.primary} />
+              <Text style={pc.finLabel}>Raised</Text>
+            </View>
+            <Text style={[pc.finValue, { color: T.primary }]}>LKR {project.raised.toLocaleString()}</Text>
+          </View>
+          <View style={pc.finSep} />
+          <View style={pc.finBox}>
+            <View style={pc.finLabelRow}>
+              <MaterialCommunityIcons name={'trending-up' as MCIcon} size={13} color={T.inkMuted} />
+              <Text style={pc.finLabel}>ROI</Text>
+            </View>
+            {/* ✅ FIX: Use roiLabel */}
+            <Text style={[pc.finValue, { color: T.inkSub, fontSize: 13 }]}>{roiLabel}</Text>
           </View>
         </View>
 
-        <View style={s.cardBody}>
-          <View style={s.cardHeader}>
-            <Text style={s.cardTitle}>{project.title}</Text>
-            <MaterialCommunityIcons name="dots-horizontal" size={24} color={COLORS.textMuted} />
-          </View>
+        <View style={pc.divider} />
 
-          <Text style={s.cardLoc}>
-            <Ionicons name="location-sharp" size={12} color={COLORS.accent} /> {project.location}
-          </Text>
-
-          {/* Financials Grid */}
-          <View style={s.statsGrid}>
-            <View>
-              <Text style={s.statLabel}>Goal</Text>
-              <Text style={s.statValue}>LKR {project.goal.toLocaleString()}</Text>
+        <View style={pc.progSection}>
+          <View style={pc.progLabelRow}>
+            <View style={pc.progLabelLeft}>
+              <MaterialCommunityIcons name={'chart-line' as MCIcon} size={14} color={T.inkMuted} />
+              <Text style={pc.progLabel}>Funding Progress</Text>
             </View>
-            <View style={s.statDivider} />
-            <View>
-              <Text style={s.statLabel}>Raised</Text>
-              <Text style={[s.statValue, { color: COLORS.primary }]}>LKR {project.raised.toLocaleString()}</Text>
+            <View style={[pc.pctBadge, { backgroundColor: barColor + '20' }]}>
+              <Text style={[pc.pctText, { color: barColor }]}>{pct}% Funded</Text>
             </View>
           </View>
-
-          {/* Progress Bar */}
-          <View style={s.progressContainer}>
-            <View style={s.progressRow}>
-              <Text style={s.progressLabel}>Progress</Text>
-              <Text style={s.progressPct}>{percent}%</Text>
-            </View>
-            <View style={s.track}>
-              <View style={[s.fill, { width: `${percent}%` }]} />
-            </View>
+          <View style={pc.track}>
+            <View style={[pc.fill, { width: `${pct}%`, backgroundColor: barColor }]} />
           </View>
         </View>
+
+        {project.tags?.length > 0 && (
+          <View style={pc.tagRow}>
+            {project.tags.map((tag) => (
+              <View key={tag} style={pc.tag}>
+                <Text style={pc.tagText}>{tag}</Text>
+              </View>
+            ))}
+          </View>
+        )}
       </View>
     </TouchableOpacity>
   );
-};
+}
+const pc = StyleSheet.create({
+  card:          { backgroundColor: T.white, marginHorizontal: SPACE.md, marginBottom: SPACE.md, borderRadius: 22, overflow: 'hidden' },
+  imgWrap:       { height: 160, position: 'relative' },
+  img:           { width: '100%', height: '100%' },
+  statusPill:    { position: 'absolute', top: 12, left: 12, flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: 10, paddingVertical: 5, borderRadius: 20 },
+  statusText:    { fontSize: FONT.xs, fontWeight: '800', letterSpacing: 0.3 },
+  body:          { padding: SPACE.md },
+  title:         { fontSize: FONT.xl, fontWeight: '800', color: T.ink, marginBottom: 6 },
+  metaRow:       { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: SPACE.sm, flexWrap: 'wrap' },
+  metaText:      { fontSize: FONT.sm, color: T.inkMuted, fontWeight: '600' },
+  investorPill:  { flexDirection: 'row', alignItems: 'center', gap: 3, backgroundColor: T.bluePale, paddingHorizontal: 7, paddingVertical: 2, borderRadius: 10, marginLeft: 'auto' },
+  investorText:  { fontSize: FONT.xs, color: T.blue, fontWeight: '700' },
+  divider:       { height: 1, backgroundColor: T.divider, marginVertical: SPACE.sm },
+  financialRow:  { flexDirection: 'row', alignItems: 'stretch' },
+  finBox:        { flex: 1 },
+  finSep:        { width: 1, backgroundColor: T.divider, marginHorizontal: SPACE.sm },
+  finLabelRow:   { flexDirection: 'row', alignItems: 'center', gap: 4, marginBottom: 4 },
+  finLabel:      { fontSize: FONT.xs, fontWeight: '700', color: T.inkMuted, textTransform: 'uppercase', letterSpacing: 0.6 },
+  finValue:      { fontSize: FONT.md, fontWeight: '800', color: T.ink },
+  progSection:   { gap: 8 },
+  progLabelRow:  { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  progLabelLeft: { flexDirection: 'row', alignItems: 'center', gap: 5 },
+  progLabel:     { fontSize: FONT.sm, fontWeight: '700', color: T.inkMuted },
+  pctBadge:      { paddingHorizontal: 9, paddingVertical: 3, borderRadius: 10 },
+  pctText:       { fontSize: FONT.sm, fontWeight: '900' },
+  track:         { height: 10, backgroundColor: T.divider, borderRadius: 5, overflow: 'hidden' },
+  fill:          { height: '100%', borderRadius: 5 },
+  tagRow:        { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: SPACE.sm },
+  tag:           { backgroundColor: T.accentPale, paddingHorizontal: 10, paddingVertical: 3, borderRadius: 20 },
+  tagText:       { fontSize: FONT.xs, fontWeight: '700', color: T.primary },
+});
 
-// ─── Main Screen ──────────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────────────────
+// REUSABLE: EmptyState
+// ─────────────────────────────────────────────────────────────────────────────
+function EmptyState({ filter, onCreatePress }: { filter: string, onCreatePress: () => void }) {
+  let icon: MCIcon = 'tractor';
+  let title = 'No Farm Projects Yet';
+  let sub = 'Start your first crop funding campaign.';
+
+  if (filter === 'Active') {
+    icon = 'sprout';
+    title = 'No Active Projects';
+    sub = 'Your funding campaigns will appear here.';
+  } else if (filter === 'Pending') {
+    icon = 'clock-outline';
+    title = 'No Pending Projects';
+    sub = 'Projects awaiting approval will show here.';
+  }
+
+  return (
+    <View style={es.wrap}>
+      <View style={es.iconRing}>
+        <MaterialCommunityIcons name={icon} size={46} color={T.accent} />
+      </View>
+      <Text style={es.title}>{title}</Text>
+      <Text style={es.sub}>{sub}</Text>
+      <TouchableOpacity style={es.btn} onPress={onCreatePress} activeOpacity={0.85}>
+        <Ionicons name={'add' as IonIcon} size={20} color={T.white} />
+        <Text style={es.btnText}>Create New Project</Text>
+      </TouchableOpacity>
+    </View>
+  );
+}
+const es = StyleSheet.create({
+  wrap:     { alignItems: 'center', paddingTop: 60, paddingHorizontal: 40 },
+  iconRing: { width: 110, height: 110, borderRadius: 55, backgroundColor: T.accentPale, justifyContent: 'center', alignItems: 'center', marginBottom: SPACE.lg },
+  title:    { fontSize: FONT.xl, fontWeight: '800', color: T.ink, marginBottom: 8, textAlign: 'center' },
+  sub:      { fontSize: FONT.md, color: T.inkMuted, textAlign: 'center', lineHeight: 22, marginBottom: SPACE.xl },
+  btn:      { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: T.primary, paddingHorizontal: 28, paddingVertical: 15, borderRadius: 16 },
+  btnText:  { fontSize: FONT.md, fontWeight: '800', color: T.white },
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// MAIN SCREEN
+// ─────────────────────────────────────────────────────────────────────────────
 export default function FarmerProjectsScreen() {
   const router = useRouter();
   const { projects } = useProjects();
-  
-  const [filter, setFilter] = useState('All'); // 'All', 'Active', 'Pending'
-  const [searchQuery, setSearchQuery] = useState(''); // FIXED 1: Added search state
 
-  // Filter Logic: Get only THIS farmer's projects, then apply tabs and search
-  const displayedProjects = projects.filter((p: any) => {
-    // 1. Must belong to farmer
-    const isMyProject = p.farmer.includes("Me") || p.farmer.includes("Suriyakumar");
-    if (!isMyProject) return false;
+  const [filter, setFilter]           = useState<string>('All');
+  const [searchQuery, setSearchQuery] = useState<string>('');
 
-    // 2. Must match search query
-    const matchesSearch = p.title.toLowerCase().includes(searchQuery.toLowerCase());
-    if (!matchesSearch) return false;
+  // ✅ FIX: Filter using helper
+  const myProjects = projects.filter(isMyProject);
 
-    // 3. Must match active tab
-    if (filter === 'Active') return p.progress > 0;
-    if (filter === 'Pending') return p.progress === 0;
-    
-    return true; // 'All' tab
+  // ✅ FIX: Calculate counts safely
+  const activeCount  = myProjects.filter((p) => getProgress(p) > 0).length;
+  const pendingCount = myProjects.filter((p) => getProgress(p) === 0).length;
+  const totalRaised  = myProjects.reduce((s, p) => s + p.raised, 0);
+
+  const displayed = myProjects.filter((p) => {
+    const matchSearch = p.title.toLowerCase().includes(searchQuery.toLowerCase());
+    const progress = getProgress(p);
+    const matchFilter =
+      filter === 'Active'  ? progress > 0  :
+      filter === 'Pending' ? progress === 0 : true;
+    return matchSearch && matchFilter;
   });
 
   return (
-    <View style={s.container}>
-      <StatusBar barStyle="light-content" backgroundColor={COLORS.primary} />
+    <View style={ms.root}>
+      <StatusBar barStyle="light-content" backgroundColor={T.primary} />
 
-      {/* ── HEADER ── */}
-      <View style={s.header}>
-        <View style={s.decCircle} />
-        <Text style={s.headerTitle}>My Harvests</Text>
-        <Text style={s.headerSub}>Manage your funding campaigns</Text>
+      {/* ══ HEADER ══════════════════════════════════════════════════════════ */}
+      <View style={ms.header}>
+        <View style={ms.arc} />
+        <Text style={ms.hTitle}>My Farm Projects</Text>
+        <Text style={ms.hSub}>Track your crop funding campaigns</Text>
 
-        {/* Search Bar */}
-        <View style={s.searchBar}>
-          <Ionicons name="search" size={20} color={COLORS.textMuted} />
-          <TextInput 
-            placeholder="Search your projects..." 
-            placeholderTextColor={COLORS.textMuted} 
-            style={s.searchInput}
-            value={searchQuery}
-            onChangeText={setSearchQuery} // FIXED 1: Wired up search input
-          />
+        <View style={ms.summaryRow}>
+          <View style={ms.summaryBox}>
+            <MaterialCommunityIcons name={'sprout' as MCIcon} size={18} color={T.accent} />
+            <Text style={ms.sumValue}>{activeCount}</Text>
+            <Text style={ms.sumLabel}>Active</Text>
+          </View>
+          <View style={ms.sumDivider} />
+          <View style={ms.summaryBox}>
+            <MaterialCommunityIcons name={'currency-usd' as MCIcon} size={18} color={T.accent} />
+            <Text style={ms.sumValue}>{(totalRaised / 1000).toFixed(0)}k</Text>
+            <Text style={ms.sumLabel}>LKR Raised</Text>
+          </View>
+          <View style={ms.sumDivider} />
+          <View style={ms.summaryBox}>
+            <MaterialCommunityIcons name={'clock-outline' as MCIcon} size={18} color={T.amber} />
+            <Text style={[ms.sumValue, pendingCount > 0 && { color: T.amber }]}>
+              {pendingCount}
+            </Text>
+            <Text style={ms.sumLabel}>Pending</Text>
+          </View>
         </View>
+
+        <SearchBar value={searchQuery} onChangeText={setSearchQuery} />
       </View>
 
-      <ScrollView contentContainerStyle={s.content} showsVerticalScrollIndicator={false}>
-        
-        {/* ── FILTER TABS ── */}
-        <View style={s.filterRow}>
-          {['All', 'Active', 'Pending'].map((tab) => (
-            <TouchableOpacity 
-              key={tab} 
-              style={[s.filterChip, filter === tab && s.filterChipActive]}
-              onPress={() => setFilter(tab)}
-            >
-              <Text style={[s.filterText, filter === tab && s.filterTextActive]}>{tab}</Text>
-            </TouchableOpacity>
-          ))}
+      {/* ══ SCROLL BODY ═════════════════════════════════════════════════════ */}
+      <ScrollView
+        contentContainerStyle={ms.scroll}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+      >
+        <View style={{ marginTop: SPACE.md, marginBottom: SPACE.sm }}>
+          <FilterTabs active={filter} onChange={setFilter} />
         </View>
 
-        {/* ── LIST ── */}
-        {displayedProjects.length === 0 ? (
-          <View style={s.emptyState}>
-            <Image 
-              source={{ uri: 'https://cdn-icons-png.flaticon.com/512/7486/7486747.png' }} 
-              style={s.emptyIcon} 
-            />
-            <Text style={s.emptyTitle}>No Projects Found</Text>
-            <Text style={s.emptySub}>Try adjusting your search or filters.</Text>
-          </View>
-        ) : (
-          displayedProjects.map((p: any) => <ProjectCard key={p.id} project={p} />)
+        {displayed.length > 0 && (
+          <Text style={ms.resultCount}>
+            {displayed.length} project{displayed.length !== 1 ? 's' : ''} found
+          </Text>
         )}
 
+        {displayed.length === 0 ? (
+          <EmptyState
+            filter={filter}
+            onCreatePress={() => router.push('/project/create')}
+          />
+        ) : (
+          displayed.map((p) => <ProjectCard key={p.id} project={p} />)
+        )}
       </ScrollView>
 
-      {/* ── FLOATING ACTION BUTTON (FAB) ── */}
-      <TouchableOpacity 
-        style={[s.fab, SHADOWS.fab]} 
+      {/* ══ FAB ════════════════════════════════════════════════════════════ */}
+      <TouchableOpacity
+        style={[ms.fab, SH.fab]}
         onPress={() => router.push('/project/create')}
         activeOpacity={0.85}
       >
-        <Ionicons name="add" size={32} color={COLORS.white} />
+        <Ionicons name={'add' as IonIcon} size={26} color={T.white} />
+        <Text style={ms.fabLabel}>New Project</Text>
       </TouchableOpacity>
-
     </View>
   );
 }
 
-const s = StyleSheet.create({
-  container: { flex: 1, backgroundColor: COLORS.surface },
-  content: { paddingBottom: 120 }, // Increased padding for bottom tabs + fab
+// ─────────────────────────────────────────────────────────────────────────────
+// MAIN STYLES
+// ─────────────────────────────────────────────────────────────────────────────
+const ms = StyleSheet.create({
+  root:   { flex: 1, backgroundColor: T.surface },
+  scroll: { paddingBottom: 130 },
 
-  /* HEADER */
   header: {
-    backgroundColor: COLORS.primary,
-    paddingTop: 60, paddingHorizontal: 20, paddingBottom: 25,
-    borderBottomLeftRadius: 30, borderBottomRightRadius: 30,
-    position: 'relative', overflow: 'hidden'
+    backgroundColor: T.primary,
+    paddingTop: 58,
+    paddingHorizontal: SPACE.md,
+    paddingBottom: SPACE.lg,
+    borderBottomLeftRadius: 32,
+    borderBottomRightRadius: 32,
+    overflow: 'hidden',
+    gap: SPACE.sm,
   },
-  decCircle: {
-    position: 'absolute', width: 200, height: 200, borderRadius: 100,
-    backgroundColor: COLORS.primaryLight, top: -80, right: -50, opacity: 0.3
+  arc: {
+    position: 'absolute', width: 260, height: 260, borderRadius: 130,
+    backgroundColor: T.primaryMid, opacity: 0.25, top: -120, right: -60,
   },
-  headerTitle: { fontSize: 24, fontWeight: '800', color: COLORS.white },
-  headerSub: { fontSize: 14, color: 'rgba(255,255,255,0.8)', marginTop: 4, marginBottom: 20 },
-  
-  searchBar: {
-    flexDirection: 'row', alignItems: 'center',
-    backgroundColor: COLORS.white, borderRadius: 12,
-    paddingHorizontal: 12, height: 45
+
+  hTitle: { fontSize: FONT.xxl, fontWeight: '900', color: T.white, letterSpacing: 0.2 },
+  hSub:   { fontSize: FONT.md,  color: 'rgba(255,255,255,0.75)', marginBottom: 4 },
+
+  summaryRow: {
+    flexDirection: 'row',
+    backgroundColor: 'rgba(255,255,255,0.13)',
+    borderRadius: 18,
+    paddingVertical: SPACE.sm,
+    paddingHorizontal: SPACE.sm,
+    marginBottom: 4,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.18)',
   },
-  searchInput: { flex: 1, marginLeft: 10, fontSize: 14, color: COLORS.text },
+  summaryBox: { flex: 1, alignItems: 'center', gap: 3 },
+  sumDivider: { width: 1, backgroundColor: 'rgba(255,255,255,0.2)' },
+  sumValue:   { fontSize: FONT.xl, fontWeight: '900', color: T.white },
+  sumLabel:   { fontSize: FONT.xs, fontWeight: '700', color: 'rgba(255,255,255,0.65)', textTransform: 'uppercase', letterSpacing: 0.5 },
 
-  /* FILTERS */
-  filterRow: { flexDirection: 'row', paddingHorizontal: 20, marginTop: 20, marginBottom: 10, gap: 10 },
-  filterChip: {
-    paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20,
-    backgroundColor: COLORS.white, borderWidth: 1, borderColor: COLORS.border
+  resultCount: {
+    fontSize: FONT.sm,
+    fontWeight: '700',
+    color: T.inkMuted,
+    paddingHorizontal: SPACE.md,
+    marginBottom: 4,
   },
-  filterChipActive: { backgroundColor: COLORS.primary, borderColor: COLORS.primary },
-  filterText: { fontSize: 13, fontWeight: '600', color: COLORS.textMuted },
-  filterTextActive: { color: COLORS.white },
 
-  /* CARD */
-  card: {
-    backgroundColor: COLORS.white,
-    marginHorizontal: 20, marginTop: 15,
-    borderRadius: 20, overflow: 'hidden'
-  },
-  imageContainer: { height: 140, position: 'relative' },
-  cardImage: { width: '100%', height: '100%' },
-  statusOverlay: { position: 'absolute', top: 12, left: 12 },
-  statusBadge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8 },
-  statusText: { fontSize: 10, fontWeight: '700', color: COLORS.white, textTransform: 'uppercase' },
-
-  cardBody: { padding: 16 },
-  cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' },
-  cardTitle: { fontSize: 16, fontWeight: '800', color: COLORS.text, flex: 1, marginRight: 10 },
-  cardLoc: { fontSize: 12, color: COLORS.textMuted, marginTop: 4 },
-
-  statsGrid: { flexDirection: 'row', backgroundColor: '#F9F9F9', borderRadius: 12, padding: 12, marginTop: 15 },
-  statDivider: { width: 1, backgroundColor: COLORS.border, marginHorizontal: 20 },
-  statLabel: { fontSize: 11, color: COLORS.textMuted, textTransform: 'uppercase' },
-  statValue: { fontSize: 14, fontWeight: '800', color: COLORS.text, marginTop: 2 },
-
-  progressContainer: { marginTop: 15 },
-  progressRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 6 },
-  progressLabel: { fontSize: 12, fontWeight: '600', color: COLORS.textMuted },
-  progressPct: { fontSize: 12, fontWeight: '800', color: COLORS.primary },
-  track: { height: 6, backgroundColor: COLORS.border, borderRadius: 3, overflow: 'hidden' },
-  fill: { height: '100%', backgroundColor: COLORS.accent, borderRadius: 3 },
-
-  /* EMPTY STATE */
-  emptyState: { alignItems: 'center', marginTop: 50 },
-  emptyIcon: { width: 80, height: 80, opacity: 0.5, marginBottom: 15 },
-  emptyTitle: { fontSize: 18, fontWeight: '700', color: COLORS.text },
-  emptySub: { fontSize: 14, color: COLORS.textMuted, marginTop: 5 },
-
-  /* FAB */
   fab: {
-    position: 'absolute', 
-    bottom: 95, // FIXED 2: Moved up so it doesn't hide behind the _layout.tsx bottom tab bar
-    right: 20,
-    width: 60, height: 60, borderRadius: 30,
-    backgroundColor: COLORS.primary,
-    justifyContent: 'center', alignItems: 'center',
-    zIndex: 100
-  }
+    position: 'absolute',
+    bottom: 100,
+    right: SPACE.md,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: T.primary,
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    borderRadius: 32,
+    zIndex: 100,
+  },
+  fabLabel: { fontSize: FONT.md, fontWeight: '800', color: T.white },
 });
