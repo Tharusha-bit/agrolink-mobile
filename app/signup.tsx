@@ -32,7 +32,7 @@ const COLORS = {
   border: "#DDE8D4",
   accent: "#76C442",
   success: "#2E7D32",
-  danger: "#D32F2F", // ✅ Added for input errors
+  danger: "#D32F2F",
 };
 
 const SHADOWS = {
@@ -47,7 +47,80 @@ const SHADOWS = {
   }),
 };
 
-// ─── Input Component (Now Supports Errors) ──────────────────────────────────────
+// ─── Translations Dictionary ───────────────────────────────────────────────────
+const TRANSLATIONS = {
+  en: {
+    createAcc: "Create Account",
+    farmer: "Farmer",
+    investor: "Investor",
+    fName: "First Name",
+    lName: "Last Name",
+    phone: "Phone Number",
+    nic: "NIC Number",
+    pass: "Password",
+    cPass: "Confirm Password",
+    farmVerif: "Farm & Identity Verification",
+    farmLoc: "Farm Location",
+    tapLoc: "Tap to auto-detect via GPS",
+    gsLetter: "Grama Sevaka Letter",
+    uploadDoc: "Upload PDF or image",
+    selected: "Document Selected",
+    signUpBtn: "Sign Up",
+    haveAcc: "Already have an account? ",
+    loginTxt: "Login",
+    errMatch: "Passwords do not match",
+    errFill: "Please fill in all required details.",
+    success: "Account created successfully!",
+  },
+  si: {
+    createAcc: "ගිණුමක් සාදන්න",
+    farmer: "ගොවියා",
+    investor: "ආයෝජකයා",
+    fName: "මුල් නම",
+    lName: "අවසන් නම",
+    phone: "දුරකථන අංකය",
+    nic: "ජා.හැ. අංකය",
+    pass: "මුරපදය",
+    cPass: "මුරපදය තහවුරු කරන්න",
+    farmVerif: "ගොවිපල සහ අනන්‍යතා තහවුරු කිරීම",
+    farmLoc: "ගොවිපල ස්ථානය",
+    tapLoc: "ස්වයංක්‍රීයව ස්ථානය ලබා ගන්න",
+    gsLetter: "ග්‍රාම සේවක ලිපිය",
+    uploadDoc: "PDF හෝ රූපයක් උඩුගත කරන්න",
+    selected: "ලේඛනය තෝරා ඇත",
+    signUpBtn: "ලියාපදිංචි වන්න",
+    haveAcc: "දැනටමත් ගිණුමක් තිබේද? ",
+    loginTxt: "පුරනය වන්න",
+    errMatch: "මුරපද නොගැලපේ",
+    errFill: "කරුණාකර සියලු විස්තර පුරවන්න.",
+    success: "ගිණුම සාර්ථකව නිර්මාණය කරන ලදී!",
+  },
+  ta: {
+    createAcc: "கணக்கை உருவாக்கவும்",
+    farmer: "விவசாயி",
+    investor: "முதலீட்டாளர்",
+    fName: "முதல் பெயர்",
+    lName: "கடைசி பெயர்",
+    phone: "தொலைபேசி எண்",
+    nic: "தே.அ.அ எண்",
+    pass: "கடவுச்சொல்",
+    cPass: "கடவுச்சொல்லை உறுதிப்படுத்தவும்",
+    farmVerif: "பண்ணை மற்றும் அடையாள சரிபார்ப்பு",
+    farmLoc: "பண்ணை இடம்",
+    tapLoc: "தானாக கண்டறிய தட்டவும்",
+    gsLetter: "கிராம சேவகர் கடிதம்",
+    uploadDoc: "PDF அல்லது படத்தை பதிவேற்றவும்",
+    selected: "ஆவணம் தேர்ந்தெடுக்கப்பட்டது",
+    signUpBtn: "பதிவு செய்க",
+    haveAcc: "ஏற்கனவே கணக்கு உள்ளதா? ",
+    loginTxt: "உள்நுழைய",
+    errMatch: "கடவுச்சொல் பொருந்தவில்லை",
+    errFill: "தயவுசெய்து அனைத்து விவரங்களையும் நிரப்பவும்.",
+    success: "கணக்கு வெற்றிகரமாக உருவாக்கப்பட்டது!",
+  },
+};
+
+// ─── Input Component ───────────────────────────────────────────────────────────
 interface SignupInputProps {
   label: string;
   placeholder: string;
@@ -56,7 +129,7 @@ interface SignupInputProps {
   keyboardType?: "default" | "phone-pad" | "numeric";
   value: string;
   onChangeText: (text: string) => void;
-  errorMsg?: string; // ✅ Added error prop
+  errorMsg?: string;
 }
 
 const SignupInput = ({
@@ -89,7 +162,6 @@ const SignupInput = ({
         onChangeText={onChangeText}
       />
     </View>
-    {/* ✅ Inline Error Message */}
     {errorMsg ? <Text style={s.errorText}>{errorMsg}</Text> : null}
   </View>
 );
@@ -97,6 +169,10 @@ const SignupInput = ({
 // ─── Main Screen ──────────────────────────────────────────────────────────────
 export default function SignupScreen() {
   const router = useRouter();
+
+  // ✅ Language State
+  const [lang, setLang] = useState<"en" | "si" | "ta">("en");
+  const t = TRANSLATIONS[lang];
 
   const [isFarmer, setIsFarmer] = useState(true);
   const [loading, setLoading] = useState(false);
@@ -108,7 +184,7 @@ export default function SignupScreen() {
   const [nic, setNic] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [passwordError, setPasswordError] = useState(""); // ✅ Track password mismatch
+  const [passwordError, setPasswordError] = useState("");
 
   const [gramaSevakaLetter, setGramaSevakaLetter] = useState<any>(null);
   const [locationData, setLocationData] = useState<{
@@ -117,7 +193,6 @@ export default function SignupScreen() {
     city: string;
   } | null>(null);
 
-  // ✅ Toast State
   const toastAnim = useRef(new Animated.Value(-100)).current;
   const [toastConfig, setToastConfig] = useState({
     message: "",
@@ -156,13 +231,11 @@ export default function SignupScreen() {
         setLoadingLocation(false);
         return;
       }
-
       let location = await Location.getCurrentPositionAsync({});
       let address = await Location.reverseGeocodeAsync({
         latitude: location.coords.latitude,
         longitude: location.coords.longitude,
       });
-
       let city = "Unknown Location";
       if (address.length > 0) {
         city =
@@ -201,24 +274,21 @@ export default function SignupScreen() {
   };
 
   const handleSignup = async () => {
-    setPasswordError(""); // Reset inline error
+    setPasswordError("");
 
-    // Client validation
     if (!firstName || !lastName || !phoneNumber || !nic || !password) {
-      showToast("Please fill in all required details.", "error");
+      showToast(t.errFill, "error");
       return;
     }
 
-    // ✅ Trigger inline visual error if passwords don't match
     if (password !== confirmPassword) {
-      setPasswordError("Passwords do not match");
+      setPasswordError(t.errMatch);
       return;
     }
 
     setLoading(true);
 
     try {
-      // ⚠️ UPDATE THIS IP
       const API_URL = "http://172.20.10.6:8080/api/auth/register";
 
       const userData = {
@@ -236,12 +306,11 @@ export default function SignupScreen() {
       const response = await axios.post(API_URL, userData);
 
       if (response.status === 200) {
-        showToast("Account created successfully!", "success", () => {
+        showToast(t.success, "success", () => {
           router.replace("/login" as any);
         });
       }
     } catch (error: any) {
-      // Professional Server Crash Protection
       if (error.response && error.response.status === 400) {
         showToast("This phone number is already registered.", "error");
       } else {
@@ -256,7 +325,6 @@ export default function SignupScreen() {
     <View style={s.root}>
       <StatusBar barStyle="light-content" backgroundColor={COLORS.primary} />
 
-      {/* ── CUSTOM TOAST ── */}
       <Animated.View
         style={[
           s.toastContainer,
@@ -288,6 +356,35 @@ export default function SignupScreen() {
             <TouchableOpacity style={s.backBtn} onPress={() => router.back()}>
               <Ionicons name="arrow-back" size={24} color={COLORS.white} />
             </TouchableOpacity>
+
+            {/* ✅ Language Switcher UI */}
+            <View style={s.langSwitcher}>
+              <TouchableOpacity
+                onPress={() => setLang("en")}
+                style={[s.langBtn, lang === "en" && s.langBtnActive]}
+              >
+                <Text style={[s.langText, lang === "en" && s.langTextActive]}>
+                  EN
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={() => setLang("si")}
+                style={[s.langBtn, lang === "si" && s.langBtnActive]}
+              >
+                <Text style={[s.langText, lang === "si" && s.langTextActive]}>
+                  සිං
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={() => setLang("ta")}
+                style={[s.langBtn, lang === "ta" && s.langBtnActive]}
+              >
+                <Text style={[s.langText, lang === "ta" && s.langTextActive]}>
+                  தமிழ்
+                </Text>
+              </TouchableOpacity>
+            </View>
+
             <View style={s.logoSection}>
               <View style={s.logoBadge}>
                 <Image
@@ -297,12 +394,11 @@ export default function SignupScreen() {
                 />
               </View>
               <Text style={s.appName}>AgroLink</Text>
-              <Text style={s.tagline}>Future of Agri-Finance</Text>
             </View>
           </View>
 
           <View style={[s.card, SHADOWS.md]}>
-            <Text style={s.cardTitle}>Create Account</Text>
+            <Text style={s.cardTitle}>{t.createAcc}</Text>
 
             <View style={s.toggleContainer}>
               <TouchableOpacity
@@ -315,7 +411,7 @@ export default function SignupScreen() {
                   color={isFarmer ? COLORS.white : COLORS.textMuted}
                 />
                 <Text style={[s.toggleText, isFarmer && s.toggleTextActive]}>
-                  Farmer
+                  {t.farmer}
                 </Text>
               </TouchableOpacity>
               <TouchableOpacity
@@ -328,7 +424,7 @@ export default function SignupScreen() {
                   color={!isFarmer ? COLORS.white : COLORS.textMuted}
                 />
                 <Text style={[s.toggleText, !isFarmer && s.toggleTextActive]}>
-                  Investor
+                  {t.investor}
                 </Text>
               </TouchableOpacity>
             </View>
@@ -336,7 +432,7 @@ export default function SignupScreen() {
             <View style={s.rowInputs}>
               <View style={{ flex: 1, marginRight: 10 }}>
                 <SignupInput
-                  label="First Name"
+                  label={t.fName}
                   placeholder="John"
                   icon="account-outline"
                   value={firstName}
@@ -345,7 +441,7 @@ export default function SignupScreen() {
               </View>
               <View style={{ flex: 1 }}>
                 <SignupInput
-                  label="Last Name"
+                  label={t.lName}
                   placeholder="Doe"
                   icon="account-outline"
                   value={lastName}
@@ -355,7 +451,7 @@ export default function SignupScreen() {
             </View>
 
             <SignupInput
-              label="Phone Number"
+              label={t.phone}
               placeholder="077 123 4567"
               icon="phone-outline"
               keyboardType="phone-pad"
@@ -363,14 +459,14 @@ export default function SignupScreen() {
               onChangeText={setPhoneNumber}
             />
             <SignupInput
-              label="NIC Number"
+              label={t.nic}
               placeholder="99xxxxxxxV"
               icon="card-account-details-outline"
               value={nic}
               onChangeText={setNic}
             />
             <SignupInput
-              label="Password"
+              label={t.pass}
               placeholder="••••••••"
               icon="lock-outline"
               secureTextEntry
@@ -381,9 +477,8 @@ export default function SignupScreen() {
               }}
             />
 
-            {/* ✅ Confim Password with Error Warning */}
             <SignupInput
-              label="Confirm Password"
+              label={t.cPass}
               placeholder="••••••••"
               icon="lock-check-outline"
               secureTextEntry
@@ -397,7 +492,7 @@ export default function SignupScreen() {
 
             {isFarmer && (
               <View style={s.uploadSection}>
-                <Text style={s.uploadTitle}>Farm & Identity Verification</Text>
+                <Text style={s.uploadTitle}>{t.farmVerif}</Text>
 
                 <TouchableOpacity
                   style={[
@@ -427,7 +522,7 @@ export default function SignupScreen() {
                     )}
                   </View>
                   <View style={s.uploadContent}>
-                    <Text style={s.uploadLabel}>Farm Location</Text>
+                    <Text style={s.uploadLabel}>{t.farmLoc}</Text>
                     <Text
                       style={[
                         s.uploadValue,
@@ -437,9 +532,7 @@ export default function SignupScreen() {
                         },
                       ]}
                     >
-                      {locationData
-                        ? `${locationData.city} ✓`
-                        : "Tap to auto-detect via GPS"}
+                      {locationData ? `${locationData.city} ✓` : t.tapLoc}
                     </Text>
                   </View>
                 </TouchableOpacity>
@@ -468,16 +561,14 @@ export default function SignupScreen() {
                     />
                   </View>
                   <View style={s.uploadContent}>
-                    <Text style={s.uploadLabel}>Grama Sevaka Letter</Text>
+                    <Text style={s.uploadLabel}>{t.gsLetter}</Text>
                     <Text
                       style={[
                         s.uploadValue,
                         gramaSevakaLetter && { color: COLORS.primary },
                       ]}
                     >
-                      {gramaSevakaLetter
-                        ? "Document Selected"
-                        : "Upload PDF or image"}
+                      {gramaSevakaLetter ? t.selected : t.uploadDoc}
                     </Text>
                   </View>
                   <MaterialCommunityIcons
@@ -503,7 +594,7 @@ export default function SignupScreen() {
               {loading ? (
                 <ActivityIndicator color={COLORS.white} />
               ) : (
-                <Text style={s.signupBtnText}>Sign Up</Text>
+                <Text style={s.signupBtnText}>{t.signUpBtn}</Text>
               )}
               {!loading && (
                 <MaterialCommunityIcons
@@ -515,9 +606,9 @@ export default function SignupScreen() {
             </TouchableOpacity>
 
             <View style={s.footer}>
-              <Text style={s.footerText}>Already have an account? </Text>
+              <Text style={s.footerText}>{t.haveAcc}</Text>
               <TouchableOpacity onPress={() => router.replace("/login" as any)}>
-                <Text style={s.loginLink}>Login</Text>
+                <Text style={s.loginLink}>{t.loginTxt}</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -543,10 +634,6 @@ const s = StyleSheet.create({
     paddingHorizontal: 20,
     zIndex: 999,
     elevation: 10,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 5,
   },
   toastText: {
     color: COLORS.white,
@@ -577,6 +664,23 @@ const s = StyleSheet.create({
     opacity: 0.4,
   },
   backBtn: { position: "absolute", top: 50, left: 20, padding: 8, zIndex: 10 },
+
+  /* Language Switcher Styles */
+  langSwitcher: {
+    position: "absolute",
+    top: 50,
+    right: 20,
+    flexDirection: "row",
+    backgroundColor: "rgba(255,255,255,0.2)",
+    borderRadius: 20,
+    padding: 4,
+    zIndex: 10,
+  },
+  langBtn: { paddingHorizontal: 10, paddingVertical: 6, borderRadius: 16 },
+  langBtnActive: { backgroundColor: COLORS.white },
+  langText: { fontSize: 12, fontWeight: "700", color: "rgba(255,255,255,0.7)" },
+  langTextActive: { color: COLORS.primary },
+
   logoSection: { alignItems: "center", marginTop: 10 },
   logoBadge: {
     width: 80,
@@ -594,12 +698,6 @@ const s = StyleSheet.create({
     fontWeight: "900",
     color: COLORS.white,
     letterSpacing: -0.5,
-  },
-  tagline: {
-    fontSize: 13,
-    color: "rgba(255,255,255,0.8)",
-    fontWeight: "500",
-    letterSpacing: 1,
   },
 
   card: {
@@ -661,7 +759,7 @@ const s = StyleSheet.create({
     borderColor: COLORS.danger,
     borderWidth: 1.5,
     backgroundColor: "#FFF0F0",
-  }, // ✅ Red border style
+  },
   inputIcon: { marginRight: 10 },
   input: { flex: 1, fontSize: 14, color: COLORS.text },
   errorText: {
@@ -670,7 +768,7 @@ const s = StyleSheet.create({
     fontWeight: "600",
     marginTop: 4,
     marginLeft: 4,
-  }, // ✅ Error text style
+  },
 
   uploadSection: {
     backgroundColor: COLORS.surface,

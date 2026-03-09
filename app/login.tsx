@@ -28,7 +28,7 @@ const COLORS = {
   textMuted: "#9BB08A",
   border: "#DDE8D4",
   success: "#2E7D32",
-  danger: "#D32F2F", // ✅ Added Danger Red for errors
+  danger: "#D32F2F",
 };
 
 const SHADOWS = {
@@ -41,6 +41,55 @@ const SHADOWS = {
     },
     android: { elevation: 6 },
   }),
+};
+
+// ─── Translations Dictionary ───────────────────────────────────────────────────
+const TRANSLATIONS = {
+  en: {
+    welcome: "Welcome Back",
+    sub: "Sign in to manage your investments",
+    phone: "Phone Number",
+    pass: "Password",
+    stay: "Stay logged in",
+    forgot: "Forgot Password?",
+    loginBtn: "Login",
+    noAccount: "Don't have an account? ",
+    signUp: "Sign Up",
+    tagline: "Future of Agri-Finance",
+    errEmpty: "Please enter phone number and password",
+    errFail: "Invalid credentials",
+    success: "Login Successful",
+  },
+  si: {
+    welcome: "ආපසු සාදරයෙන් පිළිගනිමු",
+    sub: "ඔබගේ ගිණුමට පුරනය වන්න",
+    phone: "දුරකථන අංකය",
+    pass: "මුරපදය",
+    stay: "පුරනය වී සිටින්න",
+    forgot: "මුරපදය අමතකද?",
+    loginBtn: "පුරනය වන්න",
+    noAccount: "ගිණුමක් නැද්ද? ",
+    signUp: "ලියාපදිංචි වන්න",
+    tagline: "කෘෂි-මූල්‍යයේ අනාගතය",
+    errEmpty: "කරුණාකර අංකය සහ මුරපදය ඇතුළත් කරන්න",
+    errFail: "මුරපදය වැරදියි",
+    success: "සාර්ථකව පුරනය විය",
+  },
+  ta: {
+    welcome: "மீண்டும் வருக",
+    sub: "உள்நுழையவும்",
+    phone: "தொலைபேசி எண்",
+    pass: "கடவுச்சொல்",
+    stay: "உள்நுழைந்திருக்கவும்",
+    forgot: "கடவுச்சொல் மறந்துவிட்டதா?",
+    loginBtn: "உள்நுழைக",
+    noAccount: "கணக்கு இல்லையா? ",
+    signUp: "பதிவு செய்க",
+    tagline: "விவசாய நிதியின் எதிர்காலம்",
+    errEmpty: "எண் மற்றும் கடவுச்சொல்லை உள்ளிடவும்",
+    errFail: "தவறான கடவுச்சொல்",
+    success: "உள்நுழைவு வெற்றி",
+  },
 };
 
 // ─── Input Component ───────────────────────────────────────────────────────────
@@ -92,13 +141,16 @@ const LoginInput = ({
 export default function LoginScreen() {
   const router = useRouter();
 
+  // ✅ Language State
+  const [lang, setLang] = useState<"en" | "si" | "ta">("en");
+  const t = TRANSLATIONS[lang];
+
   const [phoneNumber, setPhoneNumber] = useState("");
   const [password, setPassword] = useState("");
   const [passwordVisible, setPasswordVisible] = useState(false);
   const [stayLoggedIn, setStayLoggedIn] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  // ✅ Advanced Toast State for Errors & Success
   const toastAnim = useRef(new Animated.Value(-100)).current;
   const [toastConfig, setToastConfig] = useState({
     message: "",
@@ -129,23 +181,21 @@ export default function LoginScreen() {
   };
 
   const handleLogin = async () => {
-    // 1. Client-Side Validation
     if (!phoneNumber || !password) {
-      showToast("Please enter phone number and password", "error");
+      showToast(t.errEmpty, "error");
       return;
     }
 
     setLoading(true);
 
     try {
-      // ⚠️ KEEP YOUR LAPTOP IP HERE
       const API_URL = "http://172.20.10.6:8080/api/auth/login";
 
       const response = await axios.post(API_URL, { phoneNumber, password });
 
       if (response.status === 200) {
         const userRole = response.data.role;
-        showToast("Login Successful", "success", () => {
+        showToast(t.success, "success", () => {
           if (userRole === "FARMER") {
             router.replace("/farmer/farmerhome" as any);
           } else {
@@ -154,13 +204,12 @@ export default function LoginScreen() {
         });
       }
     } catch (error: any) {
-      // 2. Professional Backend Error Catching (No Crashes!)
       if (error.response && error.response.status === 401) {
-        showToast("Incorrect password. Please try again.", "error");
+        showToast(t.errFail, "error");
       } else if (error.response && error.response.status === 404) {
-        showToast("Account not found. Please sign up.", "error");
+        showToast(t.noAccount, "error");
       } else {
-        showToast("Server connection error. Try again later.", "error");
+        showToast("Server connection error.", "error");
       }
     } finally {
       setLoading(false);
@@ -171,7 +220,6 @@ export default function LoginScreen() {
     <View style={s.root}>
       <StatusBar barStyle="light-content" backgroundColor={COLORS.primary} />
 
-      {/* ── CUSTOM TOAST ── */}
       <Animated.View
         style={[
           s.toastContainer,
@@ -200,6 +248,35 @@ export default function LoginScreen() {
         >
           <View style={s.header}>
             <View style={s.decCircle} />
+
+            {/* ✅ Language Switcher UI */}
+            <View style={s.langSwitcher}>
+              <TouchableOpacity
+                onPress={() => setLang("en")}
+                style={[s.langBtn, lang === "en" && s.langBtnActive]}
+              >
+                <Text style={[s.langText, lang === "en" && s.langTextActive]}>
+                  EN
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={() => setLang("si")}
+                style={[s.langBtn, lang === "si" && s.langBtnActive]}
+              >
+                <Text style={[s.langText, lang === "si" && s.langTextActive]}>
+                  සිං
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={() => setLang("ta")}
+                style={[s.langBtn, lang === "ta" && s.langBtnActive]}
+              >
+                <Text style={[s.langText, lang === "ta" && s.langTextActive]}>
+                  தமிழ்
+                </Text>
+              </TouchableOpacity>
+            </View>
+
             <View style={s.logoSection}>
               <View style={s.logoBadge}>
                 <Image
@@ -209,15 +286,16 @@ export default function LoginScreen() {
                 />
               </View>
               <Text style={s.appName}>AgroLink</Text>
-              <Text style={s.tagline}>Future of Agri-Finance</Text>
+              <Text style={s.tagline}>{t.tagline}</Text>
             </View>
           </View>
 
           <View style={[s.card, SHADOWS.md]}>
-            <Text style={s.cardTitle}>Welcome Back</Text>
+            <Text style={s.cardTitle}>{t.welcome}</Text>
+            <Text style={s.cardSub}>{t.sub}</Text>
 
             <LoginInput
-              label="Phone Number"
+              label={t.phone}
               placeholder="077 123 4567"
               icon="phone-outline"
               keyboardType="phone-pad"
@@ -225,7 +303,7 @@ export default function LoginScreen() {
               onChangeText={setPhoneNumber}
             />
             <LoginInput
-              label="Password"
+              label={t.pass}
               placeholder="••••••••"
               icon="lock-outline"
               secureTextEntry={!passwordVisible}
@@ -249,10 +327,10 @@ export default function LoginScreen() {
                   size={22}
                   color={COLORS.primary}
                 />
-                <Text style={s.checkboxText}>Stay logged in</Text>
+                <Text style={s.checkboxText}>{t.stay}</Text>
               </TouchableOpacity>
               <TouchableOpacity>
-                <Text style={s.forgotText}>Forgot Password?</Text>
+                <Text style={s.forgotText}>{t.forgot}</Text>
               </TouchableOpacity>
             </View>
 
@@ -266,7 +344,7 @@ export default function LoginScreen() {
                 <ActivityIndicator color={COLORS.white} />
               ) : (
                 <>
-                  <Text style={s.loginBtnText}>Login</Text>
+                  <Text style={s.loginBtnText}>{t.loginBtn}</Text>
                   <MaterialCommunityIcons
                     name="login"
                     size={20}
@@ -277,9 +355,9 @@ export default function LoginScreen() {
             </TouchableOpacity>
 
             <View style={s.footer}>
-              <Text style={s.footerText}>Don't have an account? </Text>
+              <Text style={s.footerText}>{t.noAccount}</Text>
               <TouchableOpacity onPress={() => router.push("/signup" as any)}>
-                <Text style={s.signupLink}>Sign Up</Text>
+                <Text style={s.signupLink}>{t.signUp}</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -305,10 +383,6 @@ const s = StyleSheet.create({
     paddingHorizontal: 20,
     zIndex: 999,
     elevation: 10,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 5,
   },
   toastText: {
     color: COLORS.white,
@@ -338,6 +412,23 @@ const s = StyleSheet.create({
     left: -60,
     opacity: 0.4,
   },
+
+  /* Language Switcher Styles */
+  langSwitcher: {
+    position: "absolute",
+    top: 50,
+    right: 20,
+    flexDirection: "row",
+    backgroundColor: "rgba(255,255,255,0.2)",
+    borderRadius: 20,
+    padding: 4,
+    zIndex: 10,
+  },
+  langBtn: { paddingHorizontal: 10, paddingVertical: 6, borderRadius: 16 },
+  langBtnActive: { backgroundColor: COLORS.white },
+  langText: { fontSize: 12, fontWeight: "700", color: "rgba(255,255,255,0.7)" },
+  langTextActive: { color: COLORS.primary },
+
   logoSection: { alignItems: "center", marginTop: 10 },
   logoBadge: {
     width: 90,
@@ -376,7 +467,13 @@ const s = StyleSheet.create({
     fontWeight: "800",
     color: COLORS.text,
     textAlign: "center",
-    marginBottom: 20,
+    marginBottom: 6,
+  },
+  cardSub: {
+    fontSize: 13,
+    color: COLORS.textMuted,
+    textAlign: "center",
+    marginBottom: 24,
   },
 
   inputContainer: { marginBottom: 18 },
