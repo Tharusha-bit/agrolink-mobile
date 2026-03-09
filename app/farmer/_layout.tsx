@@ -24,7 +24,7 @@ export default function FarmerLayout() {
         },
       }}
     >
-      {/* 1. FIXED: Changed "home" to "farmerhome" to match your actual file name */}
+      {/* ─── 1. VISIBLE TABS (The 3 Main Icons) ─── */}
       <Tabs.Screen
         name="farmerhome" 
         options={{
@@ -44,17 +44,40 @@ export default function FarmerLayout() {
         }}
       />
 
-      {/* 2. FIXED: Hide non-tab screens from the bottom tab bar */}
+      {/* ─── 2. HIDDEN SUB-PAGES ─── */}
       <Tabs.Screen
         name="trust"
         options={{
-          href: null, // This prevents a blank tab from appearing
+          href: null, // ✅ Correct Expo way to hide the tab button
+          tabBarStyle: { display: 'none' }, // ✅ Hides the background bar when screen is open
         }}
       />
       <Tabs.Screen
         name="project-manage"
         options={{
-          href: null, // Hides the folder containing [id].tsx from the tab bar
+          href: null,
+          tabBarStyle: { display: 'none' },
+        }}
+      />
+      <Tabs.Screen
+        name="chat"
+        options={{
+          href: null,
+          tabBarStyle: { display: 'none' },
+        }}
+      />
+      <Tabs.Screen
+        name="analytics"
+        options={{
+          href: null,
+          tabBarStyle: { display: 'none' },
+        }}
+      />
+      <Tabs.Screen
+        name="project-edit"
+        options={{
+          href: null,
+          tabBarStyle: { display: 'none' },
         }}
       />
     </Tabs>
