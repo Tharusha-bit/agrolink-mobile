@@ -202,7 +202,7 @@ export default function LoginScreen() {
           if (userRole === "FARMER") {
             router.replace({
               pathname: "/farmer/farmerhome" as any,
-              params: { firstName }, // Passing data in case you want to make "Suriyakumar" dynamic later
+              params: { firstName, userId: response.data.userId },
             });
           } else {
             router.replace({

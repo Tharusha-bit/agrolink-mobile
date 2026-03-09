@@ -1,11 +1,14 @@
 import { MaterialCommunityIcons } from "@expo/vector-icons";
-import { useRouter } from "expo-router";
-import React, { ComponentProps, useRef } from "react";
+import axios from "axios";
+import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router"; // ✅ Added useFocusEffect
+import React, { ComponentProps, useCallback, useRef, useState } from "react"; // ✅ Added useCallback
 import {
+  ActivityIndicator,
   Alert,
   Animated,
   Image,
   Platform,
+  RefreshControl,
   ScrollView,
   StatusBar,
   StyleSheet,
@@ -14,16 +17,10 @@ import {
   View,
 } from "react-native";
 
-// ✅ Connects to your Global Data
-import { type Project, useProjects } from "../../src/context/ProjectContext";
-
-// ─────────────────────────────────────────────────────────────────────────────
-// ICON TYPE
-// ─────────────────────────────────────────────────────────────────────────────
 type MCIcon = ComponentProps<typeof MaterialCommunityIcons>["name"];
 
 // ─────────────────────────────────────────────────────────────────────────────
-// DESIGN TOKENS (Green & Gold Theme)
+// DESIGN TOKENS
 // ─────────────────────────────────────────────────────────────────────────────
 const C = {
   primary: "#1A5200",
@@ -41,14 +38,6 @@ const C = {
   goldLight: "#FFF8E1",
   border: "#E2EDD9",
   divider: "#EEF5E8",
-
-  // Alert severities
-  safe: "#2E7D32",
-  safePale: "#E8F5E9",
-  medium: "#FF8F00",
-  mediumPale: "#FFF3E0",
-  high: "#C62828",
-  highPale: "#FFEBEE",
 };
 
 const SH = {
@@ -85,110 +74,43 @@ const FONT = { xs: 10, sm: 12, md: 14, lg: 16, xl: 18, xxl: 22 };
 const SPACE = { xs: 6, sm: 10, md: 16, lg: 20, xl: 24 };
 
 // ─────────────────────────────────────────────────────────────────────────────
-// STATIC DATA
+// QUICK ACTIONS MENU
 // ─────────────────────────────────────────────────────────────────────────────
-interface AlertItem {
-  id: number;
-  icon: MCIcon;
-  title: string;
-  body: string;
-  severity: "safe" | "medium" | "high";
-}
-
-const FARM_ALERTS: AlertItem[] = [
+const QUICK_ACTIONS = [
   {
-    id: 1,
-    icon: "weather-lightning-rainy",
-    title: "Heavy Rain Expected",
-    body: "Anuradhapura · Next 24 h",
-    severity: "high",
-  },
-  {
-    id: 2,
-    icon: "bug-outline",
-    title: "Pest Advisory",
-    body: "Monitor paddy for leaf blight",
-    severity: "medium",
-  },
-  {
-    id: 3,
-    icon: "water-check-outline",
-    title: "Irrigation Completed",
-    body: "North plot · All systems normal",
-    severity: "safe",
-  },
-];
-
-interface QuickAction {
-  icon: MCIcon;
-  label: string;
-  bg: string;
-  color: string;
-  route: string;
-}
-
-// ✅ FIXED: Routes point to existing pages
-const QUICK_ACTIONS: QuickAction[] = [
-  {
-    icon: "plus-circle-outline",
+    icon: "plus-circle-outline" as MCIcon,
     label: "Add Project",
     bg: C.primaryPale,
     color: C.primary,
     route: "/project/create",
   },
   {
-    icon: "folder-multiple",
+    icon: "folder-multiple" as MCIcon,
     label: "My Projects",
     bg: "#F3E5F5",
     color: "#6A1B9A",
     route: "/farmer/projects",
   },
   {
-    icon: "camera-plus-outline",
+    icon: "camera-plus-outline" as MCIcon,
     label: "Post Update",
     bg: "#FFF3E0",
     color: C.accentWarm,
     route: "update",
-  }, // Placeholder
+  },
   {
-    icon: "chart-line",
+    icon: "chart-line" as MCIcon,
     label: "Analytics",
     bg: "#E3F2FD",
     color: "#1565C0",
     route: "analytics",
-  }, // Placeholder
+  },
 ];
-
-// ─────────────────────────────────────────────────────────────────────────────
-// HELPERS
-// ─────────────────────────────────────────────────────────────────────────────
-function farmerName(p: Project): string {
-  // Handles both old string format and new object format
-  if (typeof p.farmer === "string") return p.farmer;
-  return (p.farmer as any)?.name ?? "Unknown Farmer";
-}
-
-function getProgress(p: Project): number {
-  return p.goal > 0 ? Math.min(p.raised / p.goal, 1) : 0;
-}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // SUB-COMPONENTS
 // ─────────────────────────────────────────────────────────────────────────────
-
-function MetricTile({
-  icon,
-  value,
-  label,
-  color,
-  bg,
-}: {
-  icon: MCIcon;
-  value: string | number;
-  label: string;
-  color: string;
-  bg: string;
-}) {
+function MetricTile({ icon, value, label, color, bg }: any) {
   return (
     <View style={mt.tile}>
       <View style={[mt.iconBox, { backgroundColor: bg }]}>
@@ -219,57 +141,7 @@ const mt = StyleSheet.create({
   },
 });
 
-function HealthRow({
-  icon,
-  label,
-  value,
-  color,
-  bg,
-}: {
-  icon: MCIcon;
-  label: string;
-  value: string;
-  color: string;
-  bg: string;
-}) {
-  return (
-    <View style={hr.row}>
-      <View style={[hr.iconBox, { backgroundColor: bg }]}>
-        <MaterialCommunityIcons name={icon} size={15} color={color} />
-      </View>
-      <Text style={hr.label}>{label}</Text>
-      <View style={[hr.pill, { backgroundColor: bg }]}>
-        <Text style={[hr.pillText, { color }]}>{value}</Text>
-      </View>
-    </View>
-  );
-}
-const hr = StyleSheet.create({
-  row: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: SPACE.sm,
-    paddingVertical: 6,
-  },
-  iconBox: {
-    width: 28,
-    height: 28,
-    borderRadius: 8,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  label: { flex: 1, fontSize: FONT.md, fontWeight: "600", color: C.inkSub },
-  pill: { paddingHorizontal: 10, paddingVertical: 3, borderRadius: 20 },
-  pillText: { fontSize: FONT.sm, fontWeight: "800" },
-});
-
-function ActionBtn({
-  action,
-  onPress,
-}: {
-  action: QuickAction;
-  onPress: () => void;
-}) {
+function ActionBtn({ action, onPress }: any) {
   return (
     <TouchableOpacity
       style={[ab.btn, SH.sm]}
@@ -311,20 +183,16 @@ const ab = StyleSheet.create({
   },
 });
 
-function ProjectCard({
-  project,
-  onPress,
-}: {
-  project: Project;
-  onPress: () => void;
-}) {
-  const pct = Math.round(getProgress(project) * 100);
-  const investorCount = project.investors?.length ?? 0;
-  // Handle different image formats
+function ProjectCard({ project, onPress }: any) {
+  const goal = project.fundingGoal || 1;
+  const raised = project.currentFundingAmount || 0;
+  const pct = Math.min(Math.round((raised / goal) * 100), 100);
+
+  const title = project.projectTitle || "Farm Project";
   const imageUri =
-    (project as any).imageUrl ??
-    (project as any).image ??
-    "https://via.placeholder.com/150";
+    project.photos && project.photos.length > 0
+      ? project.photos[0]
+      : "https://cdn.pixabay.com/photo/2016/09/21/04/46/barley-field-1684052_1280.jpg";
 
   return (
     <TouchableOpacity
@@ -335,7 +203,7 @@ function ProjectCard({
       <Image source={{ uri: imageUri }} style={pc.img} />
       <View style={pc.body}>
         <Text style={pc.title} numberOfLines={1}>
-          {project.title}
+          {title}
         </Text>
 
         <View style={pc.barRow}>
@@ -346,22 +214,9 @@ function ProjectCard({
         </View>
 
         <View style={pc.metaRow}>
-          <Text style={pc.raised}>LKR {project.raised.toLocaleString()}</Text>
-          <Text style={pc.goal}> / {project.goal.toLocaleString()}</Text>
+          <Text style={pc.raised}>LKR {raised.toLocaleString()}</Text>
+          <Text style={pc.goal}> / {goal.toLocaleString()}</Text>
         </View>
-
-        {investorCount > 0 && (
-          <View style={pc.investRow}>
-            <MaterialCommunityIcons
-              name={"account-group-outline" as MCIcon}
-              size={12}
-              color={C.inkMuted}
-            />
-            <Text style={pc.investText}>
-              {investorCount} investor{investorCount !== 1 ? "s" : ""}
-            </Text>
-          </View>
-        )}
       </View>
       <MaterialCommunityIcons
         name={"chevron-right" as MCIcon}
@@ -408,67 +263,6 @@ const pc = StyleSheet.create({
   metaRow: { flexDirection: "row", alignItems: "baseline" },
   raised: { fontSize: FONT.sm, fontWeight: "800", color: C.inkSub },
   goal: { fontSize: FONT.xs, color: C.inkMuted },
-  investRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-    marginTop: 4,
-  },
-  investText: { fontSize: FONT.xs, color: C.inkMuted, fontWeight: "600" },
-});
-
-function AlertRow({ alert, isLast }: { alert: AlertItem; isLast: boolean }) {
-  const colorMap = {
-    safe: { bg: C.safePale, color: C.safe },
-    medium: { bg: C.mediumPale, color: C.medium },
-    high: { bg: C.highPale, color: C.high },
-  };
-  const { bg, color } = colorMap[alert.severity];
-  const badgeLabel =
-    alert.severity === "safe"
-      ? "Safe"
-      : alert.severity === "medium"
-        ? "Medium"
-        : "High";
-
-  return (
-    <>
-      <View style={al.row}>
-        <View style={[al.iconBox, { backgroundColor: bg }]}>
-          <MaterialCommunityIcons name={alert.icon} size={20} color={color} />
-        </View>
-        <View style={al.textWrap}>
-          <Text style={al.title}>{alert.title}</Text>
-          <Text style={al.body}>{alert.body}</Text>
-        </View>
-        <View style={[al.badge, { backgroundColor: bg }]}>
-          <Text style={[al.badgeText, { color }]}>{badgeLabel}</Text>
-        </View>
-      </View>
-      {!isLast && <View style={al.divider} />}
-    </>
-  );
-}
-const al = StyleSheet.create({
-  row: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingVertical: 12,
-    gap: SPACE.sm,
-  },
-  iconBox: {
-    width: 44,
-    height: 44,
-    borderRadius: 13,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  textWrap: { flex: 1 },
-  title: { fontSize: FONT.md, fontWeight: "700", color: C.ink },
-  body: { fontSize: FONT.xs, color: C.inkMuted, marginTop: 2 },
-  badge: { paddingHorizontal: 9, paddingVertical: 3, borderRadius: 20 },
-  badgeText: { fontSize: FONT.xs, fontWeight: "900" },
-  divider: { height: 1, backgroundColor: C.divider },
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -476,26 +270,92 @@ const al = StyleSheet.create({
 // ─────────────────────────────────────────────────────────────────────────────
 export default function FarmerDashboard() {
   const router = useRouter();
-  const { projects } = useProjects();
+
+  const { firstName, userId } = useLocalSearchParams();
+  const displayName = firstName || "Farmer";
+  const farmerId = userId || "69aec459e99505da9e2d156b";
+
+  // States
+  const [dbProjects, setDbProjects] = useState<any[]>([]);
+  const [stats, setStats] = useState({ raised: 0, count: 0, investors: 0 });
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false); // ✅ Pull-to-refresh state
+
   const fabScale = useRef(new Animated.Value(1)).current;
 
-  // Filter this farmer's projects
-  const myProjects = projects.filter((p) => {
-    const name = farmerName(p);
-    return name.includes("Me") || name.includes("Suriyakumar");
-  });
+  // ✅ Centralized Fetch Function
+  const fetchDashboardData = async () => {
+    try {
+      const API_URL = "http://172.20.10.6:8080";
 
-  const totalRaised = myProjects.reduce((s, p) => s + p.raised, 0);
-  const totalInvestors = myProjects.reduce(
-    (s, p) => s + (p.investors?.length ?? 0),
-    0,
+      const projRes = await axios.get(
+        `${API_URL}/api/farmer-project/list/${farmerId}`,
+      );
+      const projects = projRes.data || [];
+      setDbProjects(projects);
+
+      let totalRaised = 0;
+      let uniqueInvestors = new Set();
+
+      for (const proj of projects) {
+        totalRaised += proj.currentFundingAmount || 0;
+        try {
+          const invRes = await axios.get(
+            `${API_URL}/api/investments/project/${proj.id}`,
+          );
+          const investments = invRes.data || [];
+          investments.forEach((inv: any) =>
+            uniqueInvestors.add(inv.investorId),
+          );
+        } catch (e) {
+          console.log("No investments found for project: ", proj.id);
+        }
+      }
+
+      setStats({
+        raised: totalRaised,
+        count: projects.length,
+        investors: uniqueInvestors.size,
+      });
+    } catch (error) {
+      console.error("Failed to fetch farmer dashboard data", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // ✅ 1. Auto-refresh when navigating back to this tab
+  useFocusEffect(
+    useCallback(() => {
+      fetchDashboardData();
+    }, [farmerId]),
   );
+
+  // ✅ 2. Manual Pull-to-Refresh handler
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await fetchDashboardData();
+    setRefreshing(false);
+  }, [farmerId]);
+
+  const activeProjects = dbProjects.filter(
+    (p) =>
+      p.status === "FUNDING" ||
+      p.status === "IN_PROGRESS" ||
+      p.status === "APPROVED",
+  );
+
+  const formatRaised = (amount: number) => {
+    return amount >= 1000
+      ? `${(amount / 1000).toFixed(0)}k`
+      : amount.toString();
+  };
 
   const pressFab = () => {
     Animated.sequence([
       Animated.spring(fabScale, { toValue: 0.88, useNativeDriver: true }),
       Animated.spring(fabScale, { toValue: 1, useNativeDriver: true }),
-    ]).start(() => router.push("/project/create"));
+    ]).start(() => router.push("/project/create" as any));
   };
 
   const handleAction = (route: string) => {
@@ -510,9 +370,18 @@ export default function FarmerDashboard() {
     <View style={s.root}>
       <StatusBar barStyle="light-content" backgroundColor={C.primaryMid} />
 
+      {/* ✅ Added RefreshControl to ScrollView */}
       <ScrollView
         contentContainerStyle={s.scroll}
         showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor={C.primary}
+            colors={[C.primary]}
+          />
+        }
       >
         {/* ══ HEADER ══════════════════════════════════════════════════════════ */}
         <View style={s.header}>
@@ -521,7 +390,7 @@ export default function FarmerDashboard() {
 
           <View style={s.topRow}>
             <View>
-              <Text style={s.greeting}>Welcome, Suriyakumar 🙏</Text>
+              <Text style={s.greeting}>Welcome, {displayName} 🙏</Text>
               <Text style={s.subLine}>Your farm control center</Text>
             </View>
             <View style={s.headerRight}>
@@ -533,7 +402,9 @@ export default function FarmerDashboard() {
                 />
                 <Text style={s.levelText}>Gold</Text>
               </View>
-              <TouchableOpacity onPress={() => router.push("/farmer/profile")}>
+              <TouchableOpacity
+                onPress={() => router.push("/farmer/profile" as any)}
+              >
                 <View style={s.avatar}>
                   <MaterialCommunityIcons
                     name={"account" as MCIcon}
@@ -546,58 +417,8 @@ export default function FarmerDashboard() {
           </View>
         </View>
 
-        {/* ══ AI FARM HEALTH ══════════════════════════════════════════════════ */}
-        <View style={[s.card, s.healthCard, SH.md]}>
-          <View style={s.healthHeader}>
-            <View style={s.aiBadge}>
-              <MaterialCommunityIcons
-                name={"robot" as MCIcon}
-                size={13}
-                color={C.white}
-              />
-              <Text style={s.aiBadgeText}>AI Farm Health</Text>
-            </View>
-            <Text style={s.healthTime}>Updated just now</Text>
-          </View>
-
-          <HealthRow
-            icon={"leaf"}
-            label="Crop Health"
-            value="Good"
-            color={C.safe}
-            bg={C.safePale}
-          />
-          <View style={s.healthDivider} />
-          <HealthRow
-            icon={"weather-cloudy"}
-            label="Weather Risk"
-            value="Medium"
-            color={C.medium}
-            bg={C.mediumPale}
-          />
-          <View style={s.healthDivider} />
-          <HealthRow
-            icon={"water-outline"}
-            label="Soil Condition"
-            value="Moist"
-            color={"#1565C0"}
-            bg={"#E3F2FD"}
-          />
-
-          <View style={s.recoBox}>
-            <MaterialCommunityIcons
-              name={"lightbulb-on-outline" as MCIcon}
-              size={15}
-              color={C.accentWarm}
-            />
-            <Text style={s.recoText}>
-              Monitor irrigation tomorrow — rain expected overnight.
-            </Text>
-          </View>
-        </View>
-
-        {/* ══ FUNDING OVERVIEW ════════════════════════════════════════════════ */}
-        <View style={[s.card, SH.sm]}>
+        {/* ══ REAL-TIME FUNDING OVERVIEW ════════════════════════════════════════ */}
+        <View style={[s.card, SH.sm, { marginTop: -30 }]}>
           <View style={s.cardHeaderRow}>
             <Text style={s.cardTitle}>Funding Overview</Text>
             <View style={s.trendBadge}>
@@ -606,39 +427,47 @@ export default function FarmerDashboard() {
                 size={12}
                 color={C.accent}
               />
-              <Text style={s.trendText}>+12% this week</Text>
+              <Text style={s.trendText}>Live Data</Text>
             </View>
           </View>
 
-          <View style={s.metricsRow}>
-            <MetricTile
-              icon={"currency-usd" as MCIcon}
-              value={`${(totalRaised / 1000).toFixed(0)}k`}
-              label="LKR Raised"
+          {loading && !refreshing ? (
+            <ActivityIndicator
+              size="large"
               color={C.primary}
-              bg={C.primaryPale}
+              style={{ marginVertical: 20 }}
             />
-            <View style={s.metricDivider} />
-            <MetricTile
-              icon={"folder-multiple-outline" as MCIcon}
-              value={myProjects.length}
-              label="Projects"
-              color={"#1565C0"}
-              bg={"#E3F2FD"}
-            />
-            <View style={s.metricDivider} />
-            <MetricTile
-              icon={"account-group-outline" as MCIcon}
-              value={totalInvestors}
-              label="Investors"
-              color={C.accentWarm}
-              bg={C.goldLight}
-            />
-          </View>
+          ) : (
+            <View style={s.metricsRow}>
+              <MetricTile
+                icon={"currency-usd" as MCIcon}
+                value={formatRaised(stats.raised)}
+                label="LKR Raised"
+                color={C.primary}
+                bg={C.primaryPale}
+              />
+              <View style={s.metricDivider} />
+              <MetricTile
+                icon={"folder-multiple-outline" as MCIcon}
+                value={stats.count}
+                label="Projects"
+                color={"#1565C0"}
+                bg={"#E3F2FD"}
+              />
+              <View style={s.metricDivider} />
+              <MetricTile
+                icon={"account-group-outline" as MCIcon}
+                value={stats.investors}
+                label="Investors"
+                color={C.accentWarm}
+                bg={C.goldLight}
+              />
+            </View>
+          )}
 
           <TouchableOpacity
             style={s.viewAllBtn}
-            onPress={() => router.push("/farmer/projects")}
+            onPress={() => router.push("/farmer/projects" as any)}
           >
             <Text style={s.viewAllText}>View All Projects</Text>
             <MaterialCommunityIcons
@@ -661,63 +490,45 @@ export default function FarmerDashboard() {
           ))}
         </View>
 
-        {/* ══ ACTIVE PROJECTS ═════════════════════════════════════════════════ */}
+        {/* ══ ACTIVE PROJECTS (REAL DATA) ═════════════════════════════════════════════════ */}
         <View style={s.sectionRow}>
           <Text style={s.sectionLabel}>Active Projects</Text>
-          <TouchableOpacity onPress={() => router.push("/farmer/projects")}>
+          <TouchableOpacity
+            onPress={() => router.push("/farmer/projects" as any)}
+          >
             <Text style={s.seeAll}>See All</Text>
           </TouchableOpacity>
         </View>
 
-        {myProjects.length === 0 ? (
+        {loading && !refreshing ? (
+          <ActivityIndicator size="small" color={C.primary} />
+        ) : activeProjects.length === 0 ? (
           <View style={[s.emptyCard, SH.sm]}>
             <MaterialCommunityIcons
               name={"tractor" as MCIcon}
               size={40}
               color={C.accent}
             />
-            <Text style={s.emptyTitle}>No projects yet</Text>
-            <Text style={s.emptySub}>
-              Start your first farm funding project.
-            </Text>
+            <Text style={s.emptyTitle}>No active projects</Text>
+            <Text style={s.emptySub}>Approved projects will appear here.</Text>
             <TouchableOpacity
               style={s.emptyBtn}
-              onPress={() => router.push("/project/create")}
+              onPress={() => router.push("/project/create" as any)}
             >
               <Text style={s.emptyBtnText}>Create Project</Text>
             </TouchableOpacity>
           </View>
         ) : (
-          myProjects
-            .slice(0, 3)
-            .map((p) => (
-              <ProjectCard
-                key={p.id}
-                project={p}
-                onPress={() =>
-                  router.push(`/farmer/project-manage/${p.id}` as any)
-                }
-              />
-            ))
-        )}
-
-        {/* ══ FARM ALERTS ═════════════════════════════════════════════════════ */}
-        <View style={s.sectionRow}>
-          <Text style={s.sectionLabel}>Farm Alerts</Text>
-          <View style={s.alertCountBadge}>
-            <Text style={s.alertCountText}>{FARM_ALERTS.length}</Text>
-          </View>
-        </View>
-
-        <View style={[s.card, SH.sm]}>
-          {FARM_ALERTS.map((a, i) => (
-            <AlertRow
-              key={a.id}
-              alert={a}
-              isLast={i === FARM_ALERTS.length - 1}
+          activeProjects.map((p) => (
+            <ProjectCard
+              key={p.id}
+              project={p}
+              onPress={() =>
+                router.push(`/farmer/project-manage/${p.id}` as any)
+              }
             />
-          ))}
-        </View>
+          ))
+        )}
 
         <View style={{ height: 110 }} />
       </ScrollView>
@@ -749,12 +560,11 @@ const s = StyleSheet.create({
   root: { flex: 1, backgroundColor: C.surface },
   scroll: { paddingBottom: 30 },
 
-  // ── HEADER ──
   header: {
     backgroundColor: C.primaryMid,
     paddingTop: 58,
     paddingHorizontal: SPACE.md,
-    paddingBottom: SPACE.xl,
+    paddingBottom: 60,
     borderBottomLeftRadius: 32,
     borderBottomRightRadius: 32,
     overflow: "hidden",
@@ -812,7 +622,6 @@ const s = StyleSheet.create({
     alignItems: "center",
   },
 
-  // ── SHARED CARD ──
   card: {
     backgroundColor: C.white,
     marginHorizontal: SPACE.md,
@@ -821,43 +630,6 @@ const s = StyleSheet.create({
     padding: SPACE.md,
   },
 
-  // ── AI HEALTH CARD ──
-  healthCard: {},
-  healthHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: SPACE.sm,
-  },
-  aiBadge: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 5,
-    backgroundColor: C.primary,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 20,
-  },
-  aiBadgeText: {
-    fontSize: FONT.xs,
-    fontWeight: "800",
-    color: C.white,
-    letterSpacing: 0.5,
-  },
-  healthTime: { fontSize: FONT.xs, color: C.inkMuted },
-  healthDivider: { height: 1, backgroundColor: C.divider, marginVertical: 2 },
-  recoBox: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    gap: SPACE.xs,
-    backgroundColor: C.goldLight,
-    borderRadius: 12,
-    padding: SPACE.sm,
-    marginTop: SPACE.sm,
-  },
-  recoText: { flex: 1, fontSize: FONT.sm, color: "#7B5B00", lineHeight: 18 },
-
-  // ── FUNDING OVERVIEW ──
   cardHeaderRow: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -893,7 +665,6 @@ const s = StyleSheet.create({
   },
   viewAllText: { fontSize: FONT.sm, fontWeight: "700", color: C.primary },
 
-  // ── SECTION LABELS ──
   sectionLabel: {
     fontSize: FONT.md,
     fontWeight: "800",
@@ -909,18 +680,6 @@ const s = StyleSheet.create({
   },
   seeAll: { fontSize: FONT.sm, fontWeight: "700", color: C.primaryLight },
 
-  alertCountBadge: {
-    marginRight: SPACE.md,
-    backgroundColor: C.highPale,
-    width: 22,
-    height: 22,
-    borderRadius: 11,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  alertCountText: { fontSize: FONT.xs, fontWeight: "900", color: C.high },
-
-  // ── QUICK ACTIONS ──
   actionsGrid: {
     flexDirection: "row",
     marginHorizontal: SPACE.md,
@@ -928,7 +687,6 @@ const s = StyleSheet.create({
     marginBottom: SPACE.md,
   },
 
-  // ── EMPTY STATE ──
   emptyCard: {
     backgroundColor: C.white,
     marginHorizontal: SPACE.md,
@@ -949,7 +707,6 @@ const s = StyleSheet.create({
   },
   emptyBtnText: { fontSize: FONT.md, fontWeight: "800", color: C.white },
 
-  // ── FAB ──
   fab: {
     position: "absolute",
     bottom: 90,
@@ -959,6 +716,7 @@ const s = StyleSheet.create({
     borderRadius: 30,
     backgroundColor: C.primaryLight,
     overflow: "hidden",
+    elevation: 8,
   },
   fabInner: { flex: 1, justifyContent: "center", alignItems: "center" },
 });
