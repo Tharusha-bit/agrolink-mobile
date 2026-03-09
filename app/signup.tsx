@@ -1,10 +1,12 @@
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
+import axios from "axios";
 import * as DocumentPicker from "expo-document-picker";
-import * as ImagePicker from "expo-image-picker";
+import * as Location from "expo-location";
 import { useRouter } from "expo-router";
-import React, { useState } from "react";
+import React, { useRef, useState } from "react";
 import {
-  Alert,
+  ActivityIndicator,
+  Animated,
   Image,
   KeyboardAvoidingView,
   Platform,
@@ -19,15 +21,18 @@ import {
 
 // ─── Design Tokens ─────────────────────────────────────────────────────────────
 const COLORS = {
-  primary: "#216000", // Deep Forest Green
+  primary: "#216000",
   primaryLight: "#2E8B00",
   primaryPale: "#E8F5E1",
   white: "#FFFFFF",
   surface: "#F7F9F4",
   text: "#1A2E0D",
   textMuted: "#9BB08A",
+  textSecondary: "#5C7A4A",
   border: "#DDE8D4",
   accent: "#76C442",
+  success: "#2E7D32",
+  danger: "#D32F2F", // ✅ Added for input errors
 };
 
 const SHADOWS = {
@@ -42,17 +47,16 @@ const SHADOWS = {
   }),
 };
 
-// ─── Input Component ───────────────────────────────────────────────────────────
+// ─── Input Component (Now Supports Errors) ──────────────────────────────────────
 interface SignupInputProps {
   label: string;
   placeholder: string;
   icon: any;
   secureTextEntry?: boolean;
-}
-
-interface SelectedUpload {
-  name: string;
-  uri: string;
+  keyboardType?: "default" | "phone-pad" | "numeric";
+  value: string;
+  onChangeText: (text: string) => void;
+  errorMsg?: string; // ✅ Added error prop
 }
 
 const SignupInput = ({
@@ -60,14 +64,18 @@ const SignupInput = ({
   placeholder,
   icon,
   secureTextEntry = false,
+  keyboardType = "default",
+  value,
+  onChangeText,
+  errorMsg,
 }: SignupInputProps) => (
   <View style={s.inputContainer}>
     <Text style={s.inputLabel}>{label}</Text>
-    <View style={s.inputWrapper}>
+    <View style={[s.inputWrapper, errorMsg ? s.inputErrorBorder : null]}>
       <MaterialCommunityIcons
         name={icon}
         size={20}
-        color={COLORS.primary}
+        color={errorMsg ? COLORS.danger : COLORS.primary}
         style={s.inputIcon}
       />
       <TextInput
@@ -75,73 +83,116 @@ const SignupInput = ({
         placeholder={placeholder}
         placeholderTextColor={COLORS.textMuted}
         secureTextEntry={secureTextEntry}
+        keyboardType={keyboardType}
+        autoCapitalize={secureTextEntry ? "none" : "words"}
+        value={value}
+        onChangeText={onChangeText}
       />
     </View>
+    {/* ✅ Inline Error Message */}
+    {errorMsg ? <Text style={s.errorText}>{errorMsg}</Text> : null}
   </View>
 );
 
 // ─── Main Screen ──────────────────────────────────────────────────────────────
 export default function SignupScreen() {
   const router = useRouter();
-  const [isFarmer, setIsFarmer] = useState(true);
-  const [farmerPhoto, setFarmerPhoto] = useState<SelectedUpload | null>(null);
-  const [gramaSevakaLetter, setGramaSevakaLetter] =
-    useState<SelectedUpload | null>(null);
 
-  // ─── Logic: Handle Routing based on Role ───
-  const handleSignup = () => {
-    if (isFarmer) {
-      // ✅ Route to the Farmer Folder
-      router.replace("/farmer/farmerhome");
-    } else {
-      // ✅ Route to the Investor/Main Tabs
-      router.replace("/investor/home");
-    }
+  const [isFarmer, setIsFarmer] = useState(true);
+  const [loading, setLoading] = useState(false);
+  const [loadingLocation, setLoadingLocation] = useState(false);
+
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
+  const [phoneNumber, setPhoneNumber] = useState("");
+  const [nic, setNic] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [passwordError, setPasswordError] = useState(""); // ✅ Track password mismatch
+
+  const [gramaSevakaLetter, setGramaSevakaLetter] = useState<any>(null);
+  const [locationData, setLocationData] = useState<{
+    lat: number;
+    lng: number;
+    city: string;
+  } | null>(null);
+
+  // ✅ Toast State
+  const toastAnim = useRef(new Animated.Value(-100)).current;
+  const [toastConfig, setToastConfig] = useState({
+    message: "",
+    type: "success",
+  });
+
+  const showToast = (
+    message: string,
+    type: "success" | "error",
+    callback?: () => void,
+  ) => {
+    setToastConfig({ message, type });
+    Animated.sequence([
+      Animated.timing(toastAnim, {
+        toValue: Platform.OS === "ios" ? 55 : 30,
+        duration: 400,
+        useNativeDriver: true,
+      }),
+      Animated.delay(2500),
+      Animated.timing(toastAnim, {
+        toValue: -100,
+        duration: 300,
+        useNativeDriver: true,
+      }),
+    ]).start(() => {
+      if (callback) callback();
+    });
   };
 
-  // ─── Logic: Image Picker ───
-  const pickFarmerPhoto = async () => {
+  const fetchLocation = async () => {
+    setLoadingLocation(true);
     try {
-      if (Platform.OS !== "web") {
-        const { status } =
-          await ImagePicker.requestMediaLibraryPermissionsAsync();
-        if (status !== "granted") {
-          Alert.alert("Permission required", "We need access to your photos.");
-          return;
-        }
+      let { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== "granted") {
+        showToast("Location permission denied.", "error");
+        setLoadingLocation(false);
+        return;
       }
 
-      const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
-        allowsEditing: true,
-        quality: 0.8,
+      let location = await Location.getCurrentPositionAsync({});
+      let address = await Location.reverseGeocodeAsync({
+        latitude: location.coords.latitude,
+        longitude: location.coords.longitude,
       });
 
-      if (!result.canceled && result.assets.length > 0) {
-        const asset = result.assets[0];
-        setFarmerPhoto({
-          name: asset.fileName || "photo.jpg",
-          uri: asset.uri,
-        });
+      let city = "Unknown Location";
+      if (address.length > 0) {
+        city =
+          address[0].city ||
+          address[0].district ||
+          address[0].subregion ||
+          "Detected Location";
       }
+      setLocationData({
+        lat: location.coords.latitude,
+        lng: location.coords.longitude,
+        city: city,
+      });
     } catch (error) {
-      console.log(error);
+      showToast("Could not fetch GPS. Ensure location is on.", "error");
+    } finally {
+      setLoadingLocation(false);
     }
   };
 
-  // ─── Logic: Document Picker ───
   const pickGramaSevakaLetter = async () => {
     try {
       const result = await DocumentPicker.getDocumentAsync({
         copyToCacheDirectory: true,
         type: ["application/pdf", "image/*"],
       });
-
       if (!result.canceled && result.assets && result.assets.length > 0) {
-        const asset = result.assets[0];
         setGramaSevakaLetter({
-          name: asset.name,
-          uri: asset.uri,
+          name: result.assets[0].name,
+          uri: result.assets[0].uri,
         });
       }
     } catch (error) {
@@ -149,9 +200,80 @@ export default function SignupScreen() {
     }
   };
 
+  const handleSignup = async () => {
+    setPasswordError(""); // Reset inline error
+
+    // Client validation
+    if (!firstName || !lastName || !phoneNumber || !nic || !password) {
+      showToast("Please fill in all required details.", "error");
+      return;
+    }
+
+    // ✅ Trigger inline visual error if passwords don't match
+    if (password !== confirmPassword) {
+      setPasswordError("Passwords do not match");
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      // ⚠️ UPDATE THIS IP
+      const API_URL = "http://172.20.10.6:8080/api/auth/register";
+
+      const userData = {
+        firstName,
+        lastName,
+        phoneNumber,
+        nic,
+        password,
+        role: isFarmer ? "FARMER" : "INVESTOR",
+        latitude: locationData?.lat,
+        longitude: locationData?.lng,
+        city: locationData?.city,
+      };
+
+      const response = await axios.post(API_URL, userData);
+
+      if (response.status === 200) {
+        showToast("Account created successfully!", "success", () => {
+          router.replace("/login" as any);
+        });
+      }
+    } catch (error: any) {
+      // Professional Server Crash Protection
+      if (error.response && error.response.status === 400) {
+        showToast("This phone number is already registered.", "error");
+      } else {
+        showToast("Cannot connect to server. Try again.", "error");
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <View style={s.root}>
       <StatusBar barStyle="light-content" backgroundColor={COLORS.primary} />
+
+      {/* ── CUSTOM TOAST ── */}
+      <Animated.View
+        style={[
+          s.toastContainer,
+          {
+            transform: [{ translateY: toastAnim }],
+            backgroundColor:
+              toastConfig.type === "error" ? COLORS.danger : COLORS.success,
+          },
+        ]}
+      >
+        <MaterialCommunityIcons
+          name={toastConfig.type === "error" ? "alert-circle" : "check-circle"}
+          size={22}
+          color={COLORS.white}
+        />
+        <Text style={s.toastText}>{toastConfig.message}</Text>
+      </Animated.View>
 
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : "height"}
@@ -161,14 +283,11 @@ export default function SignupScreen() {
           contentContainerStyle={s.scrollContent}
           showsVerticalScrollIndicator={false}
         >
-          {/* ── HEADER ── */}
           <View style={s.header}>
             <View style={s.decCircle} />
-
             <TouchableOpacity style={s.backBtn} onPress={() => router.back()}>
               <Ionicons name="arrow-back" size={24} color={COLORS.white} />
             </TouchableOpacity>
-
             <View style={s.logoSection}>
               <View style={s.logoBadge}>
                 <Image
@@ -177,17 +296,14 @@ export default function SignupScreen() {
                   resizeMode="contain"
                 />
               </View>
-
               <Text style={s.appName}>AgroLink</Text>
               <Text style={s.tagline}>Future of Agri-Finance</Text>
             </View>
           </View>
 
-          {/* ── CARD ── */}
           <View style={[s.card, SHADOWS.md]}>
             <Text style={s.cardTitle}>Create Account</Text>
 
-            {/* User Type Toggle */}
             <View style={s.toggleContainer}>
               <TouchableOpacity
                 style={[s.toggleBtn, isFarmer && s.toggleBtnActive]}
@@ -202,7 +318,6 @@ export default function SignupScreen() {
                   Farmer
                 </Text>
               </TouchableOpacity>
-
               <TouchableOpacity
                 style={[s.toggleBtn, !isFarmer && s.toggleBtnActive]}
                 onPress={() => setIsFarmer(false)}
@@ -218,155 +333,190 @@ export default function SignupScreen() {
               </TouchableOpacity>
             </View>
 
-            {/* Inputs */}
+            <View style={s.rowInputs}>
+              <View style={{ flex: 1, marginRight: 10 }}>
+                <SignupInput
+                  label="First Name"
+                  placeholder="John"
+                  icon="account-outline"
+                  value={firstName}
+                  onChangeText={setFirstName}
+                />
+              </View>
+              <View style={{ flex: 1 }}>
+                <SignupInput
+                  label="Last Name"
+                  placeholder="Doe"
+                  icon="account-outline"
+                  value={lastName}
+                  onChangeText={setLastName}
+                />
+              </View>
+            </View>
+
             <SignupInput
-              label="Username"
-              placeholder="sample@email.com"
-              icon="email-outline"
+              label="Phone Number"
+              placeholder="077 123 4567"
+              icon="phone-outline"
+              keyboardType="phone-pad"
+              value={phoneNumber}
+              onChangeText={setPhoneNumber}
+            />
+            <SignupInput
+              label="NIC Number"
+              placeholder="99xxxxxxxV"
+              icon="card-account-details-outline"
+              value={nic}
+              onChangeText={setNic}
             />
             <SignupInput
               label="Password"
               placeholder="••••••••"
               icon="lock-outline"
               secureTextEntry
+              value={password}
+              onChangeText={(val) => {
+                setPassword(val);
+                setPasswordError("");
+              }}
             />
+
+            {/* ✅ Confim Password with Error Warning */}
             <SignupInput
               label="Confirm Password"
               placeholder="••••••••"
               icon="lock-check-outline"
               secureTextEntry
+              value={confirmPassword}
+              onChangeText={(val) => {
+                setConfirmPassword(val);
+                setPasswordError("");
+              }}
+              errorMsg={passwordError}
             />
 
-            {isFarmer ? (
-              <>
-                <SignupInput
-                  label="Farmer ID"
-                  placeholder="FM-2024-XXX"
-                  icon="identifier"
-                />
-                <SignupInput
-                  label="NIC Number"
-                  placeholder="99xxxxxxxV"
-                  icon="card-account-details-outline"
-                />
+            {isFarmer && (
+              <View style={s.uploadSection}>
+                <Text style={s.uploadTitle}>Farm & Identity Verification</Text>
 
-                <View style={s.uploadSection}>
-                  <Text style={s.uploadTitle}>Verification Uploads</Text>
-                  <Text style={s.uploadHint}>
-                    Add a farmer photo and the Grama Sevaka letter before
-                    creating the account.
-                  </Text>
-
-                  {/* Photo Upload Button */}
-                  <TouchableOpacity
+                <TouchableOpacity
+                  style={[
+                    s.uploadCard,
+                    locationData && { borderColor: COLORS.primary },
+                  ]}
+                  onPress={fetchLocation}
+                >
+                  <View
                     style={[
-                      s.uploadCard,
-                      farmerPhoto && { borderColor: COLORS.accent },
+                      s.uploadIconWrap,
+                      locationData && { backgroundColor: COLORS.primaryPale },
                     ]}
-                    onPress={pickFarmerPhoto}
                   >
-                    <View
-                      style={[
-                        s.uploadIconWrap,
-                        farmerPhoto && { backgroundColor: COLORS.primaryPale },
-                      ]}
-                    >
+                    {loadingLocation ? (
+                      <ActivityIndicator size="small" color={COLORS.primary} />
+                    ) : (
                       <MaterialCommunityIcons
-                        name={farmerPhoto ? "check" : "image-outline"}
+                        name={
+                          locationData
+                            ? "map-marker-check"
+                            : "map-marker-radius"
+                        }
                         size={22}
                         color={COLORS.primary}
                       />
-                    </View>
-                    <View style={s.uploadContent}>
-                      <Text style={s.uploadLabel}>Farmer Photo</Text>
-                      <Text
-                        style={[
-                          s.uploadValue,
-                          farmerPhoto && { color: COLORS.primary },
-                        ]}
-                      >
-                        {farmerPhoto ? "Photo Selected" : "Upload image"}
-                      </Text>
-                    </View>
-                    <MaterialCommunityIcons
-                      name={
-                        farmerPhoto ? "checkbox-marked-circle" : "cloud-upload"
-                      }
-                      size={20}
-                      color={farmerPhoto ? COLORS.primary : COLORS.textMuted}
-                    />
-                  </TouchableOpacity>
-
-                  {/* Document Upload Button */}
-                  <TouchableOpacity
-                    style={[
-                      s.uploadCard,
-                      gramaSevakaLetter && { borderColor: COLORS.accent },
-                    ]}
-                    onPress={pickGramaSevakaLetter}
-                  >
-                    <View
+                    )}
+                  </View>
+                  <View style={s.uploadContent}>
+                    <Text style={s.uploadLabel}>Farm Location</Text>
+                    <Text
                       style={[
-                        s.uploadIconWrap,
-                        gramaSevakaLetter && {
-                          backgroundColor: COLORS.primaryPale,
+                        s.uploadValue,
+                        locationData && {
+                          color: COLORS.primary,
+                          fontWeight: "700",
                         },
                       ]}
                     >
-                      <MaterialCommunityIcons
-                        name={gramaSevakaLetter ? "check" : "file-document-outline"}
-                        size={22}
-                        color={COLORS.primary}
-                      />
-                    </View>
-                    <View style={s.uploadContent}>
-                      <Text style={s.uploadLabel}>Grama Sevaka Letter</Text>
-                      <Text
-                        style={[
-                          s.uploadValue,
-                          gramaSevakaLetter && { color: COLORS.primary },
-                        ]}
-                      >
-                        {gramaSevakaLetter
-                          ? "Document Selected"
-                          : "Upload PDF or image"}
-                      </Text>
-                    </View>
+                      {locationData
+                        ? `${locationData.city} ✓`
+                        : "Tap to auto-detect via GPS"}
+                    </Text>
+                  </View>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={[
+                    s.uploadCard,
+                    gramaSevakaLetter && { borderColor: COLORS.accent },
+                  ]}
+                  onPress={pickGramaSevakaLetter}
+                >
+                  <View
+                    style={[
+                      s.uploadIconWrap,
+                      gramaSevakaLetter && {
+                        backgroundColor: COLORS.primaryPale,
+                      },
+                    ]}
+                  >
                     <MaterialCommunityIcons
                       name={
-                        gramaSevakaLetter
-                          ? "checkbox-marked-circle"
-                          : "cloud-upload"
+                        gramaSevakaLetter ? "check" : "file-document-outline"
                       }
-                      size={20}
-                      color={
-                        gramaSevakaLetter ? COLORS.primary : COLORS.textMuted
-                      }
+                      size={22}
+                      color={COLORS.primary}
                     />
-                  </TouchableOpacity>
-                </View>
-              </>
-            ) : (
-              <SignupInput
-                label="NIC Number"
-                placeholder="99xxxxxxxV"
-                icon="card-account-details-outline"
-              />
+                  </View>
+                  <View style={s.uploadContent}>
+                    <Text style={s.uploadLabel}>Grama Sevaka Letter</Text>
+                    <Text
+                      style={[
+                        s.uploadValue,
+                        gramaSevakaLetter && { color: COLORS.primary },
+                      ]}
+                    >
+                      {gramaSevakaLetter
+                        ? "Document Selected"
+                        : "Upload PDF or image"}
+                    </Text>
+                  </View>
+                  <MaterialCommunityIcons
+                    name={
+                      gramaSevakaLetter
+                        ? "checkbox-marked-circle"
+                        : "cloud-upload"
+                    }
+                    size={20}
+                    color={
+                      gramaSevakaLetter ? COLORS.primary : COLORS.textMuted
+                    }
+                  />
+                </TouchableOpacity>
+              </View>
             )}
 
-            {/* Signup Button (Now Calls Logic) */}
-            <TouchableOpacity style={s.signupBtn} onPress={handleSignup}>
-              <Text style={s.signupBtnText}>Sign Up</Text>
-              <MaterialCommunityIcons
-                name="arrow-right"
-                size={20}
-                color={COLORS.white}
-              />
+            <TouchableOpacity
+              style={s.signupBtn}
+              onPress={handleSignup}
+              disabled={loading}
+            >
+              {loading ? (
+                <ActivityIndicator color={COLORS.white} />
+              ) : (
+                <Text style={s.signupBtnText}>Sign Up</Text>
+              )}
+              {!loading && (
+                <MaterialCommunityIcons
+                  name="arrow-right"
+                  size={20}
+                  color={COLORS.white}
+                />
+              )}
             </TouchableOpacity>
 
             <View style={s.footer}>
               <Text style={s.footerText}>Already have an account? </Text>
-              <TouchableOpacity onPress={() => router.replace("/login")}>
+              <TouchableOpacity onPress={() => router.replace("/login" as any)}>
                 <Text style={s.loginLink}>Login</Text>
               </TouchableOpacity>
             </View>
@@ -381,7 +531,31 @@ const s = StyleSheet.create({
   root: { flex: 1, backgroundColor: COLORS.surface },
   scrollContent: { flexGrow: 1, paddingBottom: 40 },
 
-  /* HEADER STYLES */
+  toastContainer: {
+    position: "absolute",
+    left: 20,
+    right: 20,
+    borderRadius: 12,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 14,
+    paddingHorizontal: 20,
+    zIndex: 999,
+    elevation: 10,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 5,
+  },
+  toastText: {
+    color: COLORS.white,
+    fontSize: 14,
+    fontWeight: "700",
+    marginLeft: 8,
+    textAlign: "center",
+  },
+
   header: {
     backgroundColor: COLORS.primary,
     height: 280,
@@ -403,10 +577,7 @@ const s = StyleSheet.create({
     opacity: 0.4,
   },
   backBtn: { position: "absolute", top: 50, left: 20, padding: 8, zIndex: 10 },
-
   logoSection: { alignItems: "center", marginTop: 10 },
-
-  /* LOGO BADGE STYLE */
   logoBadge: {
     width: 80,
     height: 80,
@@ -415,17 +586,9 @@ const s = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     marginBottom: 12,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 5,
     elevation: 8,
   },
-  logo: {
-    width: 55,
-    height: 55,
-  },
-
+  logo: { width: 55, height: 55 },
   appName: {
     fontSize: 30,
     fontWeight: "900",
@@ -439,7 +602,6 @@ const s = StyleSheet.create({
     letterSpacing: 1,
   },
 
-  /* CARD STYLES */
   card: {
     backgroundColor: COLORS.white,
     marginHorizontal: 24,
@@ -456,7 +618,6 @@ const s = StyleSheet.create({
     marginBottom: 20,
   },
 
-  /* TOGGLE */
   toggleContainer: {
     flexDirection: "row",
     backgroundColor: COLORS.surface,
@@ -477,7 +638,7 @@ const s = StyleSheet.create({
   toggleText: { fontSize: 14, fontWeight: "600", color: COLORS.textMuted },
   toggleTextActive: { color: COLORS.white },
 
-  /* INPUTS */
+  rowInputs: { flexDirection: "row", justifyContent: "space-between" },
   inputContainer: { marginBottom: 16 },
   inputLabel: {
     fontSize: 12,
@@ -496,10 +657,21 @@ const s = StyleSheet.create({
     paddingHorizontal: 12,
     height: 50,
   },
+  inputErrorBorder: {
+    borderColor: COLORS.danger,
+    borderWidth: 1.5,
+    backgroundColor: "#FFF0F0",
+  }, // ✅ Red border style
   inputIcon: { marginRight: 10 },
   input: { flex: 1, fontSize: 14, color: COLORS.text },
+  errorText: {
+    color: COLORS.danger,
+    fontSize: 11,
+    fontWeight: "600",
+    marginTop: 4,
+    marginLeft: 4,
+  }, // ✅ Error text style
 
-  /* UPLOADS */
   uploadSection: {
     backgroundColor: COLORS.surface,
     borderRadius: 18,
@@ -512,12 +684,6 @@ const s = StyleSheet.create({
     fontSize: 14,
     fontWeight: "800",
     color: COLORS.text,
-    marginBottom: 4,
-  },
-  uploadHint: {
-    fontSize: 11,
-    color: COLORS.textMuted,
-    lineHeight: 16,
     marginBottom: 14,
   },
   uploadCard: {
@@ -540,21 +706,15 @@ const s = StyleSheet.create({
     justifyContent: "center",
     backgroundColor: COLORS.surface,
   },
-  uploadContent: {
-    flex: 1,
-  },
+  uploadContent: { flex: 1 },
   uploadLabel: {
     fontSize: 13,
     fontWeight: "700",
     color: COLORS.text,
     marginBottom: 2,
   },
-  uploadValue: {
-    fontSize: 11,
-    color: COLORS.textMuted,
-  },
+  uploadValue: { fontSize: 11, color: COLORS.textMuted },
 
-  /* BUTTON */
   signupBtn: {
     flexDirection: "row",
     backgroundColor: COLORS.primary,
@@ -573,7 +733,6 @@ const s = StyleSheet.create({
     letterSpacing: 0.5,
   },
 
-  /* FOOTER */
   footer: { flexDirection: "row", justifyContent: "center", marginTop: 20 },
   footerText: { color: COLORS.textMuted, fontSize: 14 },
   loginLink: { color: COLORS.primary, fontWeight: "700", fontSize: 14 },
