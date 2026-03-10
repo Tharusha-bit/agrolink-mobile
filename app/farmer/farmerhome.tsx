@@ -1,7 +1,7 @@
 import { MaterialCommunityIcons } from "@expo/vector-icons";
-import AsyncStorage from "@react-native-async-storage/async-storage"; // ✅ Added AsyncStorage
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import axios from "axios";
-import { useFocusEffect, useRouter } from "expo-router"; // ✅ Removed useLocalSearchParams
+import { useFocusEffect, useRouter } from "expo-router";
 import React, { ComponentProps, useCallback, useRef, useState } from "react";
 import {
   ActivityIndicator,
@@ -75,38 +75,76 @@ const FONT = { xs: 10, sm: 12, md: 14, lg: 16, xl: 18, xxl: 22 };
 const SPACE = { xs: 6, sm: 10, md: 16, lg: 20, xl: 24 };
 
 // ─────────────────────────────────────────────────────────────────────────────
-// QUICK ACTIONS MENU
+// TRANSLATIONS DICTIONARY
 // ─────────────────────────────────────────────────────────────────────────────
-const QUICK_ACTIONS = [
-  {
-    icon: "plus-circle-outline" as MCIcon,
-    label: "Add Project",
-    bg: C.primaryPale,
-    color: C.primary,
-    route: "/project/create",
+const TRANSLATIONS = {
+  en: {
+    welcome: "Welcome",
+    subLine: "Your farm control center",
+    gold: "Gold",
+    fundOverview: "Funding Overview",
+    liveData: "Live Data",
+    lkrRaised: "LKR Raised",
+    projects: "Projects",
+    investors: "Investors",
+    viewAll: "View All Projects",
+    quickActions: "Quick Actions",
+    addProject: "Add Project",
+    myProjects: "My Projects",
+    postUpdate: "Post Update",
+    analytics: "Analytics",
+    activeProjects: "Active Projects",
+    seeAll: "See All",
+    noActive: "No active projects",
+    noActiveSub: "Approved projects will appear here.",
+    createProject: "Create Project",
+    goal: "Goal",
   },
-  {
-    icon: "folder-multiple" as MCIcon,
-    label: "My Projects",
-    bg: "#F3E5F5",
-    color: "#6A1B9A",
-    route: "/farmer/projects",
+  si: {
+    welcome: "ආයුබෝවන්",
+    subLine: "ඔබේ ගොවිපල පාලන මධ්‍යස්ථානය",
+    gold: "රන්",
+    fundOverview: "අරමුදල් දළ විශ්ලේෂණය",
+    liveData: "සජීවී දත්ත",
+    lkrRaised: "එකතු කළ මුදල",
+    projects: "ව්‍යාපෘති",
+    investors: "ආයෝජකයින්",
+    viewAll: "සියලුම ව්‍යාපෘති බලන්න",
+    quickActions: "ඉක්මන් ක්‍රියා",
+    addProject: "ව්‍යාපෘතියක් එක් කරන්න",
+    myProjects: "මගේ ව්‍යාපෘති",
+    postUpdate: "යාවත්කාලීන කිරීමක්",
+    analytics: "විශ්ලේෂණ",
+    activeProjects: "සක්‍රීය ව්‍යාපෘති",
+    seeAll: "සියල්ල බලන්න",
+    noActive: "සක්‍රීය ව්‍යාපෘති නොමැත",
+    noActiveSub: "අනුමත කළ ව්‍යාපෘති මෙහි දිස්වනු ඇත.",
+    createProject: "ව්‍යාපෘතියක් සාදන්න",
+    goal: "ඉලක්කය",
   },
-  {
-    icon: "camera-plus-outline" as MCIcon,
-    label: "Post Update",
-    bg: "#FFF3E0",
-    color: C.accentWarm,
-    route: "update",
+  ta: {
+    welcome: "வரவேற்பு",
+    subLine: "உங்கள் பண்ணை கட்டுப்பாட்டு மையம்",
+    gold: "தங்கம்",
+    fundOverview: "நிதி கண்ணோட்டம்",
+    liveData: "நேரடி தரவு",
+    lkrRaised: "திரட்டப்பட்டது (LKR)",
+    projects: "திட்டங்கள்",
+    investors: "முதலீட்டாளர்கள்",
+    viewAll: "அனைத்து திட்டங்களையும் காண்க",
+    quickActions: "விரைவான செயல்கள்",
+    addProject: "திட்டத்தை சேர்",
+    myProjects: "என் திட்டங்கள்",
+    postUpdate: "புதுப்பிப்பை இடுக",
+    analytics: "பகுப்பாய்வு",
+    activeProjects: "செயலில் உள்ள திட்டங்கள்",
+    seeAll: "அனைத்தையும் காண்க",
+    noActive: "செயலில் உள்ள திட்டங்கள் இல்லை",
+    noActiveSub: "அங்கீகரிக்கப்பட்ட திட்டங்கள் இங்கே தோன்றும்.",
+    createProject: "திட்டத்தை உருவாக்கு",
+    goal: "இலக்கு",
   },
-  {
-    icon: "chart-line" as MCIcon,
-    label: "Analytics",
-    bg: "#E3F2FD",
-    color: "#1565C0",
-    route: "analytics",
-  },
-];
+};
 
 // ─────────────────────────────────────────────────────────────────────────────
 // SUB-COMPONENTS
@@ -184,7 +222,7 @@ const ab = StyleSheet.create({
   },
 });
 
-function ProjectCard({ project, onPress }: any) {
+function ProjectCard({ project, onPress, t }: any) {
   const goal = project.fundingGoal || 1;
   const raised = project.currentFundingAmount || 0;
   const pct = Math.min(Math.round((raised / goal) * 100), 100);
@@ -213,7 +251,10 @@ function ProjectCard({ project, onPress }: any) {
         </View>
         <View style={pc.metaRow}>
           <Text style={pc.raised}>LKR {raised.toLocaleString()}</Text>
-          <Text style={pc.goal}> / {goal.toLocaleString()}</Text>
+          <Text style={pc.goal}>
+            {" "}
+            / {t.goal}: {goal.toLocaleString()}
+          </Text>
         </View>
       </View>
       <MaterialCommunityIcons
@@ -269,34 +310,61 @@ const pc = StyleSheet.create({
 export default function FarmerDashboard() {
   const router = useRouter();
 
-  // ✅ 1. State for Dynamic Name & Data
   const [displayName, setDisplayName] = useState("Farmer");
   const [dbProjects, setDbProjects] = useState<any[]>([]);
   const [stats, setStats] = useState({ raised: 0, count: 0, investors: 0 });
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
+  const [lang, setLang] = useState<"en" | "si" | "ta">("en");
+  const t = TRANSLATIONS[lang];
+
   const fabScale = useRef(new Animated.Value(1)).current;
 
-  // ✅ 2. Centralized Fetch Function using AsyncStorage
+  const getQuickActions = () => [
+    {
+      icon: "plus-circle-outline" as MCIcon,
+      label: t.addProject,
+      bg: C.primaryPale,
+      color: C.primary,
+      route: "/project/create",
+    },
+    {
+      icon: "folder-multiple" as MCIcon,
+      label: t.myProjects,
+      bg: "#F3E5F5",
+      color: "#6A1B9A",
+      route: "/farmer/projects",
+    },
+    {
+      icon: "camera-plus-outline" as MCIcon,
+      label: t.postUpdate,
+      bg: "#FFF3E0",
+      color: C.accentWarm,
+      route: "update",
+    },
+    {
+      icon: "chart-line" as MCIcon,
+      label: t.analytics,
+      bg: "#E3F2FD",
+      color: "#1565C0",
+      route: "analytics",
+    },
+  ];
+
   const fetchDashboardData = async () => {
     try {
-      // Pull secure data from memory
       const storedUserId = await AsyncStorage.getItem("userId");
       const storedName = await AsyncStorage.getItem("firstName");
 
-      if (storedName) {
-        setDisplayName(storedName);
-      }
-
+      if (storedName) setDisplayName(storedName);
       if (!storedUserId) {
         setLoading(false);
-        return; // Don't fetch if not logged in
+        return;
       }
 
       // ⚠️ UPDATE TO YOUR BACKEND IP
       const API_URL = "http://172.20.10.6:8080";
-
       const projRes = await axios.get(
         `${API_URL}/api/farmer-project/list/${storedUserId}`,
       );
@@ -313,11 +381,17 @@ export default function FarmerDashboard() {
             `${API_URL}/api/investments/project/${proj.id}`,
           );
           const investments = invRes.data || [];
-          investments.forEach((inv: any) =>
-            uniqueInvestors.add(inv.investorId),
+
+          investments.forEach((inv: any) => {
+            if (inv.investorId) uniqueInvestors.add(inv.investorId);
+          });
+        } catch (e: any) {
+          // 🚨 ENHANCED ERROR LOGGING - Check your frontend terminal!
+          console.error(
+            `❌ Backend Error on Investments for Project ${proj.id}:`,
+            e.response?.status,
+            e.message,
           );
-        } catch (e) {
-          console.log("No investments found for project: ", proj.id);
         }
       }
 
@@ -334,7 +408,6 @@ export default function FarmerDashboard() {
     }
   };
 
-  // ✅ 3. Auto-refresh when navigating back to this tab
   useFocusEffect(
     useCallback(() => {
       fetchDashboardData();
@@ -368,11 +441,8 @@ export default function FarmerDashboard() {
   };
 
   const handleAction = (route: string) => {
-    if (route.startsWith("/")) {
-      router.push(route as any);
-    } else {
-      Alert.alert("Coming Soon", "This feature is not yet implemented.");
-    }
+    if (route.startsWith("/")) router.push(route as any);
+    else Alert.alert("Coming Soon", "This feature is not yet implemented.");
   };
 
   return (
@@ -391,16 +461,43 @@ export default function FarmerDashboard() {
           />
         }
       >
-        {/* ══ HEADER ══════════════════════════════════════════════════════════ */}
         <View style={s.header}>
           <View style={s.blob1} />
           <View style={s.blob2} />
 
+          <View style={s.langGroup}>
+            <TouchableOpacity
+              onPress={() => setLang("en")}
+              style={[s.langBtn, lang === "en" && s.langBtnActive]}
+            >
+              <Text style={[s.langText, lang === "en" && s.langTextActive]}>
+                EN
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={() => setLang("si")}
+              style={[s.langBtn, lang === "si" && s.langBtnActive]}
+            >
+              <Text style={[s.langText, lang === "si" && s.langTextActive]}>
+                සිං
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={() => setLang("ta")}
+              style={[s.langBtn, lang === "ta" && s.langBtnActive]}
+            >
+              <Text style={[s.langText, lang === "ta" && s.langTextActive]}>
+                தமிழ்
+              </Text>
+            </TouchableOpacity>
+          </View>
+
           <View style={s.topRow}>
             <View>
-              {/* ✅ Dynamic Name Rendering */}
-              <Text style={s.greeting}>Welcome, {displayName} 🙏</Text>
-              <Text style={s.subLine}>Your farm control center</Text>
+              <Text style={s.greeting}>
+                {t.welcome}, {displayName} 🙏
+              </Text>
+              <Text style={s.subLine}>{t.subLine}</Text>
             </View>
             <View style={s.headerRight}>
               <View style={s.levelBadge}>
@@ -409,7 +506,7 @@ export default function FarmerDashboard() {
                   size={12}
                   color={C.gold}
                 />
-                <Text style={s.levelText}>Gold</Text>
+                <Text style={s.levelText}>{t.gold}</Text>
               </View>
               <TouchableOpacity
                 onPress={() => router.push("/farmer/profile" as any)}
@@ -426,17 +523,16 @@ export default function FarmerDashboard() {
           </View>
         </View>
 
-        {/* ══ REAL-TIME FUNDING OVERVIEW ════════════════════════════════════════ */}
         <View style={[s.card, SH.sm, { marginTop: -30 }]}>
           <View style={s.cardHeaderRow}>
-            <Text style={s.cardTitle}>Funding Overview</Text>
+            <Text style={s.cardTitle}>{t.fundOverview}</Text>
             <View style={s.trendBadge}>
               <MaterialCommunityIcons
                 name={"trending-up" as MCIcon}
                 size={12}
                 color={C.accent}
               />
-              <Text style={s.trendText}>Live Data</Text>
+              <Text style={s.trendText}>{t.liveData}</Text>
             </View>
           </View>
 
@@ -451,7 +547,7 @@ export default function FarmerDashboard() {
               <MetricTile
                 icon={"currency-usd" as MCIcon}
                 value={formatRaised(stats.raised)}
-                label="LKR Raised"
+                label={t.lkrRaised}
                 color={C.primary}
                 bg={C.primaryPale}
               />
@@ -459,7 +555,7 @@ export default function FarmerDashboard() {
               <MetricTile
                 icon={"folder-multiple-outline" as MCIcon}
                 value={stats.count}
-                label="Projects"
+                label={t.projects}
                 color={"#1565C0"}
                 bg={"#E3F2FD"}
               />
@@ -467,7 +563,7 @@ export default function FarmerDashboard() {
               <MetricTile
                 icon={"account-group-outline" as MCIcon}
                 value={stats.investors}
-                label="Investors"
+                label={t.investors}
                 color={C.accentWarm}
                 bg={C.goldLight}
               />
@@ -478,7 +574,7 @@ export default function FarmerDashboard() {
             style={s.viewAllBtn}
             onPress={() => router.push("/farmer/projects" as any)}
           >
-            <Text style={s.viewAllText}>View All Projects</Text>
+            <Text style={s.viewAllText}>{t.viewAll}</Text>
             <MaterialCommunityIcons
               name={"arrow-right" as MCIcon}
               size={14}
@@ -487,10 +583,9 @@ export default function FarmerDashboard() {
           </TouchableOpacity>
         </View>
 
-        {/* ══ QUICK ACTIONS ═══════════════════════════════════════════════════ */}
-        <Text style={s.sectionLabel}>Quick Actions</Text>
+        <Text style={s.sectionLabel}>{t.quickActions}</Text>
         <View style={s.actionsGrid}>
-          {QUICK_ACTIONS.map((a) => (
+          {getQuickActions().map((a) => (
             <ActionBtn
               key={a.label}
               action={a}
@@ -499,13 +594,12 @@ export default function FarmerDashboard() {
           ))}
         </View>
 
-        {/* ══ ACTIVE PROJECTS (REAL DATA) ═════════════════════════════════════════════════ */}
         <View style={s.sectionRow}>
-          <Text style={s.sectionLabel}>Active Projects</Text>
+          <Text style={s.sectionLabel}>{t.activeProjects}</Text>
           <TouchableOpacity
             onPress={() => router.push("/farmer/projects" as any)}
           >
-            <Text style={s.seeAll}>See All</Text>
+            <Text style={s.seeAll}>{t.seeAll}</Text>
           </TouchableOpacity>
         </View>
 
@@ -518,13 +612,13 @@ export default function FarmerDashboard() {
               size={40}
               color={C.accent}
             />
-            <Text style={s.emptyTitle}>No active projects</Text>
-            <Text style={s.emptySub}>Approved projects will appear here.</Text>
+            <Text style={s.emptyTitle}>{t.noActive}</Text>
+            <Text style={s.emptySub}>{t.noActiveSub}</Text>
             <TouchableOpacity
               style={s.emptyBtn}
               onPress={() => router.push("/project/create" as any)}
             >
-              <Text style={s.emptyBtnText}>Create Project</Text>
+              <Text style={s.emptyBtnText}>{t.createProject}</Text>
             </TouchableOpacity>
           </View>
         ) : (
@@ -532,6 +626,7 @@ export default function FarmerDashboard() {
             <ProjectCard
               key={p.id}
               project={p}
+              t={t}
               onPress={() =>
                 router.push(`/farmer/project-manage/${p.id}` as any)
               }
@@ -542,7 +637,6 @@ export default function FarmerDashboard() {
         <View style={{ height: 110 }} />
       </ScrollView>
 
-      {/* ══ FAB ════════════════════════════════════════════════════════════ */}
       <Animated.View
         style={[s.fab, SH.lg, { transform: [{ scale: fabScale }] }]}
       >
@@ -562,16 +656,12 @@ export default function FarmerDashboard() {
   );
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// STYLES
-// ─────────────────────────────────────────────────────────────────────────────
 const s = StyleSheet.create({
   root: { flex: 1, backgroundColor: C.surface },
   scroll: { paddingBottom: 30 },
-
   header: {
     backgroundColor: C.primaryMid,
-    paddingTop: 58,
+    paddingTop: 40,
     paddingHorizontal: SPACE.md,
     paddingBottom: 60,
     borderBottomLeftRadius: 32,
@@ -599,6 +689,18 @@ const s = StyleSheet.create({
     left: 30,
     opacity: 0.1,
   },
+  langGroup: {
+    flexDirection: "row",
+    backgroundColor: "rgba(255,255,255,0.15)",
+    borderRadius: 20,
+    padding: 3,
+    alignSelf: "flex-end",
+    marginBottom: 15,
+  },
+  langBtn: { paddingHorizontal: 10, paddingVertical: 5, borderRadius: 15 },
+  langBtnActive: { backgroundColor: C.white },
+  langText: { fontSize: 11, fontWeight: "700", color: "rgba(255,255,255,0.8)" },
+  langTextActive: { color: C.primary },
   topRow: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -630,7 +732,6 @@ const s = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
-
   card: {
     backgroundColor: C.white,
     marginHorizontal: SPACE.md,
@@ -638,7 +739,6 @@ const s = StyleSheet.create({
     borderRadius: 22,
     padding: SPACE.md,
   },
-
   cardHeaderRow: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -673,7 +773,6 @@ const s = StyleSheet.create({
     borderColor: C.divider,
   },
   viewAllText: { fontSize: FONT.sm, fontWeight: "700", color: C.primary },
-
   sectionLabel: {
     fontSize: FONT.md,
     fontWeight: "800",
@@ -688,14 +787,12 @@ const s = StyleSheet.create({
     marginRight: SPACE.md,
   },
   seeAll: { fontSize: FONT.sm, fontWeight: "700", color: C.primaryLight },
-
   actionsGrid: {
     flexDirection: "row",
     marginHorizontal: SPACE.md,
     gap: SPACE.sm,
     marginBottom: SPACE.md,
   },
-
   emptyCard: {
     backgroundColor: C.white,
     marginHorizontal: SPACE.md,
@@ -715,7 +812,6 @@ const s = StyleSheet.create({
     borderRadius: 16,
   },
   emptyBtnText: { fontSize: FONT.md, fontWeight: "800", color: C.white },
-
   fab: {
     position: "absolute",
     bottom: 90,
