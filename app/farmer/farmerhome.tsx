@@ -2,11 +2,10 @@ import { MaterialCommunityIcons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import axios from "axios";
 import { useFocusEffect, useRouter } from "expo-router";
-import React, { ComponentProps, useCallback, useRef, useState } from "react";
+import React, { ComponentProps, useCallback, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
-  Animated,
   Image,
   Platform,
   RefreshControl,
@@ -15,7 +14,7 @@ import {
   StyleSheet,
   Text,
   TouchableOpacity,
-  View,
+  View
 } from "react-native";
 
 type MCIcon = ComponentProps<typeof MaterialCommunityIcons>["name"];
@@ -319,8 +318,6 @@ export default function FarmerDashboard() {
   const [lang, setLang] = useState<"en" | "si" | "ta">("en");
   const t = TRANSLATIONS[lang];
 
-  const fabScale = useRef(new Animated.Value(1)).current;
-
   const getQuickActions = () => [
     {
       icon: "plus-circle-outline" as MCIcon,
@@ -431,13 +428,6 @@ export default function FarmerDashboard() {
     return amount >= 1000
       ? `${(amount / 1000).toFixed(0)}k`
       : amount.toString();
-  };
-
-  const pressFab = () => {
-    Animated.sequence([
-      Animated.spring(fabScale, { toValue: 0.88, useNativeDriver: true }),
-      Animated.spring(fabScale, { toValue: 1, useNativeDriver: true }),
-    ]).start(() => router.push("/project/create" as any));
   };
 
   const handleAction = (route: string) => {
@@ -636,22 +626,6 @@ export default function FarmerDashboard() {
 
         <View style={{ height: 110 }} />
       </ScrollView>
-
-      <Animated.View
-        style={[s.fab, SH.lg, { transform: [{ scale: fabScale }] }]}
-      >
-        <TouchableOpacity
-          onPress={pressFab}
-          style={s.fabInner}
-          activeOpacity={1}
-        >
-          <MaterialCommunityIcons
-            name={"plus" as MCIcon}
-            size={30}
-            color={C.white}
-          />
-        </TouchableOpacity>
-      </Animated.View>
     </View>
   );
 }
