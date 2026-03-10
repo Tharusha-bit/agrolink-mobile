@@ -94,7 +94,7 @@ const SETTINGS_GROUPS = [
       {
         icon: "account-edit-outline" as MCIcon,
         label: "Edit Personal Details",
-        route: "/profile/edit",
+        route: "/farmer/edit-profile",
       },
       {
         icon: "shield-lock-outline" as MCIcon,
