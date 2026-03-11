@@ -74,15 +74,14 @@ const SETTINGS_GROUPS: SettingsGroup[] =[
     items:[
       { icon: 'account-edit-outline',  label: 'Edit Personal Details',    route: '/profile/edit'          },
       { icon: 'shield-lock-outline',   label: 'Security & Password',      route: '/profile/security'      },
-      { icon: 'bell-outline',          label: 'Notification Preferences', route: '/profile/notifications' }, // Linked
+      { icon: 'bell-outline',          label: 'Notification Preferences', route: '/profile/notifications' }, 
     ],
   },
   {
     title: 'FARM & VERIFICATION',
     items:[
-      { icon: 'file-document-outline', label: 'My Documents',             route: '/profile/documents'     }, // Placeholder if you build it later
-      { icon: 'star-outline',          label: 'Trust Score Details',      route: '/farmer/trust'          },
-      { icon: 'bank-outline',          label: 'Payment Account',          route: '/profile/payment'       }, // Linked
+      { icon: 'file-document-outline', label: 'My Documents',             route: '/profile/documents'     }, 
+      { icon: 'bank-outline',          label: 'Payment Account',          route: '/profile/paymentscreen'    }, 
     ],
   },
   {
