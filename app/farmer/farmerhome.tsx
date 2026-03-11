@@ -77,6 +77,7 @@ const SPACE = { xs: 6, sm: 10, md: 16, lg: 20, xl: 24 };
 // ─────────────────────────────────────────────────────────────────────────────
 // TRANSLATIONS DICTIONARY
 // ─────────────────────────────────────────────────────────────────────────────
+<<<<<<< Updated upstream
 const TRANSLATIONS = {
   en: {
     welcome: "Welcome",
@@ -145,6 +146,41 @@ const TRANSLATIONS = {
     goal: "இலக்கு",
   },
 };
+=======
+interface AlertItem {
+  id:       number;
+  icon:     MCIcon;
+  title:    string;
+  body:     string;
+  severity: 'safe' | 'medium' | 'high';
+}
+
+const FARM_ALERTS: AlertItem[] =[
+  { id: 1, icon: 'weather-lightning-rainy', title: 'Heavy Rain Expected',        body: 'Anuradhapura · Next 24 h',          severity: 'high'   },
+  { id: 2, icon: 'bug-outline',             title: 'Pest Advisory',              body: 'Monitor paddy for leaf blight',      severity: 'medium' },
+  { id: 3, icon: 'water-check-outline',     title: 'Irrigation Completed',       body: 'North plot · All systems normal',    severity: 'safe'   },
+];
+
+interface QuickAction {
+  icon:  MCIcon;
+  label: string;
+  bg:    string;
+  color: string;
+  route: string;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// HELPERS
+// ─────────────────────────────────────────────────────────────────────────────
+function farmerName(p: Project): string {
+  if (typeof p.farmer === 'string') return p.farmer;
+  return (p.farmer as any)?.name ?? 'Unknown Farmer';
+}
+
+function getProgress(p: Project): number {
+  return p.goal > 0 ? Math.min(p.raised / p.goal, 1) : 0;
+}
+>>>>>>> Stashed changes
 
 // ─────────────────────────────────────────────────────────────────────────────
 // SUB-COMPONENTS
@@ -222,6 +258,7 @@ const ab = StyleSheet.create({
   },
 });
 
+<<<<<<< Updated upstream
 function ProjectCard({ project, onPress, t }: any) {
   const goal = project.fundingGoal || 1;
   const raised = project.currentFundingAmount || 0;
@@ -231,6 +268,12 @@ function ProjectCard({ project, onPress, t }: any) {
     project.photos && project.photos.length > 0
       ? project.photos[0]
       : "https://cdn.pixabay.com/photo/2016/09/21/04/46/barley-field-1684052_1280.jpg";
+=======
+function ProjectCard({ project, onPress }: { project: Project; onPress: () => void }) {
+  const pct           = Math.round(getProgress(project) * 100);
+  const investorCount = project.investors?.length ?? 0;
+  const imageUri      = (project as any).imageUrl ?? (project as any).image ?? 'https://via.placeholder.com/150';
+>>>>>>> Stashed changes
 
   return (
     <TouchableOpacity
@@ -433,6 +476,16 @@ export default function FarmerDashboard() {
       : amount.toString();
   };
 
+  // ✅ DYNAMIC ROUTING: Find their latest active project so "Post Update" works logically
+  const latestProjectId = myProjects.length > 0 ? myProjects[0].id : null;
+
+  const QUICK_ACTIONS: QuickAction[] =[
+    { icon: 'plus-circle-outline', label: 'Add Project',    bg: C.primaryPale, color: C.primary,    route: '/project/create'    },
+    { icon: 'folder-multiple',     label: 'My Projects',    bg: '#F3E5F5',     color: '#6A1B9A',    route: '/farmer/projects'   },
+    { icon: 'camera-plus-outline', label: 'Post Update',    bg: '#FFF3E0',     color: C.accentWarm, route: latestProjectId ? `/farmer/project-manage/${latestProjectId}` : '/farmer/projects' },
+    { icon: 'chart-line',          label: 'Analytics',      bg: '#E3F2FD',     color: '#1565C0',    route: '/farmer/project-manage/analytics'  },
+  ];
+
   const pressFab = () => {
     Animated.sequence([
       Animated.spring(fabScale, { toValue: 0.88, useNativeDriver: true }),
@@ -449,6 +502,7 @@ export default function FarmerDashboard() {
     <View style={s.root}>
       <StatusBar barStyle="light-content" backgroundColor={C.primaryMid} />
 
+<<<<<<< Updated upstream
       <ScrollView
         contentContainerStyle={s.scroll}
         showsVerticalScrollIndicator={false}
@@ -461,6 +515,12 @@ export default function FarmerDashboard() {
           />
         }
       >
+=======
+      {/* ✅ FIXED UI ISSUE: Added generous paddingBottom to prevent bottom cutoff */}
+      <ScrollView contentContainerStyle={s.scroll} showsVerticalScrollIndicator={false}>
+
+        {/* ══ HEADER ══════════════════════════════════════════════════════════ */}
+>>>>>>> Stashed changes
         <View style={s.header}>
           <View style={s.blob1} />
           <View style={s.blob2} />
@@ -634,7 +694,24 @@ export default function FarmerDashboard() {
           ))
         )}
 
+<<<<<<< Updated upstream
         <View style={{ height: 110 }} />
+=======
+        {/* ══ FARM ALERTS ═════════════════════════════════════════════════════ */}
+        <View style={s.sectionRow}>
+          <Text style={s.sectionLabel}>Farm Alerts</Text>
+          <View style={s.alertCountBadge}>
+            <Text style={s.alertCountText}>{FARM_ALERTS.length}</Text>
+          </View>
+        </View>
+
+        <View style={[s.card, SH.sm]}>
+          {FARM_ALERTS.map((a, i) => (
+            <AlertRow key={a.id} alert={a} isLast={i === FARM_ALERTS.length - 1} />
+          ))}
+        </View>
+
+>>>>>>> Stashed changes
       </ScrollView>
 
       <Animated.View
@@ -657,8 +734,16 @@ export default function FarmerDashboard() {
 }
 
 const s = StyleSheet.create({
+<<<<<<< Updated upstream
   root: { flex: 1, backgroundColor: C.surface },
   scroll: { paddingBottom: 30 },
+=======
+  root:   { flex: 1, backgroundColor: C.surface },
+  // ✅ FIXED UI ISSUE: 130px padding ensures bottom elements aren't hidden by the floating green tab bar
+  scroll: { paddingBottom: 130 },
+
+  // ── HEADER ──
+>>>>>>> Stashed changes
   header: {
     backgroundColor: C.primaryMid,
     paddingTop: 40,
