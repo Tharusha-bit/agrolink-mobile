@@ -4,6 +4,7 @@ import { ProjectProvider } from '../src/context/ProjectContext';
 
 export default function RootLayout() {
   return (
+  <ProjectProvider>
     <Tabs
       screenOptions={{
         headerShown: true, 
@@ -45,7 +46,9 @@ export default function RootLayout() {
         }}
       />
     </Tabs>
+  </ProjectProvider>
+
+  
   );
 }
 
-}
