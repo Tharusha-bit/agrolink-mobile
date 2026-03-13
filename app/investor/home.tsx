@@ -52,3 +52,34 @@ const StatBadge = ({ icon, label, value, color }: any) => (
     <Text style={s.statLabel}>{label}</Text>
   </View>
 );
+const InvestmentCard = ({ id, title, farmer, since, description, progress, image, tags, riskLevel, goal, raised }: any) => {
+  const router = useRouter();
+  const progressPct = Math.min(Math.max(progress, 0), 1);
+  const riskColor = riskLevel === 'Low' ? COLORS.accent : riskLevel === 'Medium' ? COLORS.accentWarm : COLORS.danger;
+
+  return (
+    <TouchableOpacity 
+      style={[ic.card, SHADOWS.md]} 
+      activeOpacity={0.9}
+      onPress={() => router.push(`/investment/${id}`)} // <--- Links to Detail Page
+    >
+      {/* Hero Image */}
+      <View style={ic.imageWrap}>
+        <Image source={{ uri: image }} style={ic.image} />
+        <View style={ic.imageFade} />
+        
+        {/* Risk Chip */}
+        <View style={[ic.riskChip, { backgroundColor: riskColor }]}>
+          <MaterialCommunityIcons name="shield-check" size={12} color="#fff" style={{ marginRight: 4 }} />
+          <Text style={ic.riskText}>{riskLevel} Risk</Text>
+        </View>
+
+        {/* Tags */}
+        <View style={ic.tagRow}>
+          {tags.map((t: string, index: number) => (
+            <View key={index} style={ic.tagPill}>
+              <Text style={ic.tagText}>{t}</Text>
+            </View>
+          ))}
+        </View>
+      </View>
