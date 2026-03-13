@@ -108,11 +108,7 @@ export default function InvestorProfile() {
       <StatusBar barStyle="light-content" backgroundColor={C.primary} />
 
       <ScrollView contentContainerStyle={s.scroll} showsVerticalScrollIndicator={false}>
-
-      </ScrollView>
-     </View>
-  );
-}
+        
 {/*HEADER*/}
         <View style={s.header}>
           <View style={s.blob1} />
