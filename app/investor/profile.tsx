@@ -317,3 +317,47 @@ export default function InvestorProfile() {
             </View>
           )}
         </View>
+        {/*ACCOUNT MENU*/}
+        <View style={s.menuSection}>
+          <Text style={s.menuSectionTitle}>Account</Text>
+          <View style={[s.menuCard, SHADOW.sm]}>
+            <MenuRow
+              icon="account-edit-outline"
+              label="Personal Details"
+              sub="Name, email, phone"
+              onPress={() => router.push('/profile/edit')}
+            />
+            <View style={s.menuDivider} />
+            <MenuRow
+              icon="shield-lock-outline"
+              label="Security & Password"
+              sub="2FA, change password"
+              onPress={() => router.push('/investor/security')}
+            />
+            <View style={s.menuDivider} />
+            <MenuRow
+              icon="bell-cog-outline"
+              label="Notifications"
+              sub="Investment alerts, updates"
+              onPress={() => router.push('/investor/notifications')}
+            />
+            <View style={s.menuDivider} />
+            <MenuRow
+              icon="help-circle-outline"
+              label="Help & Support"
+              onPress={() => router.push('/(investor)/help-support')}
+            />
+          </View>
+        </View>
+
+        {/*LOGOUT*/}
+        <View style={s.menuSection}>
+          <View style={[s.menuCard, SHADOW.sm]}>
+            <MenuRow
+              icon="logout-variant"
+              label="Log Out"
+              danger
+              onPress={handleLogout}
+            />
+          </View>
+        </View>
