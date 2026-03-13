@@ -37,3 +37,9 @@ const SHADOWS = {
   }),
   sm: { elevation: 2 },
 };
+const KPI_DATA = [
+  { label: 'Active Crops', value: '142', icon: 'sprout', color: COLORS.accent },
+  { label: 'Investors', value: '3.4k', icon: 'account-group', color: COLORS.primary },
+  { label: 'Funded Today', value: '$28k', icon: 'cash-multiple', color: COLORS.accentWarm },
+  { label: 'Avg Return', value: '18%', icon: 'chart-line', color: COLORS.info },
+];
