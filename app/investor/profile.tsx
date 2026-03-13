@@ -89,3 +89,27 @@ function MenuRow({ icon, label, sub, onPress, danger = false }: {
     </TouchableOpacity>
   );
 }
+export default function InvestorProfile() {
+  const router = useRouter();
+  const [activeTab, setActiveTab] = useState<'investments' | 'transactions'>('investments');
+
+  const handleLogout = () => {
+    Alert.alert(
+      'Log Out',
+      'Are you sure you want to log out?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Log Out', style: 'destructive', onPress: () => router.replace('/login') },
+      ]
+    );
+  };
+  return (
+    <View style={s.root}>
+      <StatusBar barStyle="light-content" backgroundColor={C.primary} />
+
+      <ScrollView contentContainerStyle={s.scroll} showsVerticalScrollIndicator={false}>
+
+      </ScrollView>
+     </View>
+  );
+}
