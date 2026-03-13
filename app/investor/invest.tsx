@@ -72,3 +72,15 @@ export default function InvestMarketplace() {
   return (
     <View style={s.root}>
       <StatusBar barStyle="dark-content" backgroundColor={C.surface} />
+      {/*STICKY HEADER*/}
+      <View style={s.topBar}>
+        <View style={s.topBarInner}>
+          <View>
+            <Text style={s.topBarBrand}>AgroLink Private Wealth</Text>
+            <Text style={s.topBarTitle}>Marketplace</Text>
+          </View>
+          <View style={s.liveBadge}>
+            <View style={s.liveDot} />
+            <Text style={s.liveText}>Live</Text>
+          </View>
+        </View>
