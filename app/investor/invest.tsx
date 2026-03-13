@@ -100,3 +100,20 @@ export default function InvestMarketplace() {
             </TouchableOpacity>
           )}
         </View>
+        {/* Filter chips */}
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={s.filterScroll}>
+          {FILTERS.map((f) => (
+            <TouchableOpacity
+              key={f}
+              style={[s.filterChip, filter === f && s.filterChipActive]}
+              onPress={() => setFilter(f)}
+            >
+              <Text style={[s.filterChipText, filter === f && s.filterChipTextActive]}>{f}</Text>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
+      </View>
+
+      <ScrollView contentContainerStyle={s.scroll} showsVerticalScrollIndicator={false}>
+        
+      </ScrollView>
