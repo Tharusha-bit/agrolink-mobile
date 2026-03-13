@@ -387,6 +387,158 @@ export default function InvestorProfile() {
     </View>
   );
 }
+const s = StyleSheet.create({
+  root: { flex: 1, backgroundColor: C.surface },
+  // ── FIX: paddingBottom ensures last content isn't hidden under the nav bar
+  scroll: { paddingBottom: 20 },
+
+  // Header
+  header: {
+    backgroundColor: C.primary,
+    paddingTop: 56,
+    paddingHorizontal: 22,
+    paddingBottom: 26,
+    borderBottomLeftRadius: 36,
+    borderBottomRightRadius: 36,
+    overflow: 'hidden',
+  },
+  blob1: { position: 'absolute', width: 200, height: 200, borderRadius: 100, backgroundColor: C.primaryLight, top: -60, right: -50, opacity: 0.3 },
+  blob2: { position: 'absolute', width: 100, height: 100, borderRadius: 50, backgroundColor: C.gold, bottom: 10, left: 30, opacity: 0.1 },
+
+  topRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 20 },
+  headerBrand: { color: 'rgba(255,255,255,0.6)', fontSize: 10, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 1.2, marginBottom: 3 },
+  headerTitle: { color: C.white, fontSize: 24, fontWeight: '900' },
+  notifBtn: { position: 'relative', width: 44, height: 44, borderRadius: 22, backgroundColor: 'rgba(255,255,255,0.15)', justifyContent: 'center', alignItems: 'center' },
+  notifDot: { position: 'absolute', top: 9, right: 9, width: 8, height: 8, borderRadius: 4, backgroundColor: C.gold, borderWidth: 1.5, borderColor: C.primary },
+
+  // Profile row
+  profileRow: { flexDirection: 'row', alignItems: 'center', gap: 14, marginBottom: 20 },
+  avatarCircle: { width: 52, height: 52, borderRadius: 26, backgroundColor: C.accent, justifyContent: 'center', alignItems: 'center' },
+  avatarInitials: { fontSize: 18, fontWeight: '900', color: C.white },
+  profileName: { fontSize: 18, fontWeight: '800', color: C.white },
+  verifiedRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 2 },
+  verifiedText: { fontSize: 11, color: 'rgba(255,255,255,0.75)', fontWeight: '600' },
+  memberBadge: { marginLeft: 'auto', flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: C.goldLight, paddingHorizontal: 10, paddingVertical: 5, borderRadius: 20 },
+  memberBadgeText: { fontSize: 11, fontWeight: '800', color: C.gold },
+
+  // Portfolio card
+  portfolioCard: {
+    backgroundColor: 'rgba(255,255,255,0.13)',
+    borderRadius: 20,
+    padding: 18,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.2)',
+    marginBottom: 14,
+  },
+  portfolioLabel: { color: 'rgba(255,255,255,0.65)', fontSize: 11, textTransform: 'uppercase', letterSpacing: 1.2 },
+  portfolioValue: { color: C.white, fontSize: 32, fontWeight: '900', marginVertical: 6 },
+  portfolioProfit: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  profitBadge: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: C.accent, paddingHorizontal: 8, paddingVertical: 3, borderRadius: 8 },
+  profitBadgeText: { fontSize: 11, fontWeight: '800', color: C.white },
+  profitText: { fontSize: 12, color: 'rgba(255,255,255,0.75)', fontWeight: '600' },
+
+  // Mini stats
+  miniStatsRow: { flexDirection: 'row', backgroundColor: 'rgba(255,255,255,0.1)', borderRadius: 16, padding: 14, justifyContent: 'space-around', borderWidth: 1, borderColor: 'rgba(255,255,255,0.15)' },
+  miniStat: { alignItems: 'center', flex: 1 },
+  miniStatVal: { color: C.white, fontSize: 14, fontWeight: '800', marginBottom: 2 },
+  miniStatLabel: { color: 'rgba(255,255,255,0.6)', fontSize: 11 },
+  miniStatDivider: { width: 1, backgroundColor: 'rgba(255,255,255,0.2)' },
+
+  // Quick actions
+  actionsRow: { flexDirection: 'row', paddingHorizontal: 20, gap: 10, marginTop: 22, marginBottom: 4 },
+  actionBtn: { flex: 1, backgroundColor: C.white, borderRadius: 16, padding: 12, alignItems: 'center', gap: 8 },
+  actionIcon: { width: 44, height: 44, borderRadius: 12, justifyContent: 'center', alignItems: 'center' },
+  actionLabel: { fontSize: 11, fontWeight: '700', color: C.text, textAlign: 'center' },
+
+  // Tabs
+  tabsWrapper: { paddingHorizontal: 20, marginTop: 20 },
+  tabsRow: { flexDirection: 'row', backgroundColor: C.white, borderRadius: 14, padding: 4, marginBottom: 14, ...{ elevation: 2, shadowColor: C.shadow, shadowOpacity: 0.05, shadowRadius: 4, shadowOffset: { width: 0, height: 1 } } },
+  tab: { flex: 1, paddingVertical: 10, borderRadius: 10, alignItems: 'center' },
+  tabActive: { backgroundColor: C.primary },
+  tabText: { fontSize: 13, fontWeight: '700', color: C.textMuted },
+  tabTextActive: { color: C.white },
+  tabContent: { gap: 0 },
+
+  // Investment cards
+  investCard: {
+    backgroundColor: C.white,
+    borderRadius: 20,
+    padding: 16,
+    marginBottom: 14,
+  },
+  investCardHeader: { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 14 },
+  investIconWrap: { width: 44, height: 44, borderRadius: 12, justifyContent: 'center', alignItems: 'center' },
+  investHeaderText: { flex: 1 },
+  investTitle: { fontSize: 14, fontWeight: '800', color: C.text },
+  investFarmer: { fontSize: 11, color: C.textMuted, marginTop: 1 },
+  statusBadge: { flexDirection: 'row', alignItems: 'center', gap: 5, backgroundColor: '#E8F5E9', paddingHorizontal: 9, paddingVertical: 4, borderRadius: 20 },
+  statusDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: C.accent },
+  statusText: { fontSize: 11, fontWeight: '700', color: C.primary },
+
+  investProgressRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 14 },
+  investProgressTrack: { flex: 1, height: 6, backgroundColor: C.border, borderRadius: 3, overflow: 'hidden' },
+  investProgressFill: { height: '100%', backgroundColor: C.accent, borderRadius: 3 },
+  investProgressPct: { fontSize: 11, fontWeight: '800', color: C.primary },
+
+  investDetailsGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: 14 },
+  investDetailItem: { width: '47%', backgroundColor: C.surface, borderRadius: 12, padding: 10 },
+  detailLabel: { fontSize: 10, color: C.textMuted, textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 3 },
+  detailVal: { fontSize: 13, fontWeight: '800', color: C.text },
+
+  investCardFooter: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', borderTopWidth: 1, borderTopColor: C.border, paddingTop: 12 },
+  investDuration: { fontSize: 12, color: C.textMuted },
+  viewInvestBtn: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  viewInvestBtnText: { fontSize: 13, fontWeight: '700', color: C.primary },
+
+  // Transactions
+  transCard: { backgroundColor: C.white, borderRadius: 20, overflow: 'hidden' },
+  txRow: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 14 },
+  txIconWrap: { width: 40, height: 40, borderRadius: 12, justifyContent: 'center', alignItems: 'center' },
+  txInfo: { flex: 1 },
+  txLabel: { fontSize: 13, fontWeight: '700', color: C.text, marginBottom: 2 },
+  txDate: { fontSize: 11, color: C.textMuted },
+  txAmount: { fontSize: 13, fontWeight: '800' },
+  txDivider: { height: 1, backgroundColor: C.border, marginHorizontal: 14 },
+
+  // Menu
+  menuSection: { paddingHorizontal: 20, marginTop: 22 },
+  menuSectionTitle: { fontSize: 12, fontWeight: '700', color: C.textMuted, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 10 },
+  menuCard: { backgroundColor: C.white, borderRadius: 20, overflow: 'hidden' },
+  menuRow: { flexDirection: 'row', alignItems: 'center', gap: 14, padding: 16 },
+  menuIconWrap: { width: 40, height: 40, borderRadius: 12, justifyContent: 'center', alignItems: 'center' },
+  menuLabelWrap: { flex: 1 },
+  menuLabel: { fontSize: 14, fontWeight: '700', color: C.text },
+  menuSub: { fontSize: 11, color: C.textMuted, marginTop: 1 },
+  menuDivider: { height: 1, backgroundColor: C.border, marginLeft: 70 },
+
+  // ── BOTTOM NAV BAR ────────────────────────────────────────────────────────
+  bottomNavWrapper: {
+    position: 'absolute',
+    bottom: 24,
+    left: 0,
+    right: 0,
+    alignItems: 'center',
+  },
+  bottomNavPill: {
+    flexDirection: 'row',
+    backgroundColor: C.primaryDeep,
+    borderRadius: 50,
+    paddingVertical: 10,
+    paddingHorizontal: 32,
+    gap: 48,
+    elevation: 10,
+    shadowColor: C.shadow,
+    shadowOpacity: 0.2,
+    shadowRadius: 16,
+    shadowOffset: { width: 0, height: 4 },
+  },
+  navBtn: {
+    width: 40,
+    height: 40,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+});
 
       
         
