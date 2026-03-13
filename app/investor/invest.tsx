@@ -34,3 +34,10 @@ const SHADOW = {
   sm: { elevation: 3,  shadowColor: C.shadow, shadowOpacity: 0.07, shadowRadius: 6,  shadowOffset: { width: 0, height: 2 } },
   md: { elevation: 7,  shadowColor: C.shadow, shadowOpacity: 0.11, shadowRadius: 12, shadowOffset: { width: 0, height: 4 } },
 };
+const FILTERS = ['All', 'Rice', 'Organic', 'Low Risk'];
+
+const RISK_COLORS: Record<string, { bg: string; text: string }> = {
+  Low:    { bg: '#E8F5E9', text: '#2E7D32' },
+  Medium: { bg: '#FFF8E1', text: '#F57F17' },
+  High:   { bg: '#FFEBEE', text: '#C62828' },
+};
