@@ -196,5 +196,34 @@ export default function InvestMarketplace() {
                     </View>
                     <Text style={s.progressPct}>{Math.round(progress * 100)}%</Text>
                   </View>
+                  {/* Footer */}
+                  <View style={s.cardFooter}>
+                    <View style={s.cardFooterLeft}>
+                      <View style={s.footerItem}>
+                        <Text style={s.footerLabel}>Target</Text>
+                        <Text style={s.footerVal}>LKR {project.goal.toLocaleString()}</Text>
+                      </View>
+                      <View style={s.footerDivider} />
+                      <View style={s.footerItem}>
+                        <Text style={s.footerLabel}>Duration</Text>
+                        <Text style={s.footerVal}>{project.duration}</Text>
+                      </View>
+                    </View>
+                    <TouchableOpacity
+                      style={s.viewBtn}
+                      onPress={() => router.push(`/investment/${project.id}` as any)}
+                    >
+                      <Text style={s.viewBtnText}>View</Text>
+                      <MaterialCommunityIcons name="chevron-right" size={16} color={C.white} />
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              </TouchableOpacity>
+            );
+          })
+        )}
 
+        <View style={{ height: 110 }} />
       </ScrollView>
+
+      
