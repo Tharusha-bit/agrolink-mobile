@@ -14,7 +14,7 @@ import {
 } from 'react-native';
 import { useProjects } from '../src/context/ProjectContext';
 const COLORS = {
-  primary: '#216000',       // Deep Forest Green
+  primary: '#216000',       
   primaryLight: '#2E8B00',
   primaryPale: '#E8F5E1',
   accent: '#76C442',
@@ -43,3 +43,12 @@ const KPI_DATA = [
   { label: 'Funded Today', value: '$28k', icon: 'cash-multiple', color: COLORS.accentWarm },
   { label: 'Avg Return', value: '18%', icon: 'chart-line', color: COLORS.info },
 ];
+const StatBadge = ({ icon, label, value, color }: any) => (
+ <View style={s.statBadge}>
+    <View style={[s.statIconCircle, { backgroundColor: color + '15' }]}>
+      <MaterialCommunityIcons name={icon} size={22} color={color} />
+    </View>
+    <Text style={s.statValue}>{value}</Text>
+    <Text style={s.statLabel}>{label}</Text>
+  </View>
+);
