@@ -183,3 +183,14 @@ export default function HomeScreen() {
             <StatBadge icon="weather-windy" label="Wind" value="6 m/s" color={COLORS.accent} />
           </View>
         </View>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.kpiStrip}>
+          {KPI_DATA.map((k) => (
+            <View key={k.label} style={[s.kpiCard, SHADOWS.sm]}>
+              <View style={[s.kpiIcon, { backgroundColor: k.color + '15' }]}>
+                <MaterialCommunityIcons name={k.icon as any} size={22} color={k.color} />
+              </View>
+              <Text style={s.kpiValue}>{k.value}</Text>
+              <Text style={s.kpiLabel}>{k.label}</Text>
+            </View>
+          ))}
+        </ScrollView>
