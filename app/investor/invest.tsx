@@ -84,3 +84,19 @@ export default function InvestMarketplace() {
             <Text style={s.liveText}>Live</Text>
           </View>
         </View>
+        {/* Search */}
+        <View style={s.searchBox}>
+          <MaterialCommunityIcons name="magnify" size={20} color={C.textMuted} />
+          <TextInput
+            style={s.searchInput}
+            placeholder="Search opportunities..."
+            placeholderTextColor={C.textMuted}
+            value={search}
+            onChangeText={setSearch}
+          />
+          {search.length > 0 && (
+            <TouchableOpacity onPress={() => setSearch('')}>
+              <MaterialCommunityIcons name="close-circle" size={18} color={C.textMuted} />
+            </TouchableOpacity>
+          )}
+        </View>
