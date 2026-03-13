@@ -115,5 +115,15 @@ export default function InvestMarketplace() {
       </View>
 
       <ScrollView contentContainerStyle={s.scroll} showsVerticalScrollIndicator={false}>
-        
+        {/* Results count */}
+        <View style={s.resultsRow}>
+          <Text style={s.resultsText}>
+            <Text style={s.resultsCount}>{filtered.length}</Text> opportunities found
+          </Text>
+          <TouchableOpacity style={s.sortBtn}>
+            <MaterialCommunityIcons name="sort" size={16} color={C.primary} />
+            <Text style={s.sortText}>Sort</Text>
+          </TouchableOpacity>
+        </View>
+
       </ScrollView>
