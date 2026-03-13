@@ -205,3 +205,77 @@ export default function InvestorProfile() {
             <Text style={s.actionLabel}>Reports</Text>
           </TouchableOpacity>
         </View>
+        {/* ── INVESTMENTS / TRANSACTIONS TABS ── */}
+        <View style={s.tabsWrapper}>
+          <View style={s.tabsRow}>
+            <TouchableOpacity
+              style={[s.tab, activeTab === 'investments' && s.tabActive]}
+              onPress={() => setActiveTab('investments')}
+            >
+              <Text style={[s.tabText, activeTab === 'investments' && s.tabTextActive]}>Active Investments</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[s.tab, activeTab === 'transactions' && s.tabActive]}
+              onPress={() => setActiveTab('transactions')}
+            >
+              <Text style={[s.tabText, activeTab === 'transactions' && s.tabTextActive]}>Transactions</Text>
+            </TouchableOpacity>
+          </View>
+          {/* INVESTMENTS TAB */}
+          {activeTab === 'investments' && (
+            <View style={s.tabContent}>
+              {ACTIVE_INVESTMENTS.map((inv) => (
+                <View key={inv.id} style={[s.investCard, SHADOW.md]}>
+                  <View style={s.investCardHeader}>
+                    <View style={[s.investIconWrap, { backgroundColor: C.primaryPale }]}>
+                      <MaterialCommunityIcons name={inv.icon as any} size={22} color={C.primary} />
+                    </View>
+                    <View style={s.investHeaderText}>
+                      <Text style={s.investTitle}>{inv.project}</Text>
+                      <Text style={s.investFarmer}>by {inv.farmer}</Text>
+                    </View>
+                    <View style={s.statusBadge}>
+                      <View style={s.statusDot} />
+                      <Text style={s.statusText}>{inv.status}</Text>
+                    </View>
+                  </View>
+
+                  {/* Progress */}
+                  <View style={s.investProgressRow}>
+                    <View style={s.investProgressTrack}>
+                      <View style={[s.investProgressFill, { width: `${inv.progress * 100}%` }]} />
+                    </View>
+                    <Text style={s.investProgressPct}>{Math.round(inv.progress * 100)}%</Text>
+                  </View>
+
+                  <View style={s.investDetailsGrid}>
+                    <View style={s.investDetailItem}>
+                      <Text style={s.detailLabel}>Invested</Text>
+                      <Text style={s.detailVal}>{inv.investedDate}</Text>
+                    </View>
+                    <View style={s.investDetailItem}>
+                      <Text style={s.detailLabel}>Amount</Text>
+                      <Text style={s.detailVal}>LKR {inv.amount.toLocaleString()}</Text>
+                    </View>
+                    <View style={s.investDetailItem}>
+                      <Text style={s.detailLabel}>ROI</Text>
+                      <Text style={[s.detailVal, { color: C.accent }]}>{inv.roi}</Text>
+                    </View>
+                    <View style={s.investDetailItem}>
+                      <Text style={s.detailLabel}>Expected Return</Text>
+                      <Text style={[s.detailVal, { color: C.primary, fontWeight: '900' }]}>
+                        + LKR {inv.expectedReturn.toLocaleString()}
+                      </Text>
+                    </View>
+                  </View>
+                  <View style={s.investCardFooter}>
+                    <Text style={s.investDuration}>{inv.duration} project</Text>
+                    <TouchableOpacity style={s.viewInvestBtn}>
+                      <Text style={s.viewInvestBtnText}>View Details</Text>
+                      <MaterialCommunityIcons name="arrow-right" size={14} color={C.primary} />
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              ))}
+            </View>
+          )}
