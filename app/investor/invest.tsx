@@ -247,5 +247,166 @@ export default function InvestMarketplace() {
     </View>
   );
 }
+//STYLES
+const s = StyleSheet.create({
+  root:   { flex: 1, backgroundColor: C.surface },
+  scroll: { paddingHorizontal: 16, paddingBottom: 20 },
+
+  // Top bar
+  topBar: {
+    backgroundColor: C.white,
+    paddingTop: 56,
+    paddingHorizontal: 20,
+    paddingBottom: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: C.border,
+    ...{ elevation: 4, shadowColor: C.shadow, shadowOpacity: 0.06, shadowRadius: 8, shadowOffset: { width: 0, height: 2 } },
+  },
+  topBarInner:  { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 },
+  topBarBrand:  { fontSize: 10, color: C.textMuted, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 1.2 },
+  topBarTitle:  { fontSize: 24, fontWeight: '900', color: C.text },
+  liveBadge:    { flexDirection: 'row', alignItems: 'center', gap: 5, backgroundColor: '#E8F5E9', paddingHorizontal: 10, paddingVertical: 5, borderRadius: 20 },
+  liveDot:      { width: 7, height: 7, borderRadius: 4, backgroundColor: C.accent },
+  liveText:     { fontSize: 11, fontWeight: '700', color: C.primary },
+
+  // Search
+  searchBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    backgroundColor: C.surface,
+    borderRadius: 14,
+    paddingHorizontal: 14,
+    paddingVertical: 11,
+    borderWidth: 1.5,
+    borderColor: C.border,
+    marginBottom: 12,
+  },
+  searchInput:  { flex: 1, fontSize: 14, color: C.text, fontWeight: '500' },
+
+  // Filters
+  filterScroll: { marginBottom: 2 },
+  filterChip: {
+    backgroundColor: C.surface,
+    paddingHorizontal: 16,
+    paddingVertical: 7,
+    borderRadius: 20,
+    marginRight: 8,
+    borderWidth: 1.5,
+    borderColor: C.border,
+  },
+  filterChipActive:     { backgroundColor: C.primary, borderColor: C.primary },
+  filterChipText:       { fontSize: 12, fontWeight: '700', color: C.textSub },
+  filterChipTextActive: { color: C.white },
+
+  // Results row
+  resultsRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 14 },
+  resultsText:  { fontSize: 13, color: C.textMuted, fontWeight: '500' },
+  resultsCount: { color: C.primary, fontWeight: '800' },
+  sortBtn:      { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  sortText:     { fontSize: 13, fontWeight: '700', color: C.primary },
+
+  // Cards
+  card: {
+    backgroundColor: C.white,
+    borderRadius: 22,
+    overflow: 'hidden',
+    marginBottom: 16,
+  },
+  cardImgWrap:    { position: 'relative' },
+  cardImg:        { width: '100%', height: 170 },
+  cardImgOverlay: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(26,46,13,0.22)' },
+  cardBadges:     { position: 'absolute', top: 12, left: 12, flexDirection: 'row', gap: 8 },
+
+  roiBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+    backgroundColor: C.accent,
+    paddingHorizontal: 9,
+    paddingVertical: 5,
+    borderRadius: 9,
+  },
+  roiBadgeText: { color: C.white, fontSize: 10, fontWeight: '800' },
+  riskBadge: {
+    paddingHorizontal: 9,
+    paddingVertical: 5,
+    borderRadius: 9,
+  },
+  riskBadgeText: { fontSize: 10, fontWeight: '800' },
+
+  aiScoreWrap: {
+    position: 'absolute',
+    bottom: 12,
+    right: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: C.goldLight,
+    paddingHorizontal: 9,
+    paddingVertical: 5,
+    borderRadius: 9,
+    borderWidth: 1,
+    borderColor: C.gold + '50',
+  },
+  aiScoreText: { fontSize: 10, fontWeight: '800', color: C.gold },
+
+  cardBody:       { padding: 16 },
+  cardTitle:      { fontSize: 16, fontWeight: '800', color: C.text, marginBottom: 6 },
+  cardMetaRow:    { flexDirection: 'row', alignItems: 'center', gap: 4, marginBottom: 10 },
+  cardMeta:       { fontSize: 12, color: C.textMuted, fontWeight: '500' },
+  cardMetaDot:    { width: 3, height: 3, borderRadius: 2, backgroundColor: C.border, marginHorizontal: 4 },
+
+  tagsRow:  { flexDirection: 'row', gap: 6, marginBottom: 12, flexWrap: 'wrap' },
+  tag:      { backgroundColor: C.primaryPale, paddingHorizontal: 10, paddingVertical: 3, borderRadius: 20 },
+  tagText:  { fontSize: 10, fontWeight: '700', color: C.primary },
+
+  progressRow:  { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 14 },
+  progressTrack:{ flex: 1, height: 6, backgroundColor: C.border, borderRadius: 3, overflow: 'hidden' },
+  progressFill: { height: '100%', backgroundColor: C.accent, borderRadius: 3 },
+  progressPct:  { fontSize: 11, fontWeight: '800', color: C.primary, width: 34, textAlign: 'right' },
+
+  cardFooter:     { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  cardFooterLeft: { flexDirection: 'row', alignItems: 'center', gap: 14 },
+  footerItem:     { gap: 2 },
+  footerLabel:    { fontSize: 10, color: C.textMuted, textTransform: 'uppercase', letterSpacing: 0.8 },
+  footerVal:      { fontSize: 13, fontWeight: '800', color: C.text },
+  footerDivider:  { width: 1, height: 26, backgroundColor: C.border },
+  viewBtn:        { flexDirection: 'row', alignItems: 'center', gap: 2, backgroundColor: C.primary, paddingHorizontal: 14, paddingVertical: 9, borderRadius: 12 },
+  viewBtnText:    { color: C.white, fontWeight: '800', fontSize: 13 },
+
+  // Empty state
+  emptyState: { alignItems: 'center', paddingVertical: 60, gap: 12 },
+  emptyTitle: { fontSize: 16, fontWeight: '800', color: C.text },
+  emptySub:   { fontSize: 13, color: C.textMuted },
+
+  // BOTTOM NAV BAR 
+  bottomNavWrapper: {
+    position: 'absolute',
+    bottom: 24,
+    left: 0,
+    right: 0,
+    alignItems: 'center',
+  },
+  bottomNavPill: {
+    flexDirection: 'row',
+    backgroundColor: C.primaryDeep,
+    borderRadius: 50,
+    paddingVertical: 10,
+    paddingHorizontal: 32,
+    gap: 48,
+    elevation: 10,
+    shadowColor: C.shadow,
+    shadowOpacity: 0.2,
+    shadowRadius: 16,
+    shadowOffset: { width: 0, height: 4 },
+  },
+  navBtn: {
+    width: 40,
+    height: 40,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+});
 
       
