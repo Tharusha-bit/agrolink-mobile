@@ -279,3 +279,41 @@ export default function InvestorProfile() {
               ))}
             </View>
           )}
+          {/* TRANSACTIONS TAB */}
+          {activeTab === 'transactions' && (
+            <View style={s.tabContent}>
+              <View style={[s.transCard, SHADOW.sm]}>
+                {TRANSACTIONS.map((tx, i) => {
+                  const isPositive = tx.amount > 0;
+                  const iconMap: Record<string, string> = {
+                    invest: 'arrow-up-circle',
+                    return: 'arrow-down-circle',
+                    deposit: 'plus-circle',
+                  };
+                  const colorMap: Record<string, string> = {
+                    invest: C.red,
+                    return: C.accent,
+                    deposit: '#1976D2',
+                  };
+                  return (
+                    <View key={tx.id}>
+                      <View style={s.txRow}>
+                        <View style={[s.txIconWrap, { backgroundColor: colorMap[tx.type] + '18' }]}>
+                          <MaterialCommunityIcons name={iconMap[tx.type] as any} size={20} color={colorMap[tx.type]} />
+                        </View>
+                        <View style={s.txInfo}>
+                          <Text style={s.txLabel}>{tx.label}</Text>
+                          <Text style={s.txDate}>{tx.date}</Text>
+                        </View>
+                        <Text style={[s.txAmount, { color: isPositive ? C.accent : C.red }]}>
+                          {isPositive ? '+' : '−'} LKR {Math.abs(tx.amount).toLocaleString()}
+                        </Text>
+                      </View>
+                      {i < TRANSACTIONS.length - 1 && <View style={s.txDivider} />}
+                    </View>
+                  );
+                })}
+              </View>
+            </View>
+          )}
+        </View>
