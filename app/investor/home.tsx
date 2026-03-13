@@ -213,3 +213,59 @@ export default function HomeScreen() {
     </View>
   );
 }
+const s = StyleSheet.create({
+  container: { flex: 1, backgroundColor: COLORS.surface },
+  
+  /* HEADER */
+  header: {
+    backgroundColor: COLORS.primary,
+    paddingTop: Platform.OS === 'ios' ? 60 : 48,
+    paddingHorizontal: 24,
+    paddingBottom: 72,
+    borderBottomLeftRadius: 36,
+    borderBottomRightRadius: 36,
+    position: 'relative', overflow: 'hidden'
+  },
+  decCircleLg: { position: 'absolute', width: 220, height: 220, borderRadius: 110, backgroundColor: COLORS.primaryLight, top: -60, right: -50, opacity: 0.5 },
+  decCircleSm: { position: 'absolute', width: 100, height: 100, borderRadius: 50, backgroundColor: COLORS.accent, bottom: 20, left: -30, opacity: 0.18 },
+  topBar: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 22 },
+  greeting: { fontSize: 12, color: '#B6D9A0', fontWeight: '600', letterSpacing: 0.5 },
+  userName: { fontSize: 26, fontWeight: '900', color: COLORS.white, marginTop: 2 },
+  date: { fontSize: 11, color: '#A8CFA0', marginTop: 2 },
+  avatarBtn: { width: 44, height: 44, borderRadius: 22, backgroundColor: 'rgba(255,255,255,0.95)', justifyContent: 'center', alignItems: 'center' },
+  notifDot: { width: 10, height: 10, borderRadius: 5, backgroundColor: COLORS.danger, position: 'absolute', top: 0, right: 0, borderWidth: 2, borderColor: COLORS.primary, zIndex: 1 },
+  searchBar: { flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.95)', borderRadius: 16, paddingHorizontal: 16, height: 48 },
+  searchInput: { flex: 1, fontSize: 14, color: COLORS.text },
+  micBtn: { width: 32, height: 32, borderRadius: 16, backgroundColor: COLORS.primaryPale, justifyContent: 'center', alignItems: 'center' },
+
+  /* WEATHER CARD */
+  weatherCard: { backgroundColor: COLORS.card, marginHorizontal: 24, marginTop: -50, borderRadius: 24, padding: 20 },
+  weatherTopRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 14 },
+  locationRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 2 },
+  cityText: { fontSize: 15, fontWeight: '700', color: COLORS.text, marginLeft: 6 },
+  weatherDesc: { fontSize: 11, color: COLORS.textMuted, marginLeft: 24 },
+  tempBlock: { alignItems: 'flex-end' },
+  tempText: { fontSize: 28, fontWeight: '900', color: COLORS.text, letterSpacing: -1 },
+  divider: { height: 1, backgroundColor: COLORS.border, marginBottom: 16 },
+  statsRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-around' },
+  statDivider: { width: 1, height: 40, backgroundColor: COLORS.border },
+  
+  /* STAT BADGE */
+  statBadge: { alignItems: 'center', width: 70 },
+  statIconCircle: { width: 40, height: 40, borderRadius: 20, justifyContent: 'center', alignItems: 'center', marginBottom: 4 },
+  statValue: { fontSize: 14, fontWeight: '700', color: COLORS.text },
+  statLabel: { fontSize: 10, color: COLORS.textMuted },
+
+  /* KPI STRIP */
+  kpiStrip: { paddingLeft: 24, paddingRight: 12, marginTop: 20, marginBottom: 20 },
+  kpiCard: { backgroundColor: COLORS.card, borderRadius: 18, padding: 14, marginRight: 12, alignItems: 'center', minWidth: 90 },
+  kpiIcon: { width: 36, height: 36, borderRadius: 18, justifyContent: 'center', alignItems: 'center', marginBottom: 8 },
+  kpiValue: { fontSize: 15, fontWeight: '800', color: COLORS.text },
+  kpiLabel: { fontSize: 10, color: COLORS.textMuted, marginTop: 2 },
+
+  /* SECTION HEADER */
+  sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginHorizontal: 24, marginBottom: 16, marginTop: 8 },
+  pill: { width: 4, height: 18, borderRadius: 2, backgroundColor: COLORS.accent, marginRight: 10 },
+  sectionTitle: { fontSize: 18, fontWeight: '800', color: COLORS.text },
+  sectionAction: { fontSize: 12, fontWeight: '600', color: COLORS.primary },
+});
