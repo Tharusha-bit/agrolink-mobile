@@ -73,3 +73,19 @@ const TRANSACTIONS = [
 const TOTAL_PORTFOLIO = 2450000;
 const TOTAL_PROFIT = 125000;
 const PROFIT_PCT = '12%';
+function MenuRow({ icon, label, sub, onPress, danger = false }: {
+  icon: string; label: string; sub?: string; onPress?: () => void; danger?: boolean;
+}) {
+  return (
+    <TouchableOpacity style={s.menuRow} onPress={onPress} activeOpacity={0.75}>
+      <View style={[s.menuIconWrap, { backgroundColor: danger ? '#FFEBEE' : C.primaryPale }]}>
+        <MaterialCommunityIcons name={icon as any} size={20} color={danger ? C.red : C.primary} />
+      </View>
+      <View style={s.menuLabelWrap}>
+        <Text style={[s.menuLabel, danger && { color: C.red }]}>{label}</Text>
+        {sub && <Text style={s.menuSub}>{sub}</Text>}
+      </View>
+      <MaterialCommunityIcons name="chevron-right" size={20} color={C.textMuted} />
+    </TouchableOpacity>
+  );
+}
