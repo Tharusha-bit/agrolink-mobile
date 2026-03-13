@@ -166,5 +166,35 @@ export default function InvestMarketplace() {
                     <Text style={s.aiScoreText}>AI {aiScore(project.id)}</Text>
                   </View>
                 </View>
+                {/* Body */}
+                <View style={s.cardBody}>
+                  <Text style={s.cardTitle} numberOfLines={1}>{project.title}</Text>
+
+                  <View style={s.cardMetaRow}>
+                    <MaterialCommunityIcons name="map-marker-outline" size={12} color={C.textMuted} />
+                    <Text style={s.cardMeta}>{project.location}</Text>
+                    <View style={s.cardMetaDot} />
+                    <MaterialCommunityIcons name="account-outline" size={12} color={C.textMuted} />
+                    <Text style={s.cardMeta}>{project.farmer}</Text>
+                  </View>
+
+                  {/* Tags */}
+                  {project.tags.length > 0 && (
+                    <View style={s.tagsRow}>
+                      {project.tags.slice(0, 3).map((tag) => (
+                        <View key={tag} style={s.tag}>
+                          <Text style={s.tagText}>{tag}</Text>
+                        </View>
+                      ))}
+                    </View>
+                  )}
+
+                  {/* Progress bar */}
+                  <View style={s.progressRow}>
+                    <View style={s.progressTrack}>
+                      <View style={[s.progressFill, { width: `${progress * 100}%` }]} />
+                    </View>
+                    <Text style={s.progressPct}>{Math.round(progress * 100)}%</Text>
+                  </View>
 
       </ScrollView>
