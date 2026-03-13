@@ -178,3 +178,30 @@ export default function InvestorProfile() {
             </View>
           </View>
         </View>
+         {/*QUICK ACTIONS*/}
+        <View style={s.actionsRow}>
+          <TouchableOpacity style={[s.actionBtn, SHADOW.sm]}>
+            <View style={[s.actionIcon, { backgroundColor: C.primaryPale }]}>
+              <MaterialCommunityIcons name="bank-transfer-in" size={22} color={C.primary} />
+            </View>
+            <Text style={s.actionLabel}>Deposit</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={[s.actionBtn, SHADOW.sm]}>
+            <View style={[s.actionIcon, { backgroundColor: '#FFF3E0' }]}>
+              <MaterialCommunityIcons name="bank-transfer-out" size={22} color="#E65100" />
+            </View>
+            <Text style={s.actionLabel}>Withdraw</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={[s.actionBtn, SHADOW.sm]} onPress={() => router.push('/(investor)/invest')}>
+            <View style={[s.actionIcon, { backgroundColor: C.goldLight }]}>
+              <MaterialCommunityIcons name="chart-areaspline" size={22} color={C.gold} />
+            </View>
+            <Text style={s.actionLabel}>Markets</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={[s.actionBtn, SHADOW.sm]}>
+            <View style={[s.actionIcon, { backgroundColor: '#E3F2FD' }]}>
+              <MaterialCommunityIcons name="file-chart-outline" size={22} color="#1976D2" />
+            </View>
+            <Text style={s.actionLabel}>Reports</Text>
+          </TouchableOpacity>
+        </View>
