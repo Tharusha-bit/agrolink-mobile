@@ -194,3 +194,22 @@ export default function HomeScreen() {
             </View>
           ))}
         </ScrollView>
+        <View style={s.sectionHeader}>
+          <View style={{flexDirection: 'row', alignItems: 'center'}}>
+            <View style={s.pill} />
+            <Text style={s.sectionTitle}>Top Investments</Text>
+          </View>
+          <TouchableOpacity>
+            <Text style={s.sectionAction}>See all</Text>
+          </TouchableOpacity>
+        </View>
+        
+        {/* Dynamic List from Context */}
+        {projects.map((inv) => (
+          <InvestmentCard key={inv.id} {...inv} />
+        ))}
+
+      </ScrollView>
+    </View>
+  );
+}
