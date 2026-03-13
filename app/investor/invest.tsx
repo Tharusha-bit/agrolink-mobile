@@ -125,5 +125,46 @@ export default function InvestMarketplace() {
             <Text style={s.sortText}>Sort</Text>
           </TouchableOpacity>
         </View>
+        {/*PROJECT CARDS*/}
+        {filtered.length === 0 ? (
+          <View style={s.emptyState}>
+            <MaterialCommunityIcons name="magnify-close" size={48} color={C.textMuted} />
+            <Text style={s.emptyTitle}>No results found</Text>
+            <Text style={s.emptySub}>Try adjusting your search or filters</Text>
+          </View>
+        ) : (
+          filtered.map((project) => {
+            const risk = RISK_COLORS[project.riskLevel] || RISK_COLORS.Medium;
+            const progress = project.progress ?? 0;
+
+            return (
+              <TouchableOpacity
+                key={project.id}
+                style={[s.card, SHADOW.md]}
+                activeOpacity={0.88}
+                onPress={() => router.push(`/investment/${project.id}` as any)}
+              >
+                {/* Image */}
+                <View style={s.cardImgWrap}>
+                  <Image source={{ uri: project.image }} style={s.cardImg} />
+                  <View style={s.cardImgOverlay} />
+
+                  {/* Floating badges */}
+                  <View style={s.cardBadges}>
+                    <View style={s.roiBadge}>
+                      <MaterialCommunityIcons name="trending-up" size={10} color={C.white} />
+                      <Text style={s.roiBadgeText}>{project.roi} ROI</Text>
+                    </View>
+                    <View style={[s.riskBadge, { backgroundColor: risk.bg }]}>
+                      <Text style={[s.riskBadgeText, { color: risk.text }]}>{project.riskLevel} Risk</Text>
+                    </View>
+                  </View>
+
+                  {/* AI Score */}
+                  <View style={s.aiScoreWrap}>
+                    <MaterialCommunityIcons name="brain" size={11} color={C.gold} />
+                    <Text style={s.aiScoreText}>AI {aiScore(project.id)}</Text>
+                  </View>
+                </View>
 
       </ScrollView>
