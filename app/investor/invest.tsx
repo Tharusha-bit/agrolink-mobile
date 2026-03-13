@@ -41,3 +41,34 @@ const RISK_COLORS: Record<string, { bg: string; text: string }> = {
   Medium: { bg: '#FFF8E1', text: '#F57F17' },
   High:   { bg: '#FFEBEE', text: '#C62828' },
 };
+//MAIN SCREEN
+export default function InvestMarketplace() {
+  const router = useRouter();
+  const { projects } = useProjects();
+  const [filter, setFilter] = useState('All');
+  const [search, setSearch] = useState('');
+
+  const aiScore = (id: string) => {
+    const scores: Record<string, number> = { '1': 87, '2': 91 };
+    return scores[id] ?? 84;
+  };
+
+  const filtered = projects.filter((p) => {
+    const matchesFilter =
+      filter === 'All' ||
+      p.tags.includes(filter) ||
+      p.riskLevel === filter.replace(' Risk', '') ||
+      (filter === 'Low Risk' && p.riskLevel === 'Low');
+
+    const matchesSearch =
+      search.trim() === '' ||
+      p.title.toLowerCase().includes(search.toLowerCase()) ||
+      p.location.toLowerCase().includes(search.toLowerCase()) ||
+      p.farmer.toLowerCase().includes(search.toLowerCase());
+
+    return matchesFilter && matchesSearch;
+  });
+
+  return (
+    <View style={s.root}>
+      <StatusBar barStyle="dark-content" backgroundColor={C.surface} />
