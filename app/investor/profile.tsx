@@ -113,3 +113,68 @@ export default function InvestorProfile() {
      </View>
   );
 }
+{/*HEADER*/}
+        <View style={s.header}>
+          <View style={s.blob1} />
+          <View style={s.blob2} />
+
+          <View style={s.topRow}>
+            <View>
+              <Text style={s.headerBrand}>AgroLink Private Wealth</Text>
+              <Text style={s.headerTitle}>My Portfolio</Text>
+            </View>
+            <TouchableOpacity style={s.notifBtn} onPress={() => router.push('/investor/notifications')}>
+              <MaterialCommunityIcons name="bell-outline" size={22} color={C.white} />
+              <View style={s.notifDot} />
+            </TouchableOpacity>
+          </View>
+
+          {/*AVATAR + NAME*/}
+          <View style={s.profileRow}>
+            <View style={s.avatarCircle}>
+              <Text style={s.avatarInitials}>IV</Text>
+            </View>
+            <View>
+              <Text style={s.profileName}>Investor</Text>
+              <View style={s.verifiedRow}>
+                <MaterialCommunityIcons name="shield-check" size={13} color={C.accent} />
+                <Text style={s.verifiedText}>Verified Investor</Text>
+              </View>
+            </View>
+            <View style={s.memberBadge}>
+              <MaterialCommunityIcons name="crown" size={12} color={C.gold} />
+              <Text style={s.memberBadgeText}>Gold</Text>
+            </View>
+          </View>
+
+          {/*PORTFOLIO VALUE*/}
+          <View style={s.portfolioCard}>
+            <Text style={s.portfolioLabel}>Total Portfolio Value</Text>
+            <Text style={s.portfolioValue}>LKR {TOTAL_PORTFOLIO.toLocaleString()}</Text>
+            <View style={s.portfolioProfit}>
+              <View style={s.profitBadge}>
+                <MaterialCommunityIcons name="trending-up" size={12} color={C.white} />
+                <Text style={s.profitBadgeText}>+ {PROFIT_PCT}</Text>
+              </View>
+              <Text style={s.profitText}>+ LKR {TOTAL_PROFIT.toLocaleString()} overall</Text>
+            </View>
+          </View>
+
+          {/* MINI STATS */}
+          <View style={s.miniStatsRow}>
+            <View style={s.miniStat}>
+              <Text style={s.miniStatVal}>{ACTIVE_INVESTMENTS.length}</Text>
+              <Text style={s.miniStatLabel}>Active</Text>
+            </View>
+            <View style={s.miniStatDivider} />
+            <View style={s.miniStat}>
+              <Text style={s.miniStatVal}>LKR {(35000).toLocaleString()}</Text>
+              <Text style={s.miniStatLabel}>Invested</Text>
+            </View>
+            <View style={s.miniStatDivider} />
+            <View style={s.miniStat}>
+              <Text style={s.miniStatVal}>+15%</Text>
+              <Text style={s.miniStatLabel}>Avg ROI</Text>
+            </View>
+          </View>
+        </View>
