@@ -114,3 +114,47 @@ const InvestmentCard = ({ id, title, farmer, since, description, progress, image
             <Text style={ic.target}>Goal: LKR {goal.toLocaleString()}</Text>
           </View>
         </View>
+        <View style={ic.investBtn}>
+          <Text style={ic.investText}>View Details</Text>
+          <MaterialCommunityIcons name="arrow-right" size={16} color="#fff" />
+        </View>
+      </View>
+    </TouchableOpacity>
+  );
+};
+export default function HomeScreen() {
+  const router = useRouter();
+  const { projects } = useProjects(); // <--- This gets the data from Create Page
+
+  return (
+    <View style={s.container}>
+      <StatusBar barStyle="light-content" backgroundColor={COLORS.primary} />
+
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 120 }}>
+        
+        {/* ── HEADER ── */}
+        <View style={s.header}>
+          {/* Decorative Circles */}
+          <View style={s.decCircleLg} />
+          <View style={s.decCircleSm} />
+
+          {/* Top Bar */}
+          <View style={s.topBar}>
+            <View>
+              <Text style={s.greeting}>Good morning 🌱</Text>
+              <Text style={s.userName}>Fernando</Text>
+              <Text style={s.date}>Monday, 24 November 2025</Text>
+            </View>
+            <TouchableOpacity onPress={() => router.push('/profile/investorprofile')} style={s.avatarBtn} activeOpacity={0.85}>
+              <View style={s.notifDot} />
+              <MaterialCommunityIcons name="account" size={26} color={COLORS.primary} />
+            </TouchableOpacity>
+          </View>
+          <View style={s.searchBar}>
+            <Ionicons name="search-outline" size={20} color={COLORS.textMuted} style={{ marginRight: 8 }} />
+            <TextInput placeholder="Search crops, farmers..." placeholderTextColor={COLORS.textMuted} style={s.searchInput} />
+            <TouchableOpacity style={s.micBtn}>
+              <MaterialCommunityIcons name="microphone-outline" size={20} color={COLORS.primary} />
+            </TouchableOpacity>
+          </View>
+        </View>
