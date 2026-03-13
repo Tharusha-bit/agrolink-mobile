@@ -361,3 +361,40 @@ export default function InvestorProfile() {
             />
           </View>
         </View>
+        {/* Bottom spacer so content clears the fixed nav bar */}
+        <View style={{ height: 110 }} />
+      </ScrollView>
+
+      {/*BOTTOM NAVIGATION BAR*/}
+      <View style={s.bottomNavWrapper}>
+        <View style={s.bottomNavPill}>
+          <TouchableOpacity
+            style={s.navBtn}
+            onPress={() => router.push('/(investor)/home')}
+            activeOpacity={0.7}
+          >
+            <MaterialCommunityIcons name="home" size={24} color="rgba(255,255,255,0.55)" />
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={s.navBtn}
+            onPress={() => router.push('/(investor)/profile')}
+            activeOpacity={0.7}
+          >
+            <MaterialCommunityIcons name="account" size={24} color="rgba(255,255,255,0.55)" />
+          </TouchableOpacity>
+        </View>
+      </View>
+    </View>
+  );
+}
+
+      
+        
+
+
+
+
+      
+            
+
+        
