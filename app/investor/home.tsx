@@ -61,7 +61,7 @@ const InvestmentCard = ({ id, title, farmer, since, description, progress, image
     <TouchableOpacity 
       style={[ic.card, SHADOWS.md]} 
       activeOpacity={0.9}
-      onPress={() => router.push(`/investment/${id}`)} // <--- Links to Detail Page
+      onPress={() => router.push(`/investment/${id}`)} 
     >
       {/* Hero Image */}
       <View style={ic.imageWrap}>
@@ -83,3 +83,34 @@ const InvestmentCard = ({ id, title, farmer, since, description, progress, image
           ))}
         </View>
       </View>
+      <View style={ic.body}>
+        <View style={ic.farmerRow}>
+          <View style={ic.avatarWrap}>
+            <MaterialCommunityIcons name="account" size={18} color={COLORS.white} />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={ic.title}>{title}</Text>
+            <Text style={ic.farmerName}>by {farmer} • {since}</Text>
+          </View>
+          <View style={ic.verifiedBadge}>
+            <MaterialCommunityIcons name="check-decagram" size={14} color={COLORS.primary} />
+            <Text style={ic.verifiedText}>Verified</Text>
+          </View>
+        </View>
+
+        <Text style={ic.description} numberOfLines={2}>{description}</Text>
+
+        {/* Progress Bar */}
+        <View style={ic.progressBlock}>
+          <View style={ic.progressLabels}>
+            <Text style={ic.progressTitle}>Funding Progress</Text>
+            <Text style={ic.progressPct}>{Math.round(progressPct * 100)}%</Text>
+          </View>
+          <View style={ic.track}>
+            <View style={[ic.fill, { width: `${progressPct * 100}%` }]} />
+          </View>
+          <View style={ic.amountRow}>
+            <Text style={ic.raised}>Raised: <Text style={ic.raisedBold}>LKR {raised.toLocaleString()}</Text></Text>
+            <Text style={ic.target}>Goal: LKR {goal.toLocaleString()}</Text>
+          </View>
+        </View>
