@@ -158,3 +158,28 @@ export default function HomeScreen() {
             </TouchableOpacity>
           </View>
         </View>
+        <View style={[s.weatherCard, SHADOWS.md]}>
+          <View style={s.weatherTopRow}>
+            <View>
+              <View style={s.locationRow}>
+                <MaterialCommunityIcons name="map-marker" size={18} color={COLORS.primary} />
+                <Text style={s.cityText}>Anuradhapura</Text>
+              </View>
+              <Text style={s.weatherDesc}>Light rain expected</Text>
+            </View>
+            <View style={s.tempBlock}>
+              <MaterialCommunityIcons name="weather-rainy" size={32} color={COLORS.info} />
+              <Text style={s.tempText}>17°C</Text>
+            </View>
+          </View>
+
+          <View style={s.divider} />
+
+          <View style={s.statsRow}>
+            <StatBadge icon="water-percent" label="Humidity" value="59%" color={COLORS.info} />
+            <View style={s.statDivider} />
+            <StatBadge icon="thermometer" label="Soil Temp" value="22°C" color={COLORS.accentWarm} />
+            <View style={s.statDivider} />
+            <StatBadge icon="weather-windy" label="Wind" value="6 m/s" color={COLORS.accent} />
+          </View>
+        </View>
