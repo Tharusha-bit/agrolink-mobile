@@ -71,6 +71,88 @@ const SHADOWS = {
   }),
 };
 
+// ─── Translations ──────────────────────────────────────────────────────────────
+const TRANSLATIONS = {
+  en: {
+    morning: "Good morning 🌱",
+    afternoon: "Good afternoon ☀️",
+    evening: "Good evening 🌙",
+    searchBox: "Search crops, farmers...",
+    weatherFetching: "Fetching weather...",
+    locDenied: "Location Denied",
+    locError: "Location Error",
+    locating: "Locating...",
+    humidity: "Humidity",
+    soilTemp: "Soil Temp",
+    wind: "Wind",
+    kpiCrops: "Active Crops",
+    kpiInvestors: "Investors",
+    kpiFunded: "Total Funded",
+    topInvestments: "Top Investments",
+    seeAll: "See all",
+    riskLow: "Low Risk",
+    riskMed: "Medium Risk",
+    riskHigh: "High Risk",
+    verified: "Verified",
+    prog: "Funding Progress",
+    raised: "Raised:",
+    goal: "Goal:",
+    viewBtn: "View Details",
+  },
+  si: {
+    morning: "සුබ උදෑසනක් 🌱",
+    afternoon: "සුබ මධ්‍යහ්නයක් ☀️",
+    evening: "සුබ සන්ධ්‍යාවක් 🌙",
+    searchBox: "බෝග, ගොවීන් සොයන්න...",
+    weatherFetching: "කාලගුණය ලබාගනිමින්...",
+    locDenied: "ස්ථානය ප්‍රතික්ෂේප විය",
+    locError: "ස්ථාන දෝෂයකි",
+    locating: "ස්ථානය සොයමින්...",
+    humidity: "ආර්ද්‍රතාවය",
+    soilTemp: "පසෙහි උෂ්ණත්වය",
+    wind: "සුළඟ",
+    kpiCrops: "සක්‍රීය බෝග",
+    kpiInvestors: "ආයෝජකයින්",
+    kpiFunded: "මුළු අරමුදල්",
+    topInvestments: "ඉහළම ආයෝජන",
+    seeAll: "සියල්ල බලන්න",
+    riskLow: "අඩු අවදානම්",
+    riskMed: "මධ්‍යම අවදානම්",
+    riskHigh: "අධි අවදානම්",
+    verified: "තහවුරු කර ඇත",
+    prog: "අරමුදල් ප්‍රගතිය",
+    raised: "එකතු කළ:",
+    goal: "ඉලක්කය:",
+    viewBtn: "විස්තර බලන්න",
+  },
+  ta: {
+    morning: "காலை வணக்கம் 🌱",
+    afternoon: "மதிய வணக்கம் ☀️",
+    evening: "மாலை வணக்கம் 🌙",
+    searchBox: "பயிர்கள், விவசாயிகளைத் தேடுங்கள்...",
+    weatherFetching: "வானிலை பெறுகிறது...",
+    locDenied: "இடம் மறுக்கப்பட்டது",
+    locError: "இடம் பிழை",
+    locating: "கண்டுபிடிக்கிறது...",
+    humidity: "ஈரப்பதம்",
+    soilTemp: "மண் வெப்பம்",
+    wind: "காற்று",
+    kpiCrops: "செயலில் உள்ள பயிர்கள்",
+    kpiInvestors: "முதலீட்டாளர்கள்",
+    kpiFunded: "மொத்த நிதி",
+    topInvestments: "சிறந்த முதலீடுகள்",
+    seeAll: "அனைத்தையும் காண்க",
+    riskLow: "குறைந்த ஆபத்து",
+    riskMed: "நடுத்தர ஆபத்து",
+    riskHigh: "அதிக ஆபத்து",
+    verified: "சரிபார்க்கப்பட்டது",
+    prog: "நிதி முன்னேற்றம்",
+    raised: "திரட்டப்பட்டது:",
+    goal: "இலக்கு:",
+    viewBtn: "விவரங்களைக் காண்க",
+  },
+};
+
 // ─── Static Fallback Data ───────────────────────────────────────────────────
 const FALLBACK_INVESTMENTS = [
   {
@@ -103,23 +185,6 @@ const FALLBACK_INVESTMENTS = [
     image:
       "https://cdn.pixabay.com/photo/2018/03/11/01/25/vegetable-3215091_1280.jpg",
   },
-];
-
-const KPI_DATA = [
-  { label: "Active Crops", value: "142", icon: "sprout", color: COLORS.accent },
-  {
-    label: "Investors",
-    value: "3.4k",
-    icon: "account-group",
-    color: COLORS.primary,
-  },
-  {
-    label: "Funded Today",
-    value: "$28k",
-    icon: "cash-multiple",
-    color: COLORS.accentWarm,
-  },
-  { label: "Avg Return", value: "18%", icon: "chart-line", color: COLORS.info },
 ];
 
 // ─── Reusable Components ──────────────────────────────────────────────────────
@@ -161,49 +226,41 @@ const SectionHeader = ({ title, actionLabel, onAction }: any) => (
   </View>
 );
 
-const InvestmentCard = ({
-  id,
-  title,
-  farmer,
-  since = "Recently",
-  description,
-  progress = 0,
-  image,
-  tags = [],
-  riskLevel = "Medium",
-  targetAmount,
-  raisedAmount,
-  goal,
-  raised,
-}: any) => {
+const InvestmentCard = ({ project, t }: any) => {
   const router = useRouter();
 
-  const actualGoal = goal || targetAmount || 1;
-  const actualRaised = raised || raisedAmount || 0;
-  const actualProgress = progress > 0 ? progress : actualRaised / actualGoal;
-  const progressPct = Math.min(Math.max(actualProgress, 0), 1);
-  const riskColor =
-    riskLevel === "Low"
-      ? COLORS.accent
-      : riskLevel === "Medium"
-        ? COLORS.accentWarm
-        : COLORS.danger;
+  const goal = project.fundingGoal || 1;
+  const raised = project.currentFundingAmount || 0;
+  const progressPct = Math.min(Math.max(raised / goal, 0), 1);
 
-  const displayFarmer =
-    typeof farmer === "object" && farmer !== null ? farmer.name : farmer;
-  const imageUri = image?.uri || image || "https://via.placeholder.com/150";
-  const displayTitle = title || "Farm Investment";
+  let riskLevel = t.riskMed;
+  let riskColor = COLORS.accentWarm;
+  if (project.profileStrength >= 70) {
+    riskLevel = t.riskLow;
+    riskColor = COLORS.accent;
+  } else if (project.profileStrength < 40) {
+    riskLevel = t.riskHigh;
+    riskColor = COLORS.danger;
+  }
+
+  const displayFarmer = project.farmerName || "Farmer";
+  const imageUri =
+    project.photos && project.photos.length > 0
+      ? project.photos[0]
+      : "https://cdn.pixabay.com/photo/2016/09/21/04/46/barley-field-1684052_1280.jpg";
+  const displayTitle = project.projectTitle || "Farm Investment";
 
   return (
     <TouchableOpacity
       style={[ic.card, SHADOWS.md]}
       activeOpacity={0.9}
-      onPress={() => router.push(`/investor/project-details/${id}` as any)}
+      onPress={() =>
+        router.push(`/investor/project-details/${project.id}` as any)
+      }
     >
       <View style={ic.imageWrap}>
         <Image source={{ uri: imageUri }} style={ic.image} />
         <View style={ic.imageFade} />
-
         <View style={[ic.riskChip, { backgroundColor: riskColor }]}>
           <MaterialCommunityIcons
             name="shield-check"
@@ -211,15 +268,7 @@ const InvestmentCard = ({
             color="#fff"
             style={{ marginRight: 4 }}
           />
-          <Text style={ic.riskText}>{riskLevel} Risk</Text>
-        </View>
-
-        <View style={ic.tagRow}>
-          {tags.slice(0, 3).map((t: string, index: number) => (
-            <View key={index} style={ic.tagPill}>
-              <Text style={ic.tagText}>{t}</Text>
-            </View>
-          ))}
+          <Text style={ic.riskText}>{riskLevel}</Text>
         </View>
       </View>
 
@@ -236,27 +285,27 @@ const InvestmentCard = ({
             <Text style={ic.title} numberOfLines={1}>
               {displayTitle}
             </Text>
-            <Text style={ic.farmerName}>
-              by {displayFarmer} • {since}
-            </Text>
+            <Text style={ic.farmerName}>by {displayFarmer}</Text>
           </View>
-          <View style={ic.verifiedBadge}>
-            <MaterialCommunityIcons
-              name="check-decagram"
-              size={14}
-              color={COLORS.primary}
-            />
-            <Text style={ic.verifiedText}>Verified</Text>
-          </View>
+          {project.isVerified && (
+            <View style={ic.verifiedBadge}>
+              <MaterialCommunityIcons
+                name="check-decagram"
+                size={14}
+                color={COLORS.primary}
+              />
+              <Text style={ic.verifiedText}>{t.verified}</Text>
+            </View>
+          )}
         </View>
 
         <Text style={ic.description} numberOfLines={2}>
-          {description}
+          {project.description || "Farm project seeking funding."}
         </Text>
 
         <View style={ic.progressBlock}>
           <View style={ic.progressLabels}>
-            <Text style={ic.progressTitle}>Funding Progress</Text>
+            <Text style={ic.progressTitle}>{t.prog}</Text>
             <Text style={ic.progressPct}>{Math.round(progressPct * 100)}%</Text>
           </View>
           <View style={ic.track}>
@@ -264,19 +313,17 @@ const InvestmentCard = ({
           </View>
           <View style={ic.amountRow}>
             <Text style={ic.raised}>
-              Raised:{" "}
-              <Text style={ic.raisedBold}>
-                LKR {actualRaised.toLocaleString()}
-              </Text>
+              {t.raised}{" "}
+              <Text style={ic.raisedBold}>LKR {raised.toLocaleString()}</Text>
             </Text>
             <Text style={ic.target}>
-              Goal: LKR {actualGoal.toLocaleString()}
+              {t.goal} LKR {goal.toLocaleString()}
             </Text>
           </View>
         </View>
 
         <View style={ic.investBtn}>
-          <Text style={ic.investText}>View Details</Text>
+          <Text style={ic.investText}>{t.viewBtn}</Text>
           <MaterialCommunityIcons name="arrow-right" size={16} color="#fff" />
         </View>
       </View>
@@ -289,41 +336,53 @@ export default function HomeScreen() {
   const router = useRouter();
   const { projects } = useProjects();
 
-  // ✅ Dynamic user details & real-time greeting
+  const [lang, setLang] = useState<"en" | "si" | "ta">("en");
+  const t = TRANSLATIONS[lang];
+
   const [displayName, setDisplayName] = useState("Investor");
-  const [greetingText, setGreetingText] = useState("Good morning 🌱");
+  const [greetingText, setGreetingText] = useState(t.morning);
   const [dateString, setDateString] = useState("");
 
-  const displayProjects =
-    projects && projects.length > 0 ? projects : FALLBACK_INVESTMENTS;
+  // Real-time Data States
+  const [totalInvestors, setTotalInvestors] = useState(0);
+  const [totalFunded, setTotalFunded] = useState(0);
+  const [topProjects, setTopProjects] = useState<any[]>([]);
+  const [loadingData, setLoadingData] = useState(true);
 
   // Weather States
-  const [city, setCity] = useState("Locating...");
+  const [city, setCity] = useState(t.locating);
   const [loadingWeather, setLoadingWeather] = useState(true);
   const [weather, setWeather] = useState({
     temp: "--",
     humidity: "--",
     wind: "--",
     soilTemp: "--",
-    description: "Fetching weather...",
+    description: t.weatherFetching,
     icon: "weather-cloudy",
   });
 
-  // ✅ Trigger dynamic updates on mount and every time the screen focuses
+  // ⚠️ Ensure this matches your backend IP address
+  const API_URL = "http://172.20.10.6:8080";
+
+  const formatCurrency = (val: number) => {
+    if (val >= 1000000) return `LKR ${(val / 1000000).toFixed(1)}M`;
+    if (val >= 1000) return `LKR ${(val / 1000).toFixed(1)}k`;
+    return `LKR ${val}`;
+  };
+
   useFocusEffect(
     useCallback(() => {
-      const loadUserData = async () => {
+      const loadDashboard = async () => {
+        setLoadingData(true);
+
         const storedName = await AsyncStorage.getItem("firstName");
-        if (storedName) {
-          setDisplayName(storedName);
-        }
+        if (storedName) setDisplayName(storedName);
 
         const today = new Date();
         const currentHour = today.getHours();
-
-        if (currentHour < 12) setGreetingText("Good morning 🌱");
-        else if (currentHour < 18) setGreetingText("Good afternoon ☀️");
-        else setGreetingText("Good evening 🌙");
+        if (currentHour < 12) setGreetingText(t.morning);
+        else if (currentHour < 18) setGreetingText(t.afternoon);
+        else setGreetingText(t.evening);
 
         setDateString(
           today.toLocaleDateString("en-US", {
@@ -333,19 +392,81 @@ export default function HomeScreen() {
             year: "numeric",
           }),
         );
+
+        try {
+          const projRes = await axios.get(`${API_URL}/api/farmer-project/all`);
+          let allProjects = projRes.data || [];
+
+          let activeProjects = allProjects.filter(
+            (p: any) => p.status === "FUNDING" || p.status === "APPROVED",
+          );
+
+          let uniqueInvestors = new Set();
+          let moneySum = 0;
+
+          const enrichedProjects = await Promise.all(
+            activeProjects.map(async (proj: any) => {
+              moneySum += proj.currentFundingAmount || 0;
+
+              try {
+                const invRes = await axios.get(
+                  `${API_URL}/api/investments/project/${proj.id}`,
+                );
+                const invs = invRes.data || [];
+                invs.forEach((inv: any) => {
+                  if (inv.investorId) uniqueInvestors.add(inv.investorId);
+                });
+              } catch (e) {}
+
+              let profileStrength = 0;
+              let farmerName = "Farmer";
+              let isVerified = false;
+              try {
+                if (proj.farmerId) {
+                  const userRes = await axios.get(
+                    `${API_URL}/api/users/${proj.farmerId}`,
+                  );
+                  profileStrength = userRes.data.profileStrength || 0;
+                  isVerified = userRes.data.isVerified === true;
+                  farmerName =
+                    `${userRes.data.firstName || ""} ${userRes.data.lastName || ""}`.trim();
+                }
+              } catch (e) {}
+
+              return { ...proj, farmerName, profileStrength, isVerified };
+            }),
+          );
+
+          setTotalInvestors(uniqueInvestors.size);
+          setTotalFunded(moneySum);
+
+          enrichedProjects.sort((a, b) => {
+            if (b.currentFundingAmount !== a.currentFundingAmount) {
+              return (
+                (b.currentFundingAmount || 0) - (a.currentFundingAmount || 0)
+              );
+            }
+            return (b.profileStrength || 0) - (a.profileStrength || 0);
+          });
+
+          setTopProjects(enrichedProjects.slice(0, 3));
+        } catch (error) {
+          console.error("Failed to load real-time data", error);
+        } finally {
+          setLoadingData(false);
+        }
       };
 
-      loadUserData();
-    }, []),
+      loadDashboard();
+    }, [lang]),
   );
 
-  // Weather API Call
   useEffect(() => {
     (async () => {
       try {
         let { status } = await Location.requestForegroundPermissionsAsync();
         if (status !== "granted") {
-          setCity("Location Denied");
+          setCity(t.locDenied);
           setWeather((prev) => ({ ...prev, description: "Permission denied" }));
           setLoadingWeather(false);
           return;
@@ -369,34 +490,19 @@ export default function HomeScreen() {
         }
 
         const weatherUrl = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,wind_speed_10m,weather_code,is_day&hourly=soil_temperature_0cm&timezone=auto`;
-
         const response = await axios.get(weatherUrl);
         const current = response.data.current;
         const wCode = current.weather_code;
-        const isDay = current.is_day;
 
         let wDesc = "Clear skies";
-        let wIcon = isDay ? "weather-sunny" : "weather-night";
-
+        let wIcon = current.is_day ? "weather-sunny" : "weather-night";
         if (wCode >= 1 && wCode <= 3) {
           wDesc = "Partly cloudy";
           wIcon = "weather-partly-cloudy";
         }
-        if (wCode >= 45 && wCode <= 48) {
-          wDesc = "Foggy conditions";
-          wIcon = "weather-fog";
-        }
         if (wCode >= 51 && wCode <= 67) {
           wDesc = "Rain expected";
           wIcon = "weather-rainy";
-        }
-        if (wCode >= 71 && wCode <= 77) {
-          wDesc = "Snow expected";
-          wIcon = "weather-snowy";
-        }
-        if (wCode >= 95) {
-          wDesc = "Thunderstorms";
-          wIcon = "weather-lightning";
         }
 
         setWeather({
@@ -410,14 +516,32 @@ export default function HomeScreen() {
           icon: wIcon,
         });
       } catch (error) {
-        console.error("Weather error:", error);
-        setCity("Location Error");
+        setCity(t.locError);
         setWeather((prev) => ({ ...prev, description: "Failed to load" }));
       } finally {
         setLoadingWeather(false);
       }
     })();
   }, []);
+
+  const KPI_DATA = [
+    { label: t.kpiCrops, value: "1", icon: "sprout", color: COLORS.accent },
+    {
+      label: t.kpiInvestors,
+      value: loadingData ? "-" : totalInvestors.toString(),
+      icon: "account-group",
+      color: COLORS.primary,
+    },
+    {
+      label: t.kpiFunded,
+      value: loadingData ? "-" : formatCurrency(totalFunded),
+      icon: "cash-multiple",
+      color: COLORS.accentWarm,
+    },
+  ];
+
+  const displayProjects =
+    topProjects && topProjects.length > 0 ? topProjects : FALLBACK_INVESTMENTS;
 
   return (
     <View style={s.container}>
@@ -430,6 +554,33 @@ export default function HomeScreen() {
         <View style={s.header}>
           <View style={s.decCircleLg} />
           <View style={s.decCircleSm} />
+
+          <View style={s.langGroup}>
+            <TouchableOpacity
+              onPress={() => setLang("en")}
+              style={[s.langBtn, lang === "en" && s.langBtnActive]}
+            >
+              <Text style={[s.langText, lang === "en" && s.langTextActive]}>
+                EN
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={() => setLang("si")}
+              style={[s.langBtn, lang === "si" && s.langBtnActive]}
+            >
+              <Text style={[s.langText, lang === "si" && s.langTextActive]}>
+                සිං
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={() => setLang("ta")}
+              style={[s.langBtn, lang === "ta" && s.langBtnActive]}
+            >
+              <Text style={[s.langText, lang === "ta" && s.langTextActive]}>
+                தமிழ்
+              </Text>
+            </TouchableOpacity>
+          </View>
 
           <View style={s.topBar}>
             <View>
@@ -461,7 +612,7 @@ export default function HomeScreen() {
               style={{ marginRight: 8 }}
             />
             <TextInput
-              placeholder="Search crops, farmers..."
+              placeholder={t.searchBox}
               placeholderTextColor={COLORS.textMuted}
               style={s.searchInput}
             />
@@ -475,7 +626,6 @@ export default function HomeScreen() {
           </View>
         </View>
 
-        {/* ✅ DYNAMIC WEATHER WIDGET */}
         <View style={[s.weatherCard, SHADOWS.lg]}>
           <View style={s.weatherTopRow}>
             <View>
@@ -508,20 +658,18 @@ export default function HomeScreen() {
               )}
             </View>
           </View>
-
           <View style={s.divider} />
-
           <View style={s.statsRow}>
             <StatBadge
               icon="water-percent"
-              label="Humidity"
+              label={t.humidity}
               value={loadingWeather ? "--" : `${weather.humidity}%`}
               color={COLORS.info}
             />
             <View style={s.statDivider} />
             <StatBadge
               icon="thermometer"
-              label="Soil Temp"
+              label={t.soilTemp}
               value={loadingWeather ? "--" : `${weather.soilTemp}°C`}
               color={COLORS.accentWarm}
               iconFamily="mci"
@@ -529,18 +677,15 @@ export default function HomeScreen() {
             <View style={s.statDivider} />
             <StatBadge
               icon="weather-windy"
-              label="Wind"
+              label={t.wind}
               value={loadingWeather ? "--" : `${weather.wind} m/s`}
               color={COLORS.accent}
             />
           </View>
         </View>
 
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={s.kpiStrip}
-        >
+        {/* 📊 DYNAMIC KPI STRIP */}
+        <View style={s.kpiStrip}>
           {KPI_DATA.map((k) => (
             <View key={k.label} style={[s.kpiCard, SHADOWS.sm]}>
               <View style={[s.kpiIcon, { backgroundColor: k.color + "15" }]}>
@@ -550,21 +695,33 @@ export default function HomeScreen() {
                   color={k.color}
                 />
               </View>
-              <Text style={s.kpiValue}>{k.value}</Text>
-              <Text style={s.kpiLabel}>{k.label}</Text>
+              <Text style={s.kpiValue} numberOfLines={1} adjustsFontSizeToFit>
+                {k.value}
+              </Text>
+              <Text style={s.kpiLabel} numberOfLines={1} adjustsFontSizeToFit>
+                {k.label}
+              </Text>
             </View>
           ))}
-        </ScrollView>
+        </View>
 
         <SectionHeader
-          title="Top Investments"
-          actionLabel="See all"
+          title={t.topInvestments}
+          actionLabel={t.seeAll}
           onAction={() => {}}
         />
 
-        {displayProjects.map((inv: any) => (
-          <InvestmentCard key={inv.id} {...inv} />
-        ))}
+        {loadingData ? (
+          <ActivityIndicator
+            size="large"
+            color={COLORS.primary}
+            style={{ marginVertical: 30 }}
+          />
+        ) : (
+          displayProjects.map((proj: any) => (
+            <InvestmentCard key={proj.id} project={proj} t={t} />
+          ))
+        )}
       </ScrollView>
     </View>
   );
@@ -584,7 +741,6 @@ const badge = StyleSheet.create({
   value: { fontSize: 14, fontWeight: "700", color: COLORS.text },
   label: { fontSize: 10, color: COLORS.textMuted, marginTop: 2 },
 });
-
 const sh = StyleSheet.create({
   row: {
     flexDirection: "row",
@@ -605,7 +761,6 @@ const sh = StyleSheet.create({
   title: { fontSize: 18, fontWeight: "800", color: COLORS.text },
   action: { fontSize: 12, fontWeight: "600", color: COLORS.primary },
 });
-
 const ic = StyleSheet.create({
   card: {
     backgroundColor: COLORS.card,
@@ -748,6 +903,20 @@ const s = StyleSheet.create({
     left: -30,
     opacity: 0.18,
   },
+
+  langGroup: {
+    flexDirection: "row",
+    backgroundColor: "rgba(255,255,255,0.15)",
+    borderRadius: 20,
+    padding: 3,
+    alignSelf: "flex-end",
+    marginBottom: 10,
+  },
+  langBtn: { paddingHorizontal: 10, paddingVertical: 5, borderRadius: 15 },
+  langBtnActive: { backgroundColor: COLORS.white },
+  langText: { fontSize: 11, fontWeight: "700", color: "rgba(255,255,255,0.8)" },
+  langTextActive: { color: COLORS.primary },
+
   topBar: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -842,27 +1011,39 @@ const s = StyleSheet.create({
   statDivider: { width: 1, height: 40, backgroundColor: COLORS.border },
 
   kpiStrip: {
-    paddingLeft: 24,
-    paddingRight: 12,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginHorizontal: 24,
     marginTop: 20,
     marginBottom: 20,
+    gap: 12,
   },
   kpiCard: {
+    flex: 1,
     backgroundColor: COLORS.card,
     borderRadius: 18,
-    padding: 14,
-    marginRight: 12,
+    paddingVertical: 16,
+    paddingHorizontal: 8,
     alignItems: "center",
-    minWidth: 90,
   },
   kpiIcon: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+    width: 38,
+    height: 38,
+    borderRadius: 19,
     justifyContent: "center",
     alignItems: "center",
-    marginBottom: 8,
+    marginBottom: 10,
   },
-  kpiValue: { fontSize: 15, fontWeight: "800", color: COLORS.text },
-  kpiLabel: { fontSize: 10, color: COLORS.textMuted, marginTop: 2 },
+  kpiValue: {
+    fontSize: 16,
+    fontWeight: "800",
+    color: COLORS.text,
+    textAlign: "center",
+  },
+  kpiLabel: {
+    fontSize: 10.5,
+    color: COLORS.textMuted,
+    marginTop: 4,
+    textAlign: "center",
+  },
 });
