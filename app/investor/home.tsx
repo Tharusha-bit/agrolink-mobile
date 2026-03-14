@@ -12,7 +12,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import { useProjects } from '../src/context/ProjectContext';
+import { useProjects } from '../../src/context/ProjectContext';
 const COLORS = {
   primary: '#216000',       
   primaryLight: '#2E8B00',
