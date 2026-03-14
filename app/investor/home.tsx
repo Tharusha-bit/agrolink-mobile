@@ -3,8 +3,11 @@ import {
   Ionicons,
   MaterialCommunityIcons,
 } from "@expo/vector-icons";
-import { useLocalSearchParams, useRouter } from "expo-router";
-import React, { useEffect, useState } from "react";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import axios from "axios";
+import * as Location from "expo-location";
+import { useFocusEffect, useRouter } from "expo-router";
+import React, { useCallback, useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Image,
@@ -17,10 +20,6 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-
-// ✅ Imports for real-time weather
-import axios from "axios";
-import * as Location from "expo-location";
 
 import { useProjects } from "../../src/context/ProjectContext";
 
@@ -288,27 +287,17 @@ const InvestmentCard = ({
 // ─── Main Screen Component ────────────────────────────────────────────────────
 export default function HomeScreen() {
   const router = useRouter();
-
-  const { firstName } = useLocalSearchParams();
-  const displayName = firstName || "Investor";
-
-  const today = new Date();
-  const dateString = today.toLocaleDateString("en-US", {
-    weekday: "long",
-    day: "numeric",
-    month: "long",
-    year: "numeric",
-  });
-  const currentHour = today.getHours();
-  let greetingText = "Good evening 🌙";
-  if (currentHour < 12) greetingText = "Good morning 🌱";
-  else if (currentHour < 18) greetingText = "Good afternoon ☀️";
-
   const { projects } = useProjects();
+
+  // ✅ Dynamic user details & real-time greeting
+  const [displayName, setDisplayName] = useState("Investor");
+  const [greetingText, setGreetingText] = useState("Good morning 🌱");
+  const [dateString, setDateString] = useState("");
+
   const displayProjects =
     projects && projects.length > 0 ? projects : FALLBACK_INVESTMENTS;
 
-  // ✅ Real-time Weather States
+  // Weather States
   const [city, setCity] = useState("Locating...");
   const [loadingWeather, setLoadingWeather] = useState(true);
   const [weather, setWeather] = useState({
@@ -320,7 +309,37 @@ export default function HomeScreen() {
     icon: "weather-cloudy",
   });
 
-  // ✅ Weather API Call
+  // ✅ Trigger dynamic updates on mount and every time the screen focuses
+  useFocusEffect(
+    useCallback(() => {
+      const loadUserData = async () => {
+        const storedName = await AsyncStorage.getItem("firstName");
+        if (storedName) {
+          setDisplayName(storedName);
+        }
+
+        const today = new Date();
+        const currentHour = today.getHours();
+
+        if (currentHour < 12) setGreetingText("Good morning 🌱");
+        else if (currentHour < 18) setGreetingText("Good afternoon ☀️");
+        else setGreetingText("Good evening 🌙");
+
+        setDateString(
+          today.toLocaleDateString("en-US", {
+            weekday: "long",
+            day: "numeric",
+            month: "long",
+            year: "numeric",
+          }),
+        );
+      };
+
+      loadUserData();
+    }, []),
+  );
+
+  // Weather API Call
   useEffect(() => {
     (async () => {
       try {
